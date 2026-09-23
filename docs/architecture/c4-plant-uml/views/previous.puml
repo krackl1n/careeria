@@ -1,0 +1,12 @@
+@startuml C4-L2-Previous
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — полная контейнерная диаграмма (предыдущая версия)
+LAYOUT_LEFT_RIGHT()
+
+!include ../model/all-elements.puml
+!include ../model/all-relationships.puml
+
+SHOW_LEGEND()
+@enduml

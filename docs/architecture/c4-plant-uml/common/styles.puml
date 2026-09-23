@@ -1,0 +1,24 @@
+!include <C4/C4_Container>
+
+AddElementTag("frontend", $bgColor="#2563EB", $fontColor="#FFFFFF", $borderColor="#1D4ED8")
+AddElementTag("edge", $bgColor="#0EA5E9", $fontColor="#FFFFFF", $borderColor="#0284C7")
+AddElementTag("gateway", $bgColor="#0284C7", $fontColor="#FFFFFF", $borderColor="#075985")
+AddElementTag("business", $bgColor="#16A34A", $fontColor="#FFFFFF", $borderColor="#15803D")
+AddElementTag("platform", $bgColor="#0891B2", $fontColor="#FFFFFF", $borderColor="#0E7490")
+AddElementTag("authorization", $bgColor="#7C3AED", $fontColor="#FFFFFF", $borderColor="#6D28D9")
+AddElementTag("eventBus", $bgColor="#F59E0B", $fontColor="#111827", $borderColor="#B45309")
+AddElementTag("eventInfrastructure", $bgColor="#D97706", $fontColor="#FFFFFF", $borderColor="#B45309")
+AddElementTag("realtime", $bgColor="#DB2777", $fontColor="#FFFFFF", $borderColor="#9D174D")
+AddElementTag("media", $bgColor="#9333EA", $fontColor="#FFFFFF", $borderColor="#6B21A8")
+AddElementTag("storage", $bgColor="#475569", $fontColor="#FFFFFF", $borderColor="#334155")
+
+AddRelTag("async", $lineColor="#D97706", $textColor="#92400E", $lineStyle=DashedLine(), $legendText="Асинхронное событие")
+AddRelTag("cdc", $lineColor="#A16207", $textColor="#713F12", $lineStyle=DottedLine(), $legendText="CDC / WAL")
+AddRelTag("realtimeFlow", $lineColor="#DB2777", $textColor="#9D174D", $legendText="Realtime")
+AddRelTag("mediaFlow", $lineColor="#9333EA", $textColor="#6B21A8", $legendText="Медиапоток")
+
+UpdateElementStyle("person", $bgColor="#334155", $fontColor="#FFFFFF", $borderColor="#1E293B")
+UpdateElementStyle("external_system", $bgColor="#64748B", $fontColor="#FFFFFF", $borderColor="#475569")
+
+skinparam shadowing false
+skinparam linetype ortho

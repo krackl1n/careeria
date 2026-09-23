@@ -1,0 +1,41 @@
+@startuml C4-L2-Event-Driven
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — асинхронное взаимодействие (Kafka и Debezium)
+LAYOUT_TOP_DOWN()
+
+EmployerHrSystem()
+NotificationProvidersSystem()
+
+System_Boundary(platform, "Careeria") {
+    OutboxDatabases()
+    EventPlatform()
+    HiringDomain(0)
+    CommunicationDomain(0, 1)
+    IdentityAccess(0, 1, 1)
+    IntegrationDomain()
+    RealtimeMedia(1, 0, 0)
+}
+
+Rel(candidateDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(companyDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(vacancyDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(hiringDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(assessmentDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(communicationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(identityDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(debezium, schemaRegistry, "Получает схемы", "Registry API")
+Rel(debezium, kafka, "Публикует события", "Kafka / Avro", $tags="async")
+Rel(kafka, hiringService, "События найма", "Kafka / Avro", $tags="async")
+Rel(kafka, notificationService, "События уведомлений", "Kafka / Avro", $tags="async")
+Rel(kafka, realtimePublisher, "Realtime-события", "Kafka / Avro", $tags="realtimeFlow")
+Rel(kafka, authzProjection, "Изменения ролей", "Kafka / Avro", $tags="async")
+Rel(kafka, integrationService, "События интеграций", "Kafka / Avro", $tags="async")
+Rel(integrationService, kafka, "Публикует события", "Kafka / Avro", $tags="async")
+Rel(authzProjection, openFga, "Обновляет роли и связи", "OpenFGA API")
+Rel(integrationService, employerHrSystem, "Передаёт события", "REST / Webhooks")
+Rel(notificationService, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
+
+SHOW_LEGEND()
+@enduml

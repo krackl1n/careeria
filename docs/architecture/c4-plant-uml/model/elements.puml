@@ -1,0 +1,156 @@
+!unquoted procedure CandidateActor()
+    Person(candidate, "Кандидат", "Ищет работу, откликается на вакансии и проходит процесс найма.")
+!endprocedure
+
+!unquoted procedure RecruiterActor()
+    Person(recruiter, "Рекрутер", "Публикует вакансии и ведёт кандидатов по процессу найма.")
+!endprocedure
+
+!unquoted procedure HiringManagerActor()
+    Person(hiringManager, "Нанимающий руководитель", "Участвует в собеседованиях, оценке кандидатов и принятии решений.")
+!endprocedure
+
+!unquoted procedure CompanyAdminActor()
+    Person(companyAdmin, "Администратор компании", "Управляет компанией, пользователями и ролями.")
+!endprocedure
+
+!unquoted procedure IdentityProviderSystem()
+    System_Ext(identityProvider, "Identity Provider", "Внешний провайдер OAuth 2.0 и OpenID Connect.")
+!endprocedure
+
+!unquoted procedure NotificationProvidersSystem()
+    System_Ext(notificationProviders, "Notification Providers", "Email, push- и SMS-провайдеры.")
+!endprocedure
+
+!unquoted procedure EmployerHrSystem()
+    System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя.")
+!endprocedure
+
+!unquoted procedure EntryPoints()
+    Container_Boundary(entryPoints, "Точки входа") {
+        Container(web, "Web Application", "SPA", "Клиентское приложение для кандидатов и сотрудников компаний.", $tags="frontend")
+        Container(bff, "BFF", "HTTP API", "Управляет сессией и адаптирует API под веб-интерфейс.", $tags="edge")
+        Container(apiGateway, "API Gateway", "HTTP / gRPC", "Маршрутизация и передача доверенного контекста пользователя.", $tags="gateway")
+    }
+!endprocedure
+
+!unquoted procedure CandidateDomain($withDatabase)
+    Container_Boundary(candidateBoundary, "Домен кандидатов") {
+        Container(candidateService, "Candidate Service", "Service", "Профили, резюме, навыки и карьерные предпочтения.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Данные Candidate Service и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure CompanyDomain($withDatabase)
+    Container_Boundary(companyBoundary, "Домен компаний") {
+        Container(companyService, "Company Service", "Service", "Работодатели, участники компаний и корпоративные роли.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(companyDb, "Company DB", "PostgreSQL", "Данные Company Service и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure VacancyDomain($withDatabase)
+    Container_Boundary(vacancyBoundary, "Домен вакансий") {
+        Container(vacancyService, "Vacancy Service", "Service", "Вакансии, требования, условия и жизненный цикл публикации.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Данные Vacancy Service и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure HiringDomain($withDatabase)
+    Container_Boundary(hiringBoundary, "Домен найма") {
+        Container(hiringService, "Hiring Service", "Service", "Отклики, этапы найма, интервью и предложения.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Данные Hiring Service и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure AssessmentDomain($withDatabase)
+    Container_Boundary(assessmentBoundary, "Домен оценки") {
+        Container(assessmentService, "Assessment Service", "Service", "Тесты, задания, Live Coding и результаты проверки.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Данные Assessment Service и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure CommunicationDomain($withDatabase, $withNotification)
+    Container_Boundary(communicationBoundary, "Коммуникации") {
+        Container(communicationService, "Communication Service", "Service", "Диалоги, сообщения, вложения и отметки о прочтении.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Данные Communication Service и transactional outbox.", $tags="storage")
+        !endif
+        !if ($withNotification == 1)
+            Container(notificationService, "Notification Service", "Service", "In-app, email, push- и SMS-уведомления.", $tags="platform")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure IdentityAccess($withDatabase, $withProjection, $withOpenFga)
+    Container_Boundary(identityBoundary, "Идентификация и доступ") {
+        Container(identityService, "Identity Service", "Service", "Регистрация, OAuth/OIDC, токены и пользовательские сессии.", $tags="platform")
+        !if ($withDatabase == 1)
+            ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Учётные данные и transactional outbox.", $tags="storage")
+        !endif
+        !if ($withProjection == 1)
+            Container(authzProjection, "AuthZ Synchronization Service", "Kafka consumer", "Синхронизирует роли и отношения доступа.", $tags="platform")
+        !endif
+        !if ($withOpenFga == 1)
+            Container(openFga, "OpenFGA", "OpenFGA", "Источник истины для ролевой и relationship-based авторизации.", $tags="authorization")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure FilesDomain($withStorage)
+    Container_Boundary(filesBoundary, "Файлы") {
+        Container(fileService, "File Service", "Service", "Загрузка, временные ссылки, проверка и lifecycle файлов.", $tags="platform")
+        !if ($withStorage == 1)
+            ContainerDb(objectStorage, "Object Storage", "S3 / MinIO", "Резюме, аватары, вложения и записи интервью.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure IntegrationDomain()
+    Container_Boundary(integrationBoundary, "Интеграции") {
+        Container(integrationService, "Integration Service", "Service", "Webhooks и надёжная доставка внешних сообщений.", $tags="platform")
+    }
+!endprocedure
+
+!unquoted procedure RealtimeMedia($withPublisher, $withCentrifugo, $withLivekit)
+    Container_Boundary(realtimeBoundary, "Realtime и медиа") {
+        !if ($withPublisher == 1)
+            Container(realtimePublisher, "Realtime Publisher", "Kafka consumer", "Преобразует события для доставки в реальном времени.", $tags="platform")
+        !endif
+        !if ($withCentrifugo == 1)
+            Container(centrifugo, "Centrifugo", "WebSocket", "Доставляет события пользователям в реальном времени.", $tags="realtime")
+        !endif
+        !if ($withLivekit == 1)
+            Container(livekit, "LiveKit", "WebRTC", "Аудио, видео и демонстрация экрана.", $tags="media")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure EventPlatform()
+    Container_Boundary(eventBoundary, "Событийная платформа") {
+        ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина событий для асинхронного взаимодействия.", $tags="eventBus")
+        Container(schemaRegistry, "Schema Registry", "Avro", "Версионирование и проверка совместимости схем.", $tags="eventInfrastructure")
+        Container(debezium, "Debezium", "Debezium", "Публикует события из transactional outbox.", $tags="eventInfrastructure")
+    }
+!endprocedure
+
+!unquoted procedure OutboxDatabases()
+    Container_Boundary(outboxBoundary, "Transactional outbox источники") {
+        ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Candidate outbox.", $tags="storage")
+        ContainerDb(companyDb, "Company DB", "PostgreSQL", "Company outbox.", $tags="storage")
+        ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Vacancy outbox.", $tags="storage")
+        ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Hiring outbox.", $tags="storage")
+        ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessment outbox.", $tags="storage")
+        ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Communication outbox.", $tags="storage")
+        ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Identity outbox.", $tags="storage")
+    }
+!endprocedure

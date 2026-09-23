@@ -1,0 +1,43 @@
+@startuml C4-L2-Hiring-Domain
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — домен найма и рекрутинга
+LAYOUT_LEFT_RIGHT()
+
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria") {
+    EntryPoints()
+    CompanyDomain(1)
+    VacancyDomain(1)
+    HiringDomain(1)
+    AssessmentDomain(1)
+    IntegrationDomain()
+    RealtimeMedia(0, 0, 1)
+}
+
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(hiringManager, web, "Использует", "HTTPS")
+Rel(companyAdmin, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает API", "HTTPS / gRPC")
+Rel(apiGateway, companyService, "Управляет компаниями", "gRPC")
+Rel(apiGateway, vacancyService, "Управляет вакансиями", "gRPC")
+Rel(apiGateway, hiringService, "Ведёт процесс найма", "gRPC")
+Rel(apiGateway, assessmentService, "Управляет оцениванием", "gRPC")
+Rel(apiGateway, integrationService, "Передаёт webhook", "HTTP / gRPC")
+Rel(companyService, companyDb, "Хранит компании и роли", "SQL")
+Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
+Rel(hiringService, hiringDb, "Хранит отклики и этапы", "SQL")
+Rel(assessmentService, assessmentDb, "Хранит задания и оценки", "SQL")
+Rel(hiringService, livekit, "Создаёт комнаты", "LiveKit API", $tags="mediaFlow")
+Rel(web, livekit, "Передаёт медиапоток", "WebRTC", $tags="mediaFlow")
+Rel(employerHrSystem, apiGateway, "Отправляет webhook", "HTTPS / JSON")
+Rel(integrationService, employerHrSystem, "Передаёт события найма", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml

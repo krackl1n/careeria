@@ -1,0 +1,33 @@
+@startuml C4-L2-Candidate-Domain
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — домен кандидатов и вакансий
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+IdentityProviderSystem()
+
+System_Boundary(platform, "Careeria") {
+    EntryPoints()
+    IdentityAccess(1, 0, 0)
+    CandidateDomain(1)
+    VacancyDomain(1)
+    FilesDomain(1)
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(identityService, identityProvider, "Аутентифицирует", "OAuth 2.0 / OIDC")
+Rel(apiGateway, candidateService, "Получает профили", "gRPC")
+Rel(apiGateway, vacancyService, "Ищет вакансии", "gRPC")
+Rel(apiGateway, fileService, "Работает с файлами", "gRPC")
+Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
+Rel(candidateService, candidateDb, "Хранит профили и резюме", "SQL")
+Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
+Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
+
+SHOW_LEGEND()
+@enduml

@@ -29,6 +29,8 @@ OPENFGA_STORE_NAME ?= careeria
 STRUCTURIZR_VERSION ?= 2026.09.19
 STRUCTURIZR_IMAGE ?= structurizr/structurizr:$(STRUCTURIZR_VERSION)
 STRUCTURIZR_PORT ?= 18882
+PLANTUML_VERSION ?= 1.2026.8
+PLANTUML_IMAGE ?= plantuml/plantuml:$(PLANTUML_VERSION)
 
 BUF ?= $(GO_TOOL_BIN)/buf
 GOOSE ?= $(GO_TOOL_BIN)/goose
@@ -43,6 +45,7 @@ OPENFGA_TEST_FILE := /model/model.fga.yaml
 
 STRUCTURIZR_DIR := $(CURDIR)/docs/architecture/c4
 STRUCTURIZR_WORKSPACE := /usr/local/structurizr/workspace.dsl
+PLANTUML_ARCHITECTURE_DIR := docs/architecture/c4-plant-uml
 
 MODULE_DIRS := $(shell find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; | sort)
 MIGRATION_SERVICES := identity
@@ -57,7 +60,7 @@ MIGRATION_SERVICES := identity
 	docker-build compose-config compose-config-server \
 	build test vet check fmt \
 	authz-model-test authz-store-create authz-model-write \
-	architecture architecture-validate \
+	architecture architecture-validate plantuml-architecture plantuml-architecture-validate \
 	run-gateway run-identity \
 	migrate-new migrate-up migrate-status migrate-version \
 	proto-generate proto-lint proto-format
@@ -229,6 +232,20 @@ architecture-validate: ## Validate the Structurizr architecture workspace.
 		-v "$(STRUCTURIZR_DIR):/usr/local/structurizr:ro" \
 		$(STRUCTURIZR_IMAGE) \
 		validate -workspace $(STRUCTURIZR_WORKSPACE)
+
+plantuml-architecture: ## Render C4-PlantUML architecture diagrams to SVG.
+	docker run --rm \
+		-v "$(CURDIR):/workspace" \
+		-w /workspace \
+		$(PLANTUML_IMAGE) \
+		-tsvg -o ../out $(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
+
+plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagrams.
+	docker run --rm \
+		-v "$(CURDIR):/workspace:ro" \
+		-w /workspace \
+		$(PLANTUML_IMAGE) \
+		-checkonly $(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
 
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway

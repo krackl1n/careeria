@@ -1,9 +1,11 @@
 {
-  "configuration" : { },
+  "configuration" : {
+    "scope" : "SoftwareSystem"
+  },
   "description" : "Архитектурная модель рекрутинговой системы Careeria",
   "documentation" : { },
   "id" : 1,
-  "lastModifiedDate" : "2026-09-23T12:16:34Z",
+  "lastModifiedDate" : "2026-09-23T13:33:30Z",
   "model" : {
     "people" : [ {
       "description" : "Ищет работу, откликается на вакансии и проходит процесс найма.",
@@ -13,11 +15,12 @@
         "structurizr.dsl.identifier" : "candidate"
       },
       "relationships" : [ {
-        "description" : "Создаёт профиль и резюме, ищет вакансии, откликается и проходит отбор",
+        "description" : "Ищет вакансии и откликается",
         "destinationId" : "8",
         "id" : "38",
         "sourceId" : "1",
-        "tags" : "Relationship"
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
       }, {
         "description" : "Использует",
         "destinationId" : "9",
@@ -35,11 +38,12 @@
         "structurizr.dsl.identifier" : "recruiter"
       },
       "relationships" : [ {
-        "description" : "Публикует вакансии, ведёт кандидатов и организует собеседования",
+        "description" : "Управляет вакансиями и кандидатами",
         "destinationId" : "8",
         "id" : "39",
         "sourceId" : "2",
-        "tags" : "Relationship"
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
       }, {
         "description" : "Использует",
         "destinationId" : "9",
@@ -57,11 +61,12 @@
         "structurizr.dsl.identifier" : "hiringManager"
       },
       "relationships" : [ {
-        "description" : "Проводит собеседования, оценивает кандидатов и принимает решения",
+        "description" : "Оценивает кандидатов",
         "destinationId" : "8",
         "id" : "40",
         "sourceId" : "3",
-        "tags" : "Relationship"
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
       }, {
         "description" : "Использует",
         "destinationId" : "9",
@@ -79,11 +84,12 @@
         "structurizr.dsl.identifier" : "companyAdmin"
       },
       "relationships" : [ {
-        "description" : "Управляет профилем компании, сотрудниками и ролями",
+        "description" : "Управляет компанией и ролями",
         "destinationId" : "8",
         "id" : "41",
         "sourceId" : "4",
-        "tags" : "Relationship"
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
       }, {
         "description" : "Использует",
         "destinationId" : "9",
@@ -121,48 +127,48 @@
         "structurizr.dsl.identifier" : "employerHrSystem"
       },
       "relationships" : [ {
-        "description" : "Передаёт изменения данных кандидатов и сотрудников",
+        "description" : "Передаёт изменения",
         "destinationId" : "8",
         "id" : "45",
         "sourceId" : "7",
         "tags" : "Relationship",
-        "technology" : "Webhooks"
+        "technology" : "HTTPS / Webhooks"
       }, {
-        "description" : "Отправляет события интеграции",
+        "description" : "Отправляет webhook",
         "destinationId" : "11",
         "id" : "63",
         "sourceId" : "7",
         "tags" : "Relationship",
-        "technology" : "HTTPS/Webhooks"
+        "technology" : "HTTPS / JSON"
       } ],
       "tags" : "Element,Software System,ExternalSystem"
     }, {
       "containers" : [ {
         "description" : "Клиентское приложение для кандидатов и сотрудников компаний.",
         "documentation" : { },
-        "group" : "Web",
+        "group" : "Точки входа",
         "id" : "9",
         "name" : "Web Application",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.web"
         },
         "relationships" : [ {
-          "description" : "Вызывает API веб-приложения",
+          "description" : "Вызывает API",
           "destinationId" : "10",
           "id" : "50",
           "sourceId" : "9",
           "tags" : "Relationship",
-          "technology" : "HTTPS/JSON"
+          "technology" : "HTTPS / JSON"
         }, {
-          "description" : "Устанавливает соединение для событий в реальном времени",
-          "destinationId" : "34",
+          "description" : "Подключается",
+          "destinationId" : "33",
           "id" : "102",
           "sourceId" : "9",
           "tags" : "Relationship,RealtimeFlow",
           "technology" : "WebSocket"
         }, {
-          "description" : "Передаёт аудио, видео и демонстрацию экрана",
-          "destinationId" : "35",
+          "description" : "Передаёт медиапоток",
+          "destinationId" : "34",
           "id" : "105",
           "sourceId" : "9",
           "tags" : "Relationship,MediaFlow",
@@ -173,121 +179,122 @@
       }, {
         "description" : "Управляет пользовательской сессией, агрегирует данные сервисов и адаптирует API под веб-интерфейс.",
         "documentation" : { },
-        "group" : "Web",
+        "group" : "Точки входа",
         "id" : "10",
         "name" : "BFF",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.bff"
         },
         "relationships" : [ {
-          "description" : "Вызывает внутренний API",
+          "description" : "Вызывает API",
           "destinationId" : "11",
           "id" : "51",
           "sourceId" : "10",
           "tags" : "Relationship",
-          "technology" : "HTTPS/gRPC"
+          "technology" : "HTTPS / gRPC"
         } ],
         "tags" : "Element,Container,Edge",
         "technology" : "HTTP API"
       }, {
         "description" : "Единая точка входа во внутренние сервисы: маршрутизация, ограничение запросов, трассировка и передача доверенного контекста пользователя.",
         "documentation" : { },
+        "group" : "Точки входа",
         "id" : "11",
         "name" : "API Gateway",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.apiGateway"
         },
         "relationships" : [ {
-          "description" : "Проверяет аутентификацию и получает данные пользователя",
-          "destinationId" : "24",
+          "description" : "Проверяет пользователя",
+          "destinationId" : "25",
           "id" : "52",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Получает профили кандидатов",
           "destinationId" : "12",
           "id" : "54",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Управляет компаниями",
           "destinationId" : "14",
           "id" : "55",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Управляет вакансиями",
           "destinationId" : "16",
           "id" : "56",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Ведёт процесс найма",
           "destinationId" : "18",
           "id" : "57",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Управляет оцениванием",
           "destinationId" : "20",
           "id" : "58",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
+          "description" : "Обменивается сообщениями",
           "destinationId" : "22",
           "id" : "59",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
-          "destinationId" : "36",
+          "description" : "Управляет уведомлениями",
+          "destinationId" : "24",
           "id" : "60",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт запросы с доверенным контекстом пользователя",
-          "destinationId" : "28",
+          "description" : "Работает с файлами",
+          "destinationId" : "29",
           "id" : "61",
           "sourceId" : "11",
           "tags" : "Relationship",
           "technology" : "gRPC"
         }, {
-          "description" : "Передаёт входящие webhooks",
-          "destinationId" : "37",
+          "description" : "Передаёт webhook",
+          "destinationId" : "31",
           "id" : "62",
           "sourceId" : "11",
           "tags" : "Relationship",
-          "technology" : "HTTP/gRPC"
+          "technology" : "HTTP / gRPC"
         } ],
         "tags" : "Element,Container,Gateway",
         "technology" : "HTTP / gRPC"
       }, {
         "description" : "Профили кандидатов, резюме, опыт работы, образование, навыки и карьерные предпочтения.",
         "documentation" : { },
-        "group" : "Candidate Context",
+        "group" : "Домен кандидатов",
         "id" : "12",
         "name" : "Candidate Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.candidateService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "65",
           "sourceId" : "12",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит данные кандидатов и исходящие события",
+          "description" : "Хранит профили и резюме",
           "destinationId" : "13",
           "id" : "72",
           "sourceId" : "12",
@@ -298,18 +305,18 @@
       }, {
         "description" : "Данные Candidate Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Candidate Context",
+        "group" : "Домен кандидатов",
         "id" : "13",
         "name" : "Candidate DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.candidateDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "80",
           "sourceId" : "13",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -317,21 +324,21 @@
       }, {
         "description" : "Работодатели, участники компаний, рекрутеры и корпоративные роли.",
         "documentation" : { },
-        "group" : "Company Context",
+        "group" : "Домен компаний",
         "id" : "14",
         "name" : "Company Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.companyService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "66",
           "sourceId" : "14",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит данные компаний и исходящие события",
+          "description" : "Хранит компании и роли",
           "destinationId" : "15",
           "id" : "73",
           "sourceId" : "14",
@@ -342,18 +349,18 @@
       }, {
         "description" : "Данные Company Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Company Context",
+        "group" : "Домен компаний",
         "id" : "15",
         "name" : "Company DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.companyDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "81",
           "sourceId" : "15",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -361,21 +368,21 @@
       }, {
         "description" : "Вакансии, требования, условия работы, вознаграждение и жизненный цикл публикации.",
         "documentation" : { },
-        "group" : "Vacancy Context",
+        "group" : "Домен вакансий",
         "id" : "16",
         "name" : "Vacancy Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.vacancyService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "67",
           "sourceId" : "16",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит данные вакансий и исходящие события",
+          "description" : "Хранит вакансии",
           "destinationId" : "17",
           "id" : "74",
           "sourceId" : "16",
@@ -386,18 +393,18 @@
       }, {
         "description" : "Данные Vacancy Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Vacancy Context",
+        "group" : "Домен вакансий",
         "id" : "17",
         "name" : "Vacancy DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.vacancyDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "82",
           "sourceId" : "17",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -405,36 +412,36 @@
       }, {
         "description" : "Отклики, воронки и этапы найма, собеседования, предложения о работе и состояния процесса найма.",
         "documentation" : { },
-        "group" : "Hiring Context",
+        "group" : "Домен найма",
         "id" : "18",
         "name" : "Hiring Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.hiringService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "68",
           "sourceId" : "18",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит данные процесса найма и исходящие события",
+          "description" : "Хранит отклики и этапы",
           "destinationId" : "19",
           "id" : "75",
           "sourceId" : "18",
           "tags" : "Relationship",
           "technology" : "SQL"
         }, {
-          "description" : "Получает схемы обрабатываемых событий",
-          "destinationId" : "31",
+          "description" : "Получает схемы",
+          "destinationId" : "36",
           "id" : "95",
           "sourceId" : "18",
-          "tags" : "Relationship",
-          "technology" : "Avro"
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
         }, {
-          "description" : "Создаёт комнаты и выдаёт доступ к медиасессиям",
-          "destinationId" : "35",
+          "description" : "Создаёт комнаты",
+          "destinationId" : "34",
           "id" : "104",
           "sourceId" : "18",
           "tags" : "Relationship,MediaFlow",
@@ -444,18 +451,18 @@
       }, {
         "description" : "Данные Hiring Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Hiring Context",
+        "group" : "Домен найма",
         "id" : "19",
         "name" : "Hiring DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.hiringDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "83",
           "sourceId" : "19",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -463,21 +470,21 @@
       }, {
         "description" : "Оценочные мероприятия, тесты, практические задания, Live Coding, решения и результаты проверки.",
         "documentation" : { },
-        "group" : "Assessment Context",
+        "group" : "Домен оценки",
         "id" : "20",
         "name" : "Assessment Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.assessmentService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "69",
           "sourceId" : "20",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит данные оценки и исходящие события",
+          "description" : "Хранит задания и оценки",
           "destinationId" : "21",
           "id" : "76",
           "sourceId" : "20",
@@ -488,18 +495,18 @@
       }, {
         "description" : "Данные Assessment Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Assessment Context",
+        "group" : "Домен оценки",
         "id" : "21",
         "name" : "Assessment DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.assessmentDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "84",
           "sourceId" : "21",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -507,21 +514,21 @@
       }, {
         "description" : "Диалоги, участники, сообщения, вложения, реакции и отметки о прочтении.",
         "documentation" : { },
-        "group" : "Communication Context",
+        "group" : "Коммуникации",
         "id" : "22",
         "name" : "Communication Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.communicationService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "70",
           "sourceId" : "22",
-          "tags" : "Relationship",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Хранит переписку и исходящие события",
+          "description" : "Хранит сообщения",
           "destinationId" : "23",
           "id" : "77",
           "sourceId" : "22",
@@ -532,43 +539,68 @@
       }, {
         "description" : "Данные Communication Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Communication Context",
+        "group" : "Коммуникации",
         "id" : "23",
         "name" : "Communication DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.communicationDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "85",
           "sourceId" : "23",
-          "tags" : "Relationship,CDC",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
         "technology" : "PostgreSQL"
       }, {
+        "description" : "Формирует и доставляет уведомления в приложении, по электронной почте, через push и SMS.",
+        "documentation" : { },
+        "group" : "Коммуникации",
+        "id" : "24",
+        "name" : "Notification Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.notificationService"
+        },
+        "relationships" : [ {
+          "description" : "Получает схемы",
+          "destinationId" : "36",
+          "id" : "96",
+          "sourceId" : "24",
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
+        }, {
+          "description" : "Отправляет уведомления",
+          "destinationId" : "6",
+          "id" : "106",
+          "sourceId" : "24",
+          "tags" : "Relationship",
+          "technology" : "Email / Push / SMS"
+        } ],
+        "tags" : "Element,Container,PlatformService"
+      }, {
         "description" : "Регистрация, учётные данные, OAuth 2.0 и OpenID Connect, токены доступа и пользовательские сессии.",
         "documentation" : { },
-        "group" : "Identity and Access",
-        "id" : "24",
+        "group" : "Идентификация и доступ",
+        "id" : "25",
         "name" : "Identity Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.identityService"
         },
         "relationships" : [ {
-          "description" : "Выполняет внешнюю аутентификацию",
+          "description" : "Аутентифицирует пользователя",
           "destinationId" : "5",
           "id" : "53",
-          "sourceId" : "24",
+          "sourceId" : "25",
           "tags" : "Relationship",
-          "technology" : "OAuth 2.0 / OpenID Connect"
+          "technology" : "OAuth 2.0 / OIDC"
         }, {
-          "description" : "Хранит учётные данные, сессии и исходящие события",
-          "destinationId" : "25",
+          "description" : "Хранит учётные данные",
+          "destinationId" : "26",
           "id" : "78",
-          "sourceId" : "24",
+          "sourceId" : "25",
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
@@ -576,18 +608,18 @@
       }, {
         "description" : "Данные Identity Service и его транзакционный outbox.",
         "documentation" : { },
-        "group" : "Identity and Access",
-        "id" : "25",
+        "group" : "Идентификация и доступ",
+        "id" : "26",
         "name" : "Identity DB",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.identityDb"
         },
         "relationships" : [ {
-          "description" : "Передаёт записи журнала исходящих сообщений",
-          "destinationId" : "32",
+          "description" : "Передаёт outbox",
+          "destinationId" : "37",
           "id" : "86",
-          "sourceId" : "25",
-          "tags" : "Relationship,CDC",
+          "sourceId" : "26",
+          "tags" : "Relationship,CDC,InfrastructureConnection",
           "technology" : "PostgreSQL WAL"
         } ],
         "tags" : "Element,Container,Database",
@@ -595,24 +627,24 @@
       }, {
         "description" : "Консьюмер Kafka, который по доменным событиям изменяет роли и отношения доступа в OpenFGA.",
         "documentation" : { },
-        "group" : "Identity and Access",
-        "id" : "26",
+        "group" : "Идентификация и доступ",
+        "id" : "27",
         "name" : "AuthZ Synchronization Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.authzProjection"
         },
         "relationships" : [ {
-          "description" : "Получает схемы обрабатываемых событий",
-          "destinationId" : "31",
+          "description" : "Получает схемы",
+          "destinationId" : "36",
           "id" : "98",
-          "sourceId" : "26",
-          "tags" : "Relationship",
-          "technology" : "Avro"
+          "sourceId" : "27",
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
         }, {
-          "description" : "Изменяет роли и отношения доступа",
-          "destinationId" : "27",
+          "description" : "Обновляет роли и связи",
+          "destinationId" : "28",
           "id" : "100",
-          "sourceId" : "26",
+          "sourceId" : "27",
           "tags" : "Relationship",
           "technology" : "OpenFGA API"
         } ],
@@ -620,8 +652,8 @@
       }, {
         "description" : "Источник истины для ролевой и основанной на отношениях авторизации.",
         "documentation" : { },
-        "group" : "Identity and Access",
-        "id" : "27",
+        "group" : "Идентификация и доступ",
+        "id" : "28",
         "name" : "OpenFGA",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.openFga"
@@ -631,24 +663,24 @@
       }, {
         "description" : "Загрузка и скачивание файлов, метаданные, временные ссылки, проверка и управление жизненным циклом.",
         "documentation" : { },
-        "group" : "Files",
-        "id" : "28",
+        "group" : "Файлы",
+        "id" : "29",
         "name" : "File Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.fileService"
         },
         "relationships" : [ {
-          "description" : "Проверяет права доступа",
-          "destinationId" : "27",
+          "description" : "Проверяет доступ",
+          "destinationId" : "28",
           "id" : "71",
-          "sourceId" : "28",
-          "tags" : "Relationship",
+          "sourceId" : "29",
+          "tags" : "Relationship,InfrastructureConnection",
           "technology" : "OpenFGA API"
         }, {
-          "description" : "Сохраняет и получает файлы",
-          "destinationId" : "29",
+          "description" : "Читает и записывает файлы",
+          "destinationId" : "30",
           "id" : "79",
-          "sourceId" : "28",
+          "sourceId" : "29",
           "tags" : "Relationship",
           "technology" : "S3 API"
         } ],
@@ -656,8 +688,8 @@
       }, {
         "description" : "Резюме, аватары, вложения, файлы оценочных заданий и записи собеседований.",
         "documentation" : { },
-        "group" : "Files",
-        "id" : "29",
+        "group" : "Файлы",
+        "id" : "30",
         "name" : "Object Storage",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.objectStorage"
@@ -665,200 +697,176 @@
         "tags" : "Element,Container,ObjectStorage",
         "technology" : "S3 / MinIO"
       }, {
-        "description" : "Шина событий для асинхронного взаимодействия предметных областей.",
-        "documentation" : { },
-        "group" : "Event Platform",
-        "id" : "30",
-        "name" : "Kafka",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.kafka"
-        },
-        "relationships" : [ {
-          "description" : "Доставляет события, влияющие на процесс найма",
-          "destinationId" : "18",
-          "id" : "89",
-          "sourceId" : "30",
-          "tags" : "Relationship,Async",
-          "technology" : "Avro"
-        }, {
-          "description" : "Доставляет события для формирования уведомлений",
-          "destinationId" : "36",
-          "id" : "90",
-          "sourceId" : "30",
-          "tags" : "Relationship,Async",
-          "technology" : "Avro"
-        }, {
-          "description" : "Доставляет события для отправки в реальном времени",
-          "destinationId" : "33",
-          "id" : "91",
-          "sourceId" : "30",
-          "tags" : "Relationship,RealtimeFlow",
-          "technology" : "Avro"
-        }, {
-          "description" : "Доставляет события об изменениях ролей и отношений доступа",
-          "destinationId" : "26",
-          "id" : "92",
-          "sourceId" : "30",
-          "tags" : "Relationship,Async",
-          "technology" : "Avro"
-        }, {
-          "description" : "Доставляет события для внешних систем",
-          "destinationId" : "37",
-          "id" : "93",
-          "sourceId" : "30",
-          "tags" : "Relationship,Async",
-          "technology" : "Avro"
-        } ],
-        "tags" : "Element,Container,EventBus",
-        "technology" : "Apache Kafka"
-      }, {
-        "description" : "Хранение, версионирование и проверка совместимости схем Avro.",
-        "documentation" : { },
-        "group" : "Event Platform",
-        "id" : "31",
-        "name" : "Schema Registry",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.schemaRegistry"
-        },
-        "tags" : "Element,Container,EventInfrastructure",
-        "technology" : "Schema Registry / Avro"
-      }, {
-        "description" : "Публикует доменные события из транзакционных outbox в Kafka.",
-        "documentation" : { },
-        "group" : "Event Platform",
-        "id" : "32",
-        "name" : "Debezium",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.debezium"
-        },
-        "relationships" : [ {
-          "description" : "Публикует доменные события",
-          "destinationId" : "30",
-          "id" : "87",
-          "sourceId" : "32",
-          "tags" : "Relationship,Async",
-          "technology" : "Avro"
-        }, {
-          "description" : "Регистрирует и получает схемы событий",
-          "destinationId" : "31",
-          "id" : "88",
-          "sourceId" : "32",
-          "tags" : "Relationship",
-          "technology" : "Avro"
-        } ],
-        "tags" : "Element,Container,EventInfrastructure",
-        "technology" : "Debezium"
-      }, {
-        "description" : "Получает события из Kafka, преобразует их для доставки в реальном времени и публикует в Centrifugo.",
-        "documentation" : { },
-        "group" : "Realtime and Media",
-        "id" : "33",
-        "name" : "Realtime Publisher",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.realtimePublisher"
-        },
-        "relationships" : [ {
-          "description" : "Получает схемы обрабатываемых событий",
-          "destinationId" : "31",
-          "id" : "97",
-          "sourceId" : "33",
-          "tags" : "Relationship",
-          "technology" : "Avro"
-        }, {
-          "description" : "Публикует сообщения для доставки в реальном времени",
-          "destinationId" : "34",
-          "id" : "101",
-          "sourceId" : "33",
-          "tags" : "Relationship,RealtimeFlow",
-          "technology" : "Centrifugo API"
-        } ],
-        "tags" : "Element,Container,PlatformService"
-      }, {
-        "description" : "Точка входа и WebSocket-транспорт для доставки событий в реальном времени.",
-        "documentation" : { },
-        "group" : "Realtime and Media",
-        "id" : "34",
-        "name" : "Centrifugo",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.centrifugo"
-        },
-        "relationships" : [ {
-          "description" : "Доставляет события пользователю",
-          "destinationId" : "9",
-          "id" : "103",
-          "sourceId" : "34",
-          "tags" : "Relationship,RealtimeFlow",
-          "technology" : "WebSocket"
-        } ],
-        "tags" : "Element,Container,Realtime",
-        "technology" : "Centrifugo / WebSocket"
-      }, {
-        "description" : "Передаёт аудио, видео и демонстрацию экрана во время собеседований.",
-        "documentation" : { },
-        "group" : "Realtime and Media",
-        "id" : "35",
-        "name" : "LiveKit",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.livekit"
-        },
-        "tags" : "Element,Container,Media",
-        "technology" : "LiveKit / WebRTC"
-      }, {
-        "description" : "Формирует и доставляет уведомления в приложении, по электронной почте, через push и SMS.",
-        "documentation" : { },
-        "group" : "Platform Services",
-        "id" : "36",
-        "name" : "Notification Service",
-        "properties" : {
-          "structurizr.dsl.identifier" : "platform.notificationService"
-        },
-        "relationships" : [ {
-          "description" : "Получает схемы обрабатываемых событий",
-          "destinationId" : "31",
-          "id" : "96",
-          "sourceId" : "36",
-          "tags" : "Relationship",
-          "technology" : "Avro"
-        }, {
-          "description" : "Отправляет письма, push- и SMS-уведомления",
-          "destinationId" : "6",
-          "id" : "106",
-          "sourceId" : "36",
-          "tags" : "Relationship"
-        } ],
-        "tags" : "Element,Container,PlatformService"
-      }, {
         "description" : "Принимает и отправляет webhooks, преобразует внешние сообщения в события Careeria и управляет надёжной доставкой.",
         "documentation" : { },
-        "group" : "Platform Services",
-        "id" : "37",
+        "group" : "Интеграции",
+        "id" : "31",
         "name" : "Integration Service",
         "properties" : {
           "structurizr.dsl.identifier" : "platform.integrationService"
         },
         "relationships" : [ {
-          "description" : "Отправляет данные и события найма",
+          "description" : "Передаёт события найма",
           "destinationId" : "7",
           "id" : "64",
-          "sourceId" : "37",
+          "sourceId" : "31",
           "tags" : "Relationship",
-          "technology" : "REST API / Webhooks"
+          "technology" : "HTTPS / REST / Webhooks"
         }, {
-          "description" : "Публикует события, полученные из внешних систем",
-          "destinationId" : "30",
+          "description" : "Публикует события",
+          "destinationId" : "35",
           "id" : "94",
-          "sourceId" : "37",
+          "sourceId" : "31",
           "tags" : "Relationship,Async",
-          "technology" : "Avro"
+          "technology" : "Kafka / Avro"
         }, {
-          "description" : "Регистрирует и получает схемы интеграционных событий",
-          "destinationId" : "31",
+          "description" : "Управляет схемами",
+          "destinationId" : "36",
           "id" : "99",
-          "sourceId" : "37",
-          "tags" : "Relationship",
-          "technology" : "Avro"
+          "sourceId" : "31",
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
         } ],
         "tags" : "Element,Container,PlatformService"
+      }, {
+        "description" : "Получает события из Kafka, преобразует их для доставки в реальном времени и публикует в Centrifugo.",
+        "documentation" : { },
+        "group" : "Realtime и медиа",
+        "id" : "32",
+        "name" : "Realtime Publisher",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.realtimePublisher"
+        },
+        "relationships" : [ {
+          "description" : "Получает схемы",
+          "destinationId" : "36",
+          "id" : "97",
+          "sourceId" : "32",
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
+        }, {
+          "description" : "Публикует сообщения",
+          "destinationId" : "33",
+          "id" : "101",
+          "sourceId" : "32",
+          "tags" : "Relationship,RealtimeFlow",
+          "technology" : "Centrifugo API"
+        } ],
+        "tags" : "Element,Container,PlatformService,Infrastructure"
+      }, {
+        "description" : "Публичная точка входа для WebSocket-соединений и доставки событий пользователям в реальном времени.",
+        "documentation" : { },
+        "group" : "Realtime и медиа",
+        "id" : "33",
+        "name" : "Centrifugo",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.centrifugo"
+        },
+        "relationships" : [ {
+          "description" : "Доставляет сообщения",
+          "destinationId" : "9",
+          "id" : "103",
+          "sourceId" : "33",
+          "tags" : "Relationship,RealtimeFlow",
+          "technology" : "WebSocket"
+        } ],
+        "tags" : "Element,Container,Realtime,Infrastructure",
+        "technology" : "Centrifugo / WebSocket"
+      }, {
+        "description" : "Публичная точка входа для аудио, видео и демонстрации экрана во время собеседований.",
+        "documentation" : { },
+        "group" : "Realtime и медиа",
+        "id" : "34",
+        "name" : "LiveKit",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.livekit"
+        },
+        "tags" : "Element,Container,Media,Infrastructure",
+        "technology" : "LiveKit / WebRTC"
+      }, {
+        "description" : "Шина событий для асинхронного взаимодействия предметных областей.",
+        "documentation" : { },
+        "group" : "Событийная платформа",
+        "id" : "35",
+        "name" : "Kafka",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.kafka"
+        },
+        "relationships" : [ {
+          "description" : "Доставляет события найма",
+          "destinationId" : "18",
+          "id" : "89",
+          "sourceId" : "35",
+          "tags" : "Relationship,Async",
+          "technology" : "Kafka / Avro"
+        }, {
+          "description" : "Доставляет события уведомлений",
+          "destinationId" : "24",
+          "id" : "90",
+          "sourceId" : "35",
+          "tags" : "Relationship,Async",
+          "technology" : "Kafka / Avro"
+        }, {
+          "description" : "Доставляет realtime-события",
+          "destinationId" : "32",
+          "id" : "91",
+          "sourceId" : "35",
+          "tags" : "Relationship,RealtimeFlow",
+          "technology" : "Kafka / Avro"
+        }, {
+          "description" : "Доставляет изменения ролей",
+          "destinationId" : "27",
+          "id" : "92",
+          "sourceId" : "35",
+          "tags" : "Relationship,Async",
+          "technology" : "Kafka / Avro"
+        }, {
+          "description" : "Доставляет события интеграций",
+          "destinationId" : "31",
+          "id" : "93",
+          "sourceId" : "35",
+          "tags" : "Relationship,Async",
+          "technology" : "Kafka / Avro"
+        } ],
+        "tags" : "Element,Container,EventBus,Infrastructure",
+        "technology" : "Apache Kafka"
+      }, {
+        "description" : "Хранение, версионирование и проверка совместимости схем Avro.",
+        "documentation" : { },
+        "group" : "Событийная платформа",
+        "id" : "36",
+        "name" : "Schema Registry",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.schemaRegistry"
+        },
+        "tags" : "Element,Container,EventInfrastructure,Infrastructure",
+        "technology" : "Schema Registry / Avro"
+      }, {
+        "description" : "Публикует доменные события из транзакционных outbox в Kafka.",
+        "documentation" : { },
+        "group" : "Событийная платформа",
+        "id" : "37",
+        "name" : "Debezium",
+        "properties" : {
+          "structurizr.dsl.identifier" : "platform.debezium"
+        },
+        "relationships" : [ {
+          "description" : "Публикует события",
+          "destinationId" : "35",
+          "id" : "87",
+          "sourceId" : "37",
+          "tags" : "Relationship,Async",
+          "technology" : "Kafka / Avro"
+        }, {
+          "description" : "Получает схемы",
+          "destinationId" : "36",
+          "id" : "88",
+          "sourceId" : "37",
+          "tags" : "Relationship,InfrastructureConnection",
+          "technology" : "Schema Registry API / Avro"
+        } ],
+        "tags" : "Element,Container,EventInfrastructure,Infrastructure",
+        "technology" : "Debezium"
       } ],
       "description" : "Рекрутинговая система полного цикла: от публикации вакансии и отклика до оценки, собеседования и найма кандидата.",
       "documentation" : { },
@@ -868,39 +876,44 @@
         "structurizr.dsl.identifier" : "platform"
       },
       "relationships" : [ {
-        "description" : "Использует внешнюю аутентификацию",
+        "description" : "Аутентифицирует пользователей",
         "destinationId" : "5",
         "id" : "42",
         "sourceId" : "8",
         "tags" : "Relationship",
-        "technology" : "OAuth 2.0 / OpenID Connect"
+        "technology" : "OAuth 2.0 / OIDC"
       }, {
-        "description" : "Отправляет уведомления",
+        "description" : "Доставляет уведомления",
         "destinationId" : "6",
         "id" : "43",
         "sourceId" : "8",
-        "tags" : "Relationship"
+        "tags" : "Relationship",
+        "technology" : "Email / Push / SMS"
       }, {
-        "description" : "Передаёт сведения о ходе и результатах найма",
+        "description" : "Передаёт данные найма",
         "destinationId" : "7",
         "id" : "44",
         "sourceId" : "8",
         "tags" : "Relationship",
-        "technology" : "REST API / Webhooks"
+        "technology" : "HTTPS / REST / Webhooks"
       } ],
       "tags" : "Element,Software System"
     } ]
   },
   "name" : "Careeria",
   "properties" : {
-    "structurizr.inspection.error" : "21",
-    "structurizr.dsl" : "d29ya3NwYWNlICJDYXJlZXJpYSIgItCQ0YDRhdC40YLQtdC60YLRg9GA0L3QsNGPINC80L7QtNC10LvRjCDRgNC10LrRgNGD0YLQuNC90LPQvtCy0L7QuSDRgdC40YHRgtC10LzRiyBDYXJlZXJpYSIgewoKICAgICFpZGVudGlmaWVycyBoaWVyYXJjaGljYWwKCiAgICBtb2RlbCB7CgogICAgICAgIGNhbmRpZGF0ZSA9IHBlcnNvbiAi0JrQsNC90LTQuNC00LDRgiIgewogICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JjRidC10YIg0YDQsNCx0L7RgtGDLCDQvtGC0LrQu9C40LrQsNC10YLRgdGPINC90LAg0LLQsNC60LDQvdGB0LjQuCDQuCDQv9GA0L7RhdC+0LTQuNGCINC/0YDQvtGG0LXRgdGBINC90LDQudC80LAuIgogICAgICAgIH0KCiAgICAgICAgcmVjcnVpdGVyID0gcGVyc29uICLQoNC10LrRgNGD0YLQtdGAIiB7CiAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQn9GD0LHQu9C40LrRg9C10YIg0LLQsNC60LDQvdGB0LjQuCDQuCDQstC10LTRkdGCINC60LDQvdC00LjQtNCw0YLQvtCyINC/0L4g0L/RgNC+0YbQtdGB0YHRgyDQvdCw0LnQvNCwLiIKICAgICAgICB9CgogICAgICAgIGhpcmluZ01hbmFnZXIgPSBwZXJzb24gItCd0LDQvdC40LzQsNGO0YnQuNC5INGA0YPQutC+0LLQvtC00LjRgtC10LvRjCIgewogICAgICAgICAgICBkZXNjcmlwdGlvbiAi0KPRh9Cw0YHRgtCy0YPQtdGCINCyINGB0L7QsdC10YHQtdC00L7QstCw0L3QuNGP0YUsINC+0YbQtdC90LrQtSDQutCw0L3QtNC40LTQsNGC0L7QsiDQuCDQv9GA0LjQvdGP0YLQuNC4INGA0LXRiNC10L3QuNC5INC+INC90LDQudC80LUuIgogICAgICAgIH0KCiAgICAgICAgY29tcGFueUFkbWluID0gcGVyc29uICLQkNC00LzQuNC90LjRgdGC0YDQsNGC0L7RgCDQutC+0LzQv9Cw0L3QuNC4IiB7CiAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQo9C/0YDQsNCy0LvRj9C10YIg0LrQvtC80L/QsNC90LjQtdC5LCDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y/QvNC4INC4INGA0L7Qu9GP0LzQuC4iCiAgICAgICAgfQoKICAgICAgICBpZGVudGl0eVByb3ZpZGVyID0gc29mdHdhcmVTeXN0ZW0gIklkZW50aXR5IFByb3ZpZGVyIiB7CiAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQktC90LXRiNC90LjQuSDQv9GA0L7QstCw0LnQtNC10YAg0LDRg9GC0LXQvdGC0LjRhNC40LrQsNGG0LjQuCDQv9C+IE9BdXRoIDIuMCDQuCBPcGVuSUQgQ29ubmVjdC4iCiAgICAgICAgICAgIHRhZ3MgIkV4dGVybmFsU3lzdGVtIgogICAgICAgIH0KCiAgICAgICAgbm90aWZpY2F0aW9uUHJvdmlkZXJzID0gc29mdHdhcmVTeXN0ZW0gIk5vdGlmaWNhdGlvbiBQcm92aWRlcnMiIHsKICAgICAgICAgICAgZGVzY3JpcHRpb24gItCS0L3QtdGI0L3QuNC1INGB0LXRgNCy0LjRgdGLINC00L7RgdGC0LDQstC60Lgg0Y3Qu9C10LrRgtGA0L7QvdC90L7QuSDQv9C+0YfRgtGLLCBwdXNoLSDQuCBTTVMt0YPQstC10LTQvtC80LvQtdC90LjQuS4iCiAgICAgICAgICAgIHRhZ3MgIkV4dGVybmFsU3lzdGVtIgogICAgICAgIH0KCiAgICAgICAgZW1wbG95ZXJIclN5c3RlbSA9IHNvZnR3YXJlU3lzdGVtICJFbXBsb3llciBIUiBTeXN0ZW0iIHsKICAgICAgICAgICAgZGVzY3JpcHRpb24gItCS0L3QtdGI0L3Rj9GPINC60L7RgNC/0L7RgNCw0YLQuNCy0L3QsNGPINGB0LjRgdGC0LXQvNCwINGA0LDQsdC+0YLQvtC00LDRgtC10LvRjywg0LrQvtGC0L7RgNCw0Y8g0L7QsdC80LXQvdC40LLQsNC10YLRgdGPINGBIENhcmVlcmlhINC00LDQvdC90YvQvNC4INC+INC60LDQvdC00LjQtNCw0YLQsNGFINC4INGA0LXQt9GD0LvRjNGC0LDRgtCw0YUg0L3QsNC50LzQsC4iCiAgICAgICAgICAgIHRhZ3MgIkV4dGVybmFsU3lzdGVtIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0gPSBzb2Z0d2FyZVN5c3RlbSAiQ2FyZWVyaWEiIHsKICAgICAgICAgICAgZGVzY3JpcHRpb24gItCg0LXQutGA0YPRgtC40L3Qs9C+0LLQsNGPINGB0LjRgdGC0LXQvNCwINC/0L7Qu9C90L7Qs9C+INGG0LjQutC70LA6INC+0YIg0L/Rg9Cx0LvQuNC60LDRhtC40Lgg0LLQsNC60LDQvdGB0LjQuCDQuCDQvtGC0LrQu9C40LrQsCDQtNC+INC+0YbQtdC90LrQuCwg0YHQvtCx0LXRgdC10LTQvtCy0LDQvdC40Y8g0Lgg0L3QsNC50LzQsCDQutCw0L3QtNC40LTQsNGC0LAuIgoKICAgICAgICAgICAgZ3JvdXAgIldlYiIgewogICAgICAgICAgICAgICAgd2ViID0gY29udGFpbmVyICJXZWIgQXBwbGljYXRpb24iIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JrQu9C40LXQvdGC0YHQutC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0LTQu9GPINC60LDQvdC00LjQtNCw0YLQvtCyINC4INGB0L7RgtGA0YPQtNC90LjQutC+0LIg0LrQvtC80L/QsNC90LjQuS4iCiAgICAgICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiU1BBIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkZyb250ZW5kIgogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGJmZiA9IGNvbnRhaW5lciAiQkZGIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCj0L/RgNCw0LLQu9GP0LXRgiDQv9C+0LvRjNC30L7QstCw0YLQtdC70YzRgdC60L7QuSDRgdC10YHRgdC40LXQuSwg0LDQs9GA0LXQs9C40YDRg9C10YIg0LTQsNC90L3Ri9C1INGB0LXRgNCy0LjRgdC+0LIg0Lgg0LDQtNCw0L/RgtC40YDRg9C10YIgQVBJINC/0L7QtCDQstC10LEt0LjQvdGC0LXRgNGE0LXQudGBLiIKICAgICAgICAgICAgICAgICAgICB0ZWNobm9sb2d5ICJIVFRQIEFQSSIKICAgICAgICAgICAgICAgICAgICB0YWdzICJFZGdlIgogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CgogICAgICAgICAgICBhcGlHYXRld2F5ID0gY29udGFpbmVyICJBUEkgR2F0ZXdheSIgewogICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCV0LTQuNC90LDRjyDRgtC+0YfQutCwINCy0YXQvtC00LAg0LLQviDQstC90YPRgtGA0LXQvdC90LjQtSDRgdC10YDQstC40YHRizog0LzQsNGA0YjRgNGD0YLQuNC30LDRhtC40Y8sINC+0LPRgNCw0L3QuNGH0LXQvdC40LUg0LfQsNC/0YDQvtGB0L7Qsiwg0YLRgNCw0YHRgdC40YDQvtCy0LrQsCDQuCDQv9C10YDQtdC00LDRh9CwINC00L7QstC10YDQtdC90L3QvtCz0L4g0LrQvtC90YLQtdC60YHRgtCwINC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjy4iCiAgICAgICAgICAgICAgICB0ZWNobm9sb2d5ICJIVFRQIC8gZ1JQQyIKICAgICAgICAgICAgICAgIHRhZ3MgIkdhdGV3YXkiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJDYW5kaWRhdGUgQ29udGV4dCIgewogICAgICAgICAgICAgICAgY2FuZGlkYXRlU2VydmljZSA9IGNvbnRhaW5lciAiQ2FuZGlkYXRlIFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0J/RgNC+0YTQuNC70Lgg0LrQsNC90LTQuNC00LDRgtC+0LIsINGA0LXQt9GO0LzQtSwg0L7Qv9GL0YIg0YDQsNCx0L7RgtGLLCDQvtCx0YDQsNC30L7QstCw0L3QuNC1LCDQvdCw0LLRi9C60Lgg0Lgg0LrQsNGA0YzQtdGA0L3Ri9C1INC/0YDQtdC00L/QvtGH0YLQtdC90LjRjy4iCiAgICAgICAgICAgICAgICAgICAgdGFncyAiQnVzaW5lc3NTZXJ2aWNlIgogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGNhbmRpZGF0ZURiID0gY29udGFpbmVyICJDYW5kaWRhdGUgREIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQsNC90L3Ri9C1IENhbmRpZGF0ZSBTZXJ2aWNlINC4INC10LPQviDRgtGA0LDQvdC30LDQutGG0LjQvtC90L3Ri9C5IG91dGJveC4iCiAgICAgICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiUG9zdGdyZVNRTCIKICAgICAgICAgICAgICAgICAgICB0YWdzICJEYXRhYmFzZSIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQoKICAgICAgICAgICAgZ3JvdXAgIkNvbXBhbnkgQ29udGV4dCIgewogICAgICAgICAgICAgICAgY29tcGFueVNlcnZpY2UgPSBjb250YWluZXIgIkNvbXBhbnkgU2VydmljZSIgewogICAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQoNCw0LHQvtGC0L7QtNCw0YLQtdC70LgsINGD0YfQsNGB0YLQvdC40LrQuCDQutC+0LzQv9Cw0L3QuNC5LCDRgNC10LrRgNGD0YLQtdGA0Ysg0Lgg0LrQvtGA0L/QvtGA0LDRgtC40LLQvdGL0LUg0YDQvtC70LguIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkJ1c2luZXNzU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBjb21wYW55RGIgPSBjb250YWluZXIgIkNvbXBhbnkgREIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQsNC90L3Ri9C1IENvbXBhbnkgU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJWYWNhbmN5IENvbnRleHQiIHsKICAgICAgICAgICAgICAgIHZhY2FuY3lTZXJ2aWNlID0gY29udGFpbmVyICJWYWNhbmN5IFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JLQsNC60LDQvdGB0LjQuCwg0YLRgNC10LHQvtCy0LDQvdC40Y8sINGD0YHQu9C+0LLQuNGPINGA0LDQsdC+0YLRiywg0LLQvtC30L3QsNCz0YDQsNC20LTQtdC90LjQtSDQuCDQttC40LfQvdC10L3QvdGL0Lkg0YbQuNC60Lsg0L/Rg9Cx0LvQuNC60LDRhtC40LguIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkJ1c2luZXNzU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICB2YWNhbmN5RGIgPSBjb250YWluZXIgIlZhY2FuY3kgREIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQsNC90L3Ri9C1IFZhY2FuY3kgU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJIaXJpbmcgQ29udGV4dCIgewogICAgICAgICAgICAgICAgaGlyaW5nU2VydmljZSA9IGNvbnRhaW5lciAiSGlyaW5nIFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0J7RgtC60LvQuNC60LgsINCy0L7RgNC+0L3QutC4INC4INGN0YLQsNC/0Ysg0L3QsNC50LzQsCwg0YHQvtCx0LXRgdC10LTQvtCy0LDQvdC40Y8sINC/0YDQtdC00LvQvtC20LXQvdC40Y8g0L4g0YDQsNCx0L7RgtC1INC4INGB0L7RgdGC0L7Rj9C90LjRjyDQv9GA0L7RhtC10YHRgdCwINC90LDQudC80LAuIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkJ1c2luZXNzU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBoaXJpbmdEYiA9IGNvbnRhaW5lciAiSGlyaW5nIERCIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCU0LDQvdC90YvQtSBIaXJpbmcgU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJBc3Nlc3NtZW50IENvbnRleHQiIHsKICAgICAgICAgICAgICAgIGFzc2Vzc21lbnRTZXJ2aWNlID0gY29udGFpbmVyICJBc3Nlc3NtZW50IFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0J7RhtC10L3QvtGH0L3Ri9C1INC80LXRgNC+0L/RgNC40Y/RgtC40Y8sINGC0LXRgdGC0YssINC/0YDQsNC60YLQuNGH0LXRgdC60LjQtSDQt9Cw0LTQsNC90LjRjywgTGl2ZSBDb2RpbmcsINGA0LXRiNC10L3QuNGPINC4INGA0LXQt9GD0LvRjNGC0LDRgtGLINC/0YDQvtCy0LXRgNC60LguIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkJ1c2luZXNzU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBhc3Nlc3NtZW50RGIgPSBjb250YWluZXIgIkFzc2Vzc21lbnQgREIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQsNC90L3Ri9C1IEFzc2Vzc21lbnQgU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJDb21tdW5pY2F0aW9uIENvbnRleHQiIHsKICAgICAgICAgICAgICAgIGNvbW11bmljYXRpb25TZXJ2aWNlID0gY29udGFpbmVyICJDb21tdW5pY2F0aW9uIFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQuNCw0LvQvtCz0LgsINGD0YfQsNGB0YLQvdC40LrQuCwg0YHQvtC+0LHRidC10L3QuNGPLCDQstC70L7QttC10L3QuNGPLCDRgNC10LDQutGG0LjQuCDQuCDQvtGC0LzQtdGC0LrQuCDQviDQv9GA0L7Rh9GC0LXQvdC40LguIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkJ1c2luZXNzU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBjb21tdW5pY2F0aW9uRGIgPSBjb250YWluZXIgIkNvbW11bmljYXRpb24gREIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0JTQsNC90L3Ri9C1IENvbW11bmljYXRpb24gU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJJZGVudGl0eSBhbmQgQWNjZXNzIiB7CiAgICAgICAgICAgICAgICBpZGVudGl0eVNlcnZpY2UgPSBjb250YWluZXIgIklkZW50aXR5IFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0KDQtdCz0LjRgdGC0YDQsNGG0LjRjywg0YPRh9GR0YLQvdGL0LUg0LTQsNC90L3Ri9C1LCBPQXV0aCAyLjAg0LggT3BlbklEIENvbm5lY3QsINGC0L7QutC10L3RiyDQtNC+0YHRgtGD0L/QsCDQuCDQv9C+0LvRjNC30L7QstCw0YLQtdC70YzRgdC60LjQtSDRgdC10YHRgdC40LguIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIlBsYXRmb3JtU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBpZGVudGl0eURiID0gY29udGFpbmVyICJJZGVudGl0eSBEQiIgewogICAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQlNCw0L3QvdGL0LUgSWRlbnRpdHkgU2VydmljZSDQuCDQtdCz0L4g0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvQuSBvdXRib3guIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIlBvc3RncmVTUUwiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRGF0YWJhc2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgYXV0aHpQcm9qZWN0aW9uID0gY29udGFpbmVyICJBdXRoWiBTeW5jaHJvbml6YXRpb24gU2VydmljZSIgewogICAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQmtC+0L3RgdGM0Y7QvNC10YAgS2Fma2EsINC60L7RgtC+0YDRi9C5INC/0L4g0LTQvtC80LXQvdC90YvQvCDRgdC+0LHRi9GC0LjRj9C8INC40LfQvNC10L3Rj9C10YIg0YDQvtC70Lgg0Lgg0L7RgtC90L7RiNC10L3QuNGPINC00L7RgdGC0YPQv9CwINCyIE9wZW5GR0EuIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIlBsYXRmb3JtU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBvcGVuRmdhID0gY29udGFpbmVyICJPcGVuRkdBIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCY0YHRgtC+0YfQvdC40Log0LjRgdGC0LjQvdGLINC00LvRjyDRgNC+0LvQtdCy0L7QuSDQuCDQvtGB0L3QvtCy0LDQvdC90L7QuSDQvdCwINC+0YLQvdC+0YjQtdC90LjRj9GFINCw0LLRgtC+0YDQuNC30LDRhtC40LguIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIk9wZW5GR0EiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiQXV0aG9yaXphdGlvbiIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQoKICAgICAgICAgICAgZ3JvdXAgIkZpbGVzIiB7CiAgICAgICAgICAgICAgICBmaWxlU2VydmljZSA9IGNvbnRhaW5lciAiRmlsZSBTZXJ2aWNlIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCX0LDQs9GA0YPQt9C60LAg0Lgg0YHQutCw0YfQuNCy0LDQvdC40LUg0YTQsNC50LvQvtCyLCDQvNC10YLQsNC00LDQvdC90YvQtSwg0LLRgNC10LzQtdC90L3Ri9C1INGB0YHRi9C70LrQuCwg0L/RgNC+0LLQtdGA0LrQsCDQuCDRg9C/0YDQsNCy0LvQtdC90LjQtSDQttC40LfQvdC10L3QvdGL0Lwg0YbQuNC60LvQvtC8LiIKICAgICAgICAgICAgICAgICAgICB0YWdzICJQbGF0Zm9ybVNlcnZpY2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgb2JqZWN0U3RvcmFnZSA9IGNvbnRhaW5lciAiT2JqZWN0IFN0b3JhZ2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0KDQtdC30Y7QvNC1LCDQsNCy0LDRgtCw0YDRiywg0LLQu9C+0LbQtdC90LjRjywg0YTQsNC50LvRiyDQvtGG0LXQvdC+0YfQvdGL0YUg0LfQsNC00LDQvdC40Lkg0Lgg0LfQsNC/0LjRgdC4INGB0L7QsdC10YHQtdC00L7QstCw0L3QuNC5LiIKICAgICAgICAgICAgICAgICAgICB0ZWNobm9sb2d5ICJTMyAvIE1pbklPIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIk9iamVjdFN0b3JhZ2UiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJFdmVudCBQbGF0Zm9ybSIgewogICAgICAgICAgICAgICAga2Fma2EgPSBjb250YWluZXIgIkthZmthIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCo0LjQvdCwINGB0L7QsdGL0YLQuNC5INC00LvRjyDQsNGB0LjQvdGF0YDQvtC90L3QvtCz0L4g0LLQt9Cw0LjQvNC+0LTQtdC50YHRgtCy0LjRjyDQv9GA0LXQtNC80LXRgtC90YvRhSDQvtCx0LvQsNGB0YLQtdC5LiIKICAgICAgICAgICAgICAgICAgICB0ZWNobm9sb2d5ICJBcGFjaGUgS2Fma2EiCiAgICAgICAgICAgICAgICAgICAgdGFncyAiRXZlbnRCdXMiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgc2NoZW1hUmVnaXN0cnkgPSBjb250YWluZXIgIlNjaGVtYSBSZWdpc3RyeSIgewogICAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQpdGA0LDQvdC10L3QuNC1LCDQstC10YDRgdC40L7QvdC40YDQvtCy0LDQvdC40LUg0Lgg0L/RgNC+0LLQtdGA0LrQsCDRgdC+0LLQvNC10YHRgtC40LzQvtGB0YLQuCDRgdGF0LXQvCBBdnJvLiIKICAgICAgICAgICAgICAgICAgICB0ZWNobm9sb2d5ICJTY2hlbWEgUmVnaXN0cnkgLyBBdnJvIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkV2ZW50SW5mcmFzdHJ1Y3R1cmUiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgZGViZXppdW0gPSBjb250YWluZXIgIkRlYmV6aXVtIiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCf0YPQsdC70LjQutGD0LXRgiDQtNC+0LzQtdC90L3Ri9C1INGB0L7QsdGL0YLQuNGPINC40Lcg0YLRgNCw0L3Qt9Cw0LrRhtC40L7QvdC90YvRhSBvdXRib3gg0LIgS2Fma2EuIgogICAgICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkRlYmV6aXVtIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIkV2ZW50SW5mcmFzdHJ1Y3R1cmUiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGdyb3VwICJSZWFsdGltZSBhbmQgTWVkaWEiIHsKICAgICAgICAgICAgICAgIHJlYWx0aW1lUHVibGlzaGVyID0gY29udGFpbmVyICJSZWFsdGltZSBQdWJsaXNoZXIiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0J/QvtC70YPRh9Cw0LXRgiDRgdC+0LHRi9GC0LjRjyDQuNC3IEthZmthLCDQv9GA0LXQvtCx0YDQsNC30YPQtdGCINC40YUg0LTQu9GPINC00L7RgdGC0LDQstC60Lgg0LIg0YDQtdCw0LvRjNC90L7QvCDQstGA0LXQvNC10L3QuCDQuCDQv9GD0LHQu9C40LrRg9C10YIg0LIgQ2VudHJpZnVnby4iCiAgICAgICAgICAgICAgICAgICAgdGFncyAiUGxhdGZvcm1TZXJ2aWNlIgogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGNlbnRyaWZ1Z28gPSBjb250YWluZXIgIkNlbnRyaWZ1Z28iIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0KLQvtGH0LrQsCDQstGF0L7QtNCwINC4IFdlYlNvY2tldC3RgtGA0LDQvdGB0L/QvtGA0YIg0LTQu9GPINC00L7RgdGC0LDQstC60Lgg0YHQvtCx0YvRgtC40Lkg0LIg0YDQtdCw0LvRjNC90L7QvCDQstGA0LXQvNC10L3QuC4iCiAgICAgICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiQ2VudHJpZnVnbyAvIFdlYlNvY2tldCIKICAgICAgICAgICAgICAgICAgICB0YWdzICJSZWFsdGltZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBsaXZla2l0ID0gY29udGFpbmVyICJMaXZlS2l0IiB7CiAgICAgICAgICAgICAgICAgICAgZGVzY3JpcHRpb24gItCf0LXRgNC10LTQsNGR0YIg0LDRg9C00LjQviwg0LLQuNC00LXQviDQuCDQtNC10LzQvtC90YHRgtGA0LDRhtC40Y4g0Y3QutGA0LDQvdCwINCy0L4g0LLRgNC10LzRjyDRgdC+0LHQtdGB0LXQtNC+0LLQsNC90LjQuS4iCiAgICAgICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiTGl2ZUtpdCAvIFdlYlJUQyIKICAgICAgICAgICAgICAgICAgICB0YWdzICJNZWRpYSIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQoKICAgICAgICAgICAgZ3JvdXAgIlBsYXRmb3JtIFNlcnZpY2VzIiB7CiAgICAgICAgICAgICAgICBub3RpZmljYXRpb25TZXJ2aWNlID0gY29udGFpbmVyICJOb3RpZmljYXRpb24gU2VydmljZSIgewogICAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQpNC+0YDQvNC40YDRg9C10YIg0Lgg0LTQvtGB0YLQsNCy0LvRj9C10YIg0YPQstC10LTQvtC80LvQtdC90LjRjyDQsiDQv9GA0LjQu9C+0LbQtdC90LjQuCwg0L/QviDRjdC70LXQutGC0YDQvtC90L3QvtC5INC/0L7Rh9GC0LUsINGH0LXRgNC10LcgcHVzaCDQuCBTTVMuIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIlBsYXRmb3JtU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBpbnRlZ3JhdGlvblNlcnZpY2UgPSBjb250YWluZXIgIkludGVncmF0aW9uIFNlcnZpY2UiIHsKICAgICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbiAi0J/RgNC40L3QuNC80LDQtdGCINC4INC+0YLQv9GA0LDQstC70Y/QtdGCIHdlYmhvb2tzLCDQv9GA0LXQvtCx0YDQsNC30YPQtdGCINCy0L3QtdGI0L3QuNC1INGB0L7QvtCx0YnQtdC90LjRjyDQsiDRgdC+0LHRi9GC0LjRjyBDYXJlZXJpYSDQuCDRg9C/0YDQsNCy0LvRj9C10YIg0L3QsNC00ZHQttC90L7QuSDQtNC+0YHRgtCw0LLQutC+0LkuIgogICAgICAgICAgICAgICAgICAgIHRhZ3MgIlBsYXRmb3JtU2VydmljZSIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KCiAgICAgICAgY2FuZGlkYXRlIC0+IHBsYXRmb3JtICLQodC+0LfQtNCw0ZHRgiDQv9GA0L7RhNC40LvRjCDQuCDRgNC10LfRjtC80LUsINC40YnQtdGCINCy0LDQutCw0L3RgdC40LgsINC+0YLQutC70LjQutCw0LXRgtGB0Y8g0Lgg0L/RgNC+0YXQvtC00LjRgiDQvtGC0LHQvtGAIgogICAgICAgIHJlY3J1aXRlciAtPiBwbGF0Zm9ybSAi0J/Rg9Cx0LvQuNC60YPQtdGCINCy0LDQutCw0L3RgdC40LgsINCy0LXQtNGR0YIg0LrQsNC90LTQuNC00LDRgtC+0LIg0Lgg0L7RgNCz0LDQvdC40LfRg9C10YIg0YHQvtCx0LXRgdC10LTQvtCy0LDQvdC40Y8iCiAgICAgICAgaGlyaW5nTWFuYWdlciAtPiBwbGF0Zm9ybSAi0J/RgNC+0LLQvtC00LjRgiDRgdC+0LHQtdGB0LXQtNC+0LLQsNC90LjRjywg0L7RhtC10L3QuNCy0LDQtdGCINC60LDQvdC00LjQtNCw0YLQvtCyINC4INC/0YDQuNC90LjQvNCw0LXRgiDRgNC10YjQtdC90LjRjyIKICAgICAgICBjb21wYW55QWRtaW4gLT4gcGxhdGZvcm0gItCj0L/RgNCw0LLQu9GP0LXRgiDQv9GA0L7RhNC40LvQtdC8INC60L7QvNC/0LDQvdC40LgsINGB0L7RgtGA0YPQtNC90LjQutCw0LzQuCDQuCDRgNC+0LvRj9C80LgiCgogICAgICAgIHBsYXRmb3JtIC0+IGlkZW50aXR5UHJvdmlkZXIgItCY0YHQv9C+0LvRjNC30YPQtdGCINCy0L3QtdGI0L3RjtGOINCw0YPRgtC10L3RgtC40YTQuNC60LDRhtC40Y4iICJPQXV0aCAyLjAgLyBPcGVuSUQgQ29ubmVjdCIKICAgICAgICBwbGF0Zm9ybSAtPiBub3RpZmljYXRpb25Qcm92aWRlcnMgItCe0YLQv9GA0LDQstC70Y/QtdGCINGD0LLQtdC00L7QvNC70LXQvdC40Y8iCiAgICAgICAgcGxhdGZvcm0gLT4gZW1wbG95ZXJIclN5c3RlbSAi0J/QtdGA0LXQtNCw0ZHRgiDRgdCy0LXQtNC10L3QuNGPINC+INGF0L7QtNC1INC4INGA0LXQt9GD0LvRjNGC0LDRgtCw0YUg0L3QsNC50LzQsCIgIlJFU1QgQVBJIC8gV2ViaG9va3MiCiAgICAgICAgZW1wbG95ZXJIclN5c3RlbSAtPiBwbGF0Zm9ybSAi0J/QtdGA0LXQtNCw0ZHRgiDQuNC30LzQtdC90LXQvdC40Y8g0LTQsNC90L3Ri9GFINC60LDQvdC00LjQtNCw0YLQvtCyINC4INGB0L7RgtGA0YPQtNC90LjQutC+0LIiICJXZWJob29rcyIKCiAgICAgICAgY2FuZGlkYXRlIC0+IHBsYXRmb3JtLndlYiAi0JjRgdC/0L7Qu9GM0LfRg9C10YIiICJIVFRQUyIKICAgICAgICByZWNydWl0ZXIgLT4gcGxhdGZvcm0ud2ViICLQmNGB0L/QvtC70YzQt9GD0LXRgiIgIkhUVFBTIgogICAgICAgIGhpcmluZ01hbmFnZXIgLT4gcGxhdGZvcm0ud2ViICLQmNGB0L/QvtC70YzQt9GD0LXRgiIgIkhUVFBTIgogICAgICAgIGNvbXBhbnlBZG1pbiAtPiBwbGF0Zm9ybS53ZWIgItCY0YHQv9C+0LvRjNC30YPQtdGCIiAiSFRUUFMiCgogICAgICAgIHBsYXRmb3JtLndlYiAtPiBwbGF0Zm9ybS5iZmYgItCS0YvQt9GL0LLQsNC10YIgQVBJINCy0LXQsS3Qv9GA0LjQu9C+0LbQtdC90LjRjyIgIkhUVFBTL0pTT04iCiAgICAgICAgcGxhdGZvcm0uYmZmIC0+IHBsYXRmb3JtLmFwaUdhdGV3YXkgItCS0YvQt9GL0LLQsNC10YIg0LLQvdGD0YLRgNC10L3QvdC40LkgQVBJIiAiSFRUUFMvZ1JQQyIKCiAgICAgICAgcGxhdGZvcm0uYXBpR2F0ZXdheSAtPiBwbGF0Zm9ybS5pZGVudGl0eVNlcnZpY2UgItCf0YDQvtCy0LXRgNGP0LXRgiDQsNGD0YLQtdC90YLQuNGE0LjQutCw0YbQuNGOINC4INC/0L7Qu9GD0YfQsNC10YIg0LTQsNC90L3Ri9C1INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyIgImdSUEMiCiAgICAgICAgcGxhdGZvcm0uaWRlbnRpdHlTZXJ2aWNlIC0+IGlkZW50aXR5UHJvdmlkZXIgItCS0YvQv9C+0LvQvdGP0LXRgiDQstC90LXRiNC90Y7RjiDQsNGD0YLQtdC90YLQuNGE0LjQutCw0YbQuNGOIiAiT0F1dGggMi4wIC8gT3BlbklEIENvbm5lY3QiCgogICAgICAgIHBsYXRmb3JtLmFwaUdhdGV3YXkgLT4gcGxhdGZvcm0uY2FuZGlkYXRlU2VydmljZSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/RgNC+0YHRiyDRgSDQtNC+0LLQtdGA0LXQvdC90YvQvCDQutC+0L3RgtC10LrRgdGC0L7QvCDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8iICJnUlBDIgogICAgICAgIHBsYXRmb3JtLmFwaUdhdGV3YXkgLT4gcGxhdGZvcm0uY29tcGFueVNlcnZpY2UgItCf0LXRgNC10LTQsNGR0YIg0LfQsNC/0YDQvtGB0Ysg0YEg0LTQvtCy0LXRgNC10L3QvdGL0Lwg0LrQvtC90YLQtdC60YHRgtC+0Lwg0L/QvtC70YzQt9C+0LLQsNGC0LXQu9GPIiAiZ1JQQyIKICAgICAgICBwbGF0Zm9ybS5hcGlHYXRld2F5IC0+IHBsYXRmb3JtLnZhY2FuY3lTZXJ2aWNlICLQn9C10YDQtdC00LDRkdGCINC30LDQv9GA0L7RgdGLINGBINC00L7QstC10YDQtdC90L3Ri9C8INC60L7QvdGC0LXQutGB0YLQvtC8INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyIgImdSUEMiCiAgICAgICAgcGxhdGZvcm0uYXBpR2F0ZXdheSAtPiBwbGF0Zm9ybS5oaXJpbmdTZXJ2aWNlICLQn9C10YDQtdC00LDRkdGCINC30LDQv9GA0L7RgdGLINGBINC00L7QstC10YDQtdC90L3Ri9C8INC60L7QvdGC0LXQutGB0YLQvtC8INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyIgImdSUEMiCiAgICAgICAgcGxhdGZvcm0uYXBpR2F0ZXdheSAtPiBwbGF0Zm9ybS5hc3Nlc3NtZW50U2VydmljZSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/RgNC+0YHRiyDRgSDQtNC+0LLQtdGA0LXQvdC90YvQvCDQutC+0L3RgtC10LrRgdGC0L7QvCDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8iICJnUlBDIgogICAgICAgIHBsYXRmb3JtLmFwaUdhdGV3YXkgLT4gcGxhdGZvcm0uY29tbXVuaWNhdGlvblNlcnZpY2UgItCf0LXRgNC10LTQsNGR0YIg0LfQsNC/0YDQvtGB0Ysg0YEg0LTQvtCy0LXRgNC10L3QvdGL0Lwg0LrQvtC90YLQtdC60YHRgtC+0Lwg0L/QvtC70YzQt9C+0LLQsNGC0LXQu9GPIiAiZ1JQQyIKICAgICAgICBwbGF0Zm9ybS5hcGlHYXRld2F5IC0+IHBsYXRmb3JtLm5vdGlmaWNhdGlvblNlcnZpY2UgItCf0LXRgNC10LTQsNGR0YIg0LfQsNC/0YDQvtGB0Ysg0YEg0LTQvtCy0LXRgNC10L3QvdGL0Lwg0LrQvtC90YLQtdC60YHRgtC+0Lwg0L/QvtC70YzQt9C+0LLQsNGC0LXQu9GPIiAiZ1JQQyIKICAgICAgICBwbGF0Zm9ybS5hcGlHYXRld2F5IC0+IHBsYXRmb3JtLmZpbGVTZXJ2aWNlICLQn9C10YDQtdC00LDRkdGCINC30LDQv9GA0L7RgdGLINGBINC00L7QstC10YDQtdC90L3Ri9C8INC60L7QvdGC0LXQutGB0YLQvtC8INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyIgImdSUEMiCiAgICAgICAgcGxhdGZvcm0uYXBpR2F0ZXdheSAtPiBwbGF0Zm9ybS5pbnRlZ3JhdGlvblNlcnZpY2UgItCf0LXRgNC10LTQsNGR0YIg0LLRhdC+0LTRj9GJ0LjQtSB3ZWJob29rcyIgIkhUVFAvZ1JQQyIKCiAgICAgICAgZW1wbG95ZXJIclN5c3RlbSAtPiBwbGF0Zm9ybS5hcGlHYXRld2F5ICLQntGC0L/RgNCw0LLQu9GP0LXRgiDRgdC+0LHRi9GC0LjRjyDQuNC90YLQtdCz0YDQsNGG0LjQuCIgIkhUVFBTL1dlYmhvb2tzIgogICAgICAgIHBsYXRmb3JtLmludGVncmF0aW9uU2VydmljZSAtPiBlbXBsb3llckhyU3lzdGVtICLQntGC0L/RgNCw0LLQu9GP0LXRgiDQtNCw0L3QvdGL0LUg0Lgg0YHQvtCx0YvRgtC40Y8g0L3QsNC50LzQsCIgIlJFU1QgQVBJIC8gV2ViaG9va3MiCgogICAgICAgIHBsYXRmb3JtLmNhbmRpZGF0ZVNlcnZpY2UgLT4gcGxhdGZvcm0ub3BlbkZnYSAi0J/RgNC+0LLQtdGA0Y/QtdGCINC/0YDQsNCy0LAg0LTQvtGB0YLRg9C/0LAiICJPcGVuRkdBIEFQSSIKICAgICAgICBwbGF0Zm9ybS5jb21wYW55U2VydmljZSAtPiBwbGF0Zm9ybS5vcGVuRmdhICLQn9GA0L7QstC10YDRj9C10YIg0L/RgNCw0LLQsCDQtNC+0YHRgtGD0L/QsCIgIk9wZW5GR0EgQVBJIgogICAgICAgIHBsYXRmb3JtLnZhY2FuY3lTZXJ2aWNlIC0+IHBsYXRmb3JtLm9wZW5GZ2EgItCf0YDQvtCy0LXRgNGP0LXRgiDQv9GA0LDQstCwINC00L7RgdGC0YPQv9CwIiAiT3BlbkZHQSBBUEkiCiAgICAgICAgcGxhdGZvcm0uaGlyaW5nU2VydmljZSAtPiBwbGF0Zm9ybS5vcGVuRmdhICLQn9GA0L7QstC10YDRj9C10YIg0L/RgNCw0LLQsCDQtNC+0YHRgtGD0L/QsCIgIk9wZW5GR0EgQVBJIgogICAgICAgIHBsYXRmb3JtLmFzc2Vzc21lbnRTZXJ2aWNlIC0+IHBsYXRmb3JtLm9wZW5GZ2EgItCf0YDQvtCy0LXRgNGP0LXRgiDQv9GA0LDQstCwINC00L7RgdGC0YPQv9CwIiAiT3BlbkZHQSBBUEkiCiAgICAgICAgcGxhdGZvcm0uY29tbXVuaWNhdGlvblNlcnZpY2UgLT4gcGxhdGZvcm0ub3BlbkZnYSAi0J/RgNC+0LLQtdGA0Y/QtdGCINC/0YDQsNCy0LAg0LTQvtGB0YLRg9C/0LAiICJPcGVuRkdBIEFQSSIKICAgICAgICBwbGF0Zm9ybS5maWxlU2VydmljZSAtPiBwbGF0Zm9ybS5vcGVuRmdhICLQn9GA0L7QstC10YDRj9C10YIg0L/RgNCw0LLQsCDQtNC+0YHRgtGD0L/QsCIgIk9wZW5GR0EgQVBJIgoKICAgICAgICBwbGF0Zm9ybS5jYW5kaWRhdGVTZXJ2aWNlIC0+IHBsYXRmb3JtLmNhbmRpZGF0ZURiICLQpdGA0LDQvdC40YIg0LTQsNC90L3Ri9C1INC60LDQvdC00LjQtNCw0YLQvtCyINC4INC40YHRhdC+0LTRj9GJ0LjQtSDRgdC+0LHRi9GC0LjRjyIgIlNRTCIKICAgICAgICBwbGF0Zm9ybS5jb21wYW55U2VydmljZSAtPiBwbGF0Zm9ybS5jb21wYW55RGIgItCl0YDQsNC90LjRgiDQtNCw0L3QvdGL0LUg0LrQvtC80L/QsNC90LjQuSDQuCDQuNGB0YXQvtC00Y/RidC40LUg0YHQvtCx0YvRgtC40Y8iICJTUUwiCiAgICAgICAgcGxhdGZvcm0udmFjYW5jeVNlcnZpY2UgLT4gcGxhdGZvcm0udmFjYW5jeURiICLQpdGA0LDQvdC40YIg0LTQsNC90L3Ri9C1INCy0LDQutCw0L3RgdC40Lkg0Lgg0LjRgdGF0L7QtNGP0YnQuNC1INGB0L7QsdGL0YLQuNGPIiAiU1FMIgogICAgICAgIHBsYXRmb3JtLmhpcmluZ1NlcnZpY2UgLT4gcGxhdGZvcm0uaGlyaW5nRGIgItCl0YDQsNC90LjRgiDQtNCw0L3QvdGL0LUg0L/RgNC+0YbQtdGB0YHQsCDQvdCw0LnQvNCwINC4INC40YHRhdC+0LTRj9GJ0LjQtSDRgdC+0LHRi9GC0LjRjyIgIlNRTCIKICAgICAgICBwbGF0Zm9ybS5hc3Nlc3NtZW50U2VydmljZSAtPiBwbGF0Zm9ybS5hc3Nlc3NtZW50RGIgItCl0YDQsNC90LjRgiDQtNCw0L3QvdGL0LUg0L7RhtC10L3QutC4INC4INC40YHRhdC+0LTRj9GJ0LjQtSDRgdC+0LHRi9GC0LjRjyIgIlNRTCIKICAgICAgICBwbGF0Zm9ybS5jb21tdW5pY2F0aW9uU2VydmljZSAtPiBwbGF0Zm9ybS5jb21tdW5pY2F0aW9uRGIgItCl0YDQsNC90LjRgiDQv9C10YDQtdC/0LjRgdC60YMg0Lgg0LjRgdGF0L7QtNGP0YnQuNC1INGB0L7QsdGL0YLQuNGPIiAiU1FMIgogICAgICAgIHBsYXRmb3JtLmlkZW50aXR5U2VydmljZSAtPiBwbGF0Zm9ybS5pZGVudGl0eURiICLQpdGA0LDQvdC40YIg0YPRh9GR0YLQvdGL0LUg0LTQsNC90L3Ri9C1LCDRgdC10YHRgdC40Lgg0Lgg0LjRgdGF0L7QtNGP0YnQuNC1INGB0L7QsdGL0YLQuNGPIiAiU1FMIgoKICAgICAgICBwbGF0Zm9ybS5maWxlU2VydmljZSAtPiBwbGF0Zm9ybS5vYmplY3RTdG9yYWdlICLQodC+0YXRgNCw0L3Rj9C10YIg0Lgg0L/QvtC70YPRh9Cw0LXRgiDRhNCw0LnQu9GLIiAiUzMgQVBJIgoKICAgICAgICBwbGF0Zm9ybS5jYW5kaWRhdGVEYiAtPiBwbGF0Zm9ybS5kZWJleml1bSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/QuNGB0Lgg0LbRg9GA0L3QsNC70LAg0LjRgdGF0L7QtNGP0YnQuNGFINGB0L7QvtCx0YnQtdC90LjQuSIgIlBvc3RncmVTUUwgV0FMIiB7CiAgICAgICAgICAgIHRhZ3MgIkNEQyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLmNvbXBhbnlEYiAtPiBwbGF0Zm9ybS5kZWJleml1bSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/QuNGB0Lgg0LbRg9GA0L3QsNC70LAg0LjRgdGF0L7QtNGP0YnQuNGFINGB0L7QvtCx0YnQtdC90LjQuSIgIlBvc3RncmVTUUwgV0FMIiB7CiAgICAgICAgICAgIHRhZ3MgIkNEQyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLnZhY2FuY3lEYiAtPiBwbGF0Zm9ybS5kZWJleml1bSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/QuNGB0Lgg0LbRg9GA0L3QsNC70LAg0LjRgdGF0L7QtNGP0YnQuNGFINGB0L7QvtCx0YnQtdC90LjQuSIgIlBvc3RncmVTUUwgV0FMIiB7CiAgICAgICAgICAgIHRhZ3MgIkNEQyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLmhpcmluZ0RiIC0+IHBsYXRmb3JtLmRlYmV6aXVtICLQn9C10YDQtdC00LDRkdGCINC30LDQv9C40YHQuCDQttGD0YDQvdCw0LvQsCDQuNGB0YXQvtC00Y/RidC40YUg0YHQvtC+0LHRidC10L3QuNC5IiAiUG9zdGdyZVNRTCBXQUwiIHsKICAgICAgICAgICAgdGFncyAiQ0RDIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0uYXNzZXNzbWVudERiIC0+IHBsYXRmb3JtLmRlYmV6aXVtICLQn9C10YDQtdC00LDRkdGCINC30LDQv9C40YHQuCDQttGD0YDQvdCw0LvQsCDQuNGB0YXQvtC00Y/RidC40YUg0YHQvtC+0LHRidC10L3QuNC5IiAiUG9zdGdyZVNRTCBXQUwiIHsKICAgICAgICAgICAgdGFncyAiQ0RDIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0uY29tbXVuaWNhdGlvbkRiIC0+IHBsYXRmb3JtLmRlYmV6aXVtICLQn9C10YDQtdC00LDRkdGCINC30LDQv9C40YHQuCDQttGD0YDQvdCw0LvQsCDQuNGB0YXQvtC00Y/RidC40YUg0YHQvtC+0LHRidC10L3QuNC5IiAiUG9zdGdyZVNRTCBXQUwiIHsKICAgICAgICAgICAgdGFncyAiQ0RDIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0uaWRlbnRpdHlEYiAtPiBwbGF0Zm9ybS5kZWJleml1bSAi0J/QtdGA0LXQtNCw0ZHRgiDQt9Cw0L/QuNGB0Lgg0LbRg9GA0L3QsNC70LAg0LjRgdGF0L7QtNGP0YnQuNGFINGB0L7QvtCx0YnQtdC90LjQuSIgIlBvc3RncmVTUUwgV0FMIiB7CiAgICAgICAgICAgIHRhZ3MgIkNEQyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLmRlYmV6aXVtIC0+IHBsYXRmb3JtLmthZmthICLQn9GD0LHQu9C40LrRg9C10YIg0LTQvtC80LXQvdC90YvQtSDRgdC+0LHRi9GC0LjRjyIgIkF2cm8iIHsKICAgICAgICAgICAgdGFncyAiQXN5bmMiCiAgICAgICAgfQoKICAgICAgICBwbGF0Zm9ybS5kZWJleml1bSAtPiBwbGF0Zm9ybS5zY2hlbWFSZWdpc3RyeSAi0KDQtdCz0LjRgdGC0YDQuNGA0YPQtdGCINC4INC/0L7Qu9GD0YfQsNC10YIg0YHRhdC10LzRiyDRgdC+0LHRi9GC0LjQuSIgIkF2cm8iCgogICAgICAgIHBsYXRmb3JtLmthZmthIC0+IHBsYXRmb3JtLmhpcmluZ1NlcnZpY2UgItCU0L7RgdGC0LDQstC70Y/QtdGCINGB0L7QsdGL0YLQuNGPLCDQstC70LjRj9GO0YnQuNC1INC90LAg0L/RgNC+0YbQtdGB0YEg0L3QsNC50LzQsCIgIkF2cm8iIHsKICAgICAgICAgICAgdGFncyAiQXN5bmMiCiAgICAgICAgfQoKICAgICAgICBwbGF0Zm9ybS5rYWZrYSAtPiBwbGF0Zm9ybS5ub3RpZmljYXRpb25TZXJ2aWNlICLQlNC+0YHRgtCw0LLQu9GP0LXRgiDRgdC+0LHRi9GC0LjRjyDQtNC70Y8g0YTQvtGA0LzQuNGA0L7QstCw0L3QuNGPINGD0LLQtdC00L7QvNC70LXQvdC40LkiICJBdnJvIiB7CiAgICAgICAgICAgIHRhZ3MgIkFzeW5jIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0ua2Fma2EgLT4gcGxhdGZvcm0ucmVhbHRpbWVQdWJsaXNoZXIgItCU0L7RgdGC0LDQstC70Y/QtdGCINGB0L7QsdGL0YLQuNGPINC00LvRjyDQvtGC0L/RgNCw0LLQutC4INCyINGA0LXQsNC70YzQvdC+0Lwg0LLRgNC10LzQtdC90LgiICJBdnJvIiB7CiAgICAgICAgICAgIHRhZ3MgIlJlYWx0aW1lRmxvdyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLmthZmthIC0+IHBsYXRmb3JtLmF1dGh6UHJvamVjdGlvbiAi0JTQvtGB0YLQsNCy0LvRj9C10YIg0YHQvtCx0YvRgtC40Y8g0L7QsSDQuNC30LzQtdC90LXQvdC40Y/RhSDRgNC+0LvQtdC5INC4INC+0YLQvdC+0YjQtdC90LjQuSDQtNC+0YHRgtGD0L/QsCIgIkF2cm8iIHsKICAgICAgICAgICAgdGFncyAiQXN5bmMiCiAgICAgICAgfQoKICAgICAgICBwbGF0Zm9ybS5rYWZrYSAtPiBwbGF0Zm9ybS5pbnRlZ3JhdGlvblNlcnZpY2UgItCU0L7RgdGC0LDQstC70Y/QtdGCINGB0L7QsdGL0YLQuNGPINC00LvRjyDQstC90LXRiNC90LjRhSDRgdC40YHRgtC10LwiICJBdnJvIiB7CiAgICAgICAgICAgIHRhZ3MgIkFzeW5jIgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0uaW50ZWdyYXRpb25TZXJ2aWNlIC0+IHBsYXRmb3JtLmthZmthICLQn9GD0LHQu9C40LrRg9C10YIg0YHQvtCx0YvRgtC40Y8sINC/0L7Qu9GD0YfQtdC90L3Ri9C1INC40Lcg0LLQvdC10YjQvdC40YUg0YHQuNGB0YLQtdC8IiAiQXZybyIgewogICAgICAgICAgICB0YWdzICJBc3luYyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLmhpcmluZ1NlcnZpY2UgLT4gcGxhdGZvcm0uc2NoZW1hUmVnaXN0cnkgItCf0L7Qu9GD0YfQsNC10YIg0YHRhdC10LzRiyDQvtCx0YDQsNCx0LDRgtGL0LLQsNC10LzRi9GFINGB0L7QsdGL0YLQuNC5IiAiQXZybyIKICAgICAgICBwbGF0Zm9ybS5ub3RpZmljYXRpb25TZXJ2aWNlIC0+IHBsYXRmb3JtLnNjaGVtYVJlZ2lzdHJ5ICLQn9C+0LvRg9GH0LDQtdGCINGB0YXQtdC80Ysg0L7QsdGA0LDQsdCw0YLRi9Cy0LDQtdC80YvRhSDRgdC+0LHRi9GC0LjQuSIgIkF2cm8iCiAgICAgICAgcGxhdGZvcm0ucmVhbHRpbWVQdWJsaXNoZXIgLT4gcGxhdGZvcm0uc2NoZW1hUmVnaXN0cnkgItCf0L7Qu9GD0YfQsNC10YIg0YHRhdC10LzRiyDQvtCx0YDQsNCx0LDRgtGL0LLQsNC10LzRi9GFINGB0L7QsdGL0YLQuNC5IiAiQXZybyIKICAgICAgICBwbGF0Zm9ybS5hdXRoelByb2plY3Rpb24gLT4gcGxhdGZvcm0uc2NoZW1hUmVnaXN0cnkgItCf0L7Qu9GD0YfQsNC10YIg0YHRhdC10LzRiyDQvtCx0YDQsNCx0LDRgtGL0LLQsNC10LzRi9GFINGB0L7QsdGL0YLQuNC5IiAiQXZybyIKICAgICAgICBwbGF0Zm9ybS5pbnRlZ3JhdGlvblNlcnZpY2UgLT4gcGxhdGZvcm0uc2NoZW1hUmVnaXN0cnkgItCg0LXQs9C40YHRgtGA0LjRgNGD0LXRgiDQuCDQv9C+0LvRg9GH0LDQtdGCINGB0YXQtdC80Ysg0LjQvdGC0LXQs9GA0LDRhtC40L7QvdC90YvRhSDRgdC+0LHRi9GC0LjQuSIgIkF2cm8iCgogICAgICAgIHBsYXRmb3JtLmF1dGh6UHJvamVjdGlvbiAtPiBwbGF0Zm9ybS5vcGVuRmdhICLQmNC30LzQtdC90Y/QtdGCINGA0L7Qu9C4INC4INC+0YLQvdC+0YjQtdC90LjRjyDQtNC+0YHRgtGD0L/QsCIgIk9wZW5GR0EgQVBJIgoKICAgICAgICBwbGF0Zm9ybS5yZWFsdGltZVB1Ymxpc2hlciAtPiBwbGF0Zm9ybS5jZW50cmlmdWdvICLQn9GD0LHQu9C40LrRg9C10YIg0YHQvtC+0LHRidC10L3QuNGPINC00LvRjyDQtNC+0YHRgtCw0LLQutC4INCyINGA0LXQsNC70YzQvdC+0Lwg0LLRgNC10LzQtdC90LgiICJDZW50cmlmdWdvIEFQSSIgewogICAgICAgICAgICB0YWdzICJSZWFsdGltZUZsb3ciCiAgICAgICAgfQoKICAgICAgICBwbGF0Zm9ybS53ZWIgLT4gcGxhdGZvcm0uY2VudHJpZnVnbyAi0KPRgdGC0LDQvdCw0LLQu9C40LLQsNC10YIg0YHQvtC10LTQuNC90LXQvdC40LUg0LTQu9GPINGB0L7QsdGL0YLQuNC5INCyINGA0LXQsNC70YzQvdC+0Lwg0LLRgNC10LzQtdC90LgiICJXZWJTb2NrZXQiIHsKICAgICAgICAgICAgdGFncyAiUmVhbHRpbWVGbG93IgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0uY2VudHJpZnVnbyAtPiBwbGF0Zm9ybS53ZWIgItCU0L7RgdGC0LDQstC70Y/QtdGCINGB0L7QsdGL0YLQuNGPINC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjiIgIldlYlNvY2tldCIgewogICAgICAgICAgICB0YWdzICJSZWFsdGltZUZsb3ciCiAgICAgICAgfQoKICAgICAgICBwbGF0Zm9ybS5oaXJpbmdTZXJ2aWNlIC0+IHBsYXRmb3JtLmxpdmVraXQgItCh0L7Qt9C00LDRkdGCINC60L7QvNC90LDRgtGLINC4INCy0YvQtNCw0ZHRgiDQtNC+0YHRgtGD0L8g0Log0LzQtdC00LjQsNGB0LXRgdGB0LjRj9C8IiAiTGl2ZUtpdCBBUEkiIHsKICAgICAgICAgICAgdGFncyAiTWVkaWFGbG93IgogICAgICAgIH0KCiAgICAgICAgcGxhdGZvcm0ud2ViIC0+IHBsYXRmb3JtLmxpdmVraXQgItCf0LXRgNC10LTQsNGR0YIg0LDRg9C00LjQviwg0LLQuNC00LXQviDQuCDQtNC10LzQvtC90YHRgtGA0LDRhtC40Y4g0Y3QutGA0LDQvdCwIiAiV2ViUlRDIiB7CiAgICAgICAgICAgIHRhZ3MgIk1lZGlhRmxvdyIKICAgICAgICB9CgogICAgICAgIHBsYXRmb3JtLm5vdGlmaWNhdGlvblNlcnZpY2UgLT4gbm90aWZpY2F0aW9uUHJvdmlkZXJzICLQntGC0L/RgNCw0LLQu9GP0LXRgiDQv9C40YHRjNC80LAsIHB1c2gtINC4IFNNUy3Rg9Cy0LXQtNC+0LzQu9C10L3QuNGPIgogICAgfQoKICAgIHZpZXdzIHsKCiAgICAgICAgc3lzdGVtQ29udGV4dCBwbGF0Zm9ybSAiQzQtTDEtU3lzdGVtQ29udGV4dCIgewogICAgICAgICAgICB0aXRsZSAiQ2FyZWVyaWEg4oCUINGB0LjRgdGC0LXQvNC90YvQuSDQutC+0L3RgtC10LrRgdGCIChDNCwg0YPRgNC+0LLQtdC90YwgMSkiCiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyIDQwMCAzMDAKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBwbGF0Zm9ybSAiQzQtTDItQ29udGFpbmVyIiB7CiAgICAgICAgICAgIHRpdGxlICJDYXJlZXJpYSDigJQg0LrQvtC90YLQtdC50L3QtdGA0YsgKEM0LCDRg9GA0L7QstC10L3RjCAyKSIKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgbHIgNTAwIDMwMAogICAgICAgIH0KCiAgICAgICAgc3R5bGVzIHsKCiAgICAgICAgICAgIGVsZW1lbnQgIkVsZW1lbnQiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFJvdW5kZWRCb3gKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzY0NzQ4YgogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgc3Ryb2tlICM0NzU1NjkKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZWxlbWVudCAiUGVyc29uIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBQZXJzb24KICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzMzNDE1NQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CgogICAgICAgICAgICBlbGVtZW50ICJTb2Z0d2FyZSBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzI1NjNlYgogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CgogICAgICAgICAgICBlbGVtZW50ICJFeHRlcm5hbFN5c3RlbSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjNjQ3NDhiCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgICAgICBib3JkZXIgZGFzaGVkCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIkZyb250ZW5kIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBXZWJCcm93c2VyCiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMyNTYzZWIKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZWxlbWVudCAiRWRnZSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMGVhNWU5CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIkdhdGV3YXkiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzAyODRjNwogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgc3Ryb2tlV2lkdGggNAogICAgICAgICAgICB9CgogICAgICAgICAgICBlbGVtZW50ICJCdXNpbmVzc1NlcnZpY2UiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzE2YTM0YQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CgogICAgICAgICAgICBlbGVtZW50ICJQbGF0Zm9ybVNlcnZpY2UiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzA4OTFiMgogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CgogICAgICAgICAgICBlbGVtZW50ICJBdXRob3JpemF0aW9uIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM3YzNhZWQKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZWxlbWVudCAiRXZlbnRCdXMiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFBpcGUKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgI2Y1OWUwYgogICAgICAgICAgICAgICAgY29sb3IgIzExMTgyNwogICAgICAgICAgICAgICAgc3Ryb2tlICNiNDUzMDkKICAgICAgICAgICAgICAgIHN0cm9rZVdpZHRoIDQKICAgICAgICAgICAgfQoKICAgICAgICAgICAgZWxlbWVudCAiRXZlbnRJbmZyYXN0cnVjdHVyZSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjZDk3NzA2CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIlJlYWx0aW1lIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBIZXhhZ29uCiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICNkYjI3NzcKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgICAgIHN0cm9rZSAjOWQxNzRkCiAgICAgICAgICAgICAgICBzdHJva2VXaWR0aCA0CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIk1lZGlhIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBIZXhhZ29uCiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM5MzMzZWEKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgICAgIHN0cm9rZSAjNmIyMWE4CiAgICAgICAgICAgICAgICBzdHJva2VXaWR0aCA0CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIkRhdGFiYXNlIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBDeWxpbmRlcgogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjNDc1NTY5CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIk9iamVjdFN0b3JhZ2UiIHsKICAgICAgICAgICAgICAgIHNoYXBlIEJ1Y2tldAogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjNDc1NTY5CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiUmVsYXRpb25zaGlwIiB7CiAgICAgICAgICAgICAgICBjb2xvciAjNjQ3NDhiCiAgICAgICAgICAgICAgICB0aGlja25lc3MgMgogICAgICAgICAgICAgICAgcm91dGluZyBPcnRob2dvbmFsCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiQXN5bmMiIHsKICAgICAgICAgICAgICAgIGNvbG9yICNkOTc3MDYKICAgICAgICAgICAgICAgIHN0eWxlIGRhc2hlZAogICAgICAgICAgICAgICAgdGhpY2tuZXNzIDIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgcmVsYXRpb25zaGlwICJSZWFsdGltZUZsb3ciIHsKICAgICAgICAgICAgICAgIGNvbG9yICNkYjI3NzcKICAgICAgICAgICAgICAgIHRoaWNrbmVzcyAzCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiTWVkaWFGbG93IiB7CiAgICAgICAgICAgICAgICBjb2xvciAjOTMzM2VhCiAgICAgICAgICAgICAgICB0aGlja25lc3MgMwogICAgICAgICAgICB9CgogICAgICAgICAgICByZWxhdGlvbnNoaXAgIkNEQyIgewogICAgICAgICAgICAgICAgY29sb3IgI2ExNjIwNwogICAgICAgICAgICAgICAgc3R5bGUgZG90dGVkCiAgICAgICAgICAgICAgICB0aGlja25lc3MgMgogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9",
+    "structurizr.inspection.error" : "14",
     "structurizr.inspection.info" : "0",
     "structurizr.inspection.ignore" : "0",
     "structurizr.inspection.warning" : "0"
   },
   "views" : {
     "configuration" : {
+      "defaultView" : "C4-L2-HighLevel",
+      "lastSavedView" : "C4-L2-Overview",
+      "properties" : {
+        "structurizr.sort" : "created"
+      },
       "styles" : {
         "elements" : [ {
           "background" : "#7c3aed",
@@ -954,7 +967,6 @@
         }, {
           "background" : "#9333ea",
           "color" : "#ffffff",
-          "shape" : "Hexagon",
           "stroke" : "#6b21a8",
           "strokeWidth" : 4,
           "tag" : "Media"
@@ -975,7 +987,6 @@
         }, {
           "background" : "#db2777",
           "color" : "#ffffff",
-          "shape" : "Hexagon",
           "stroke" : "#9d174d",
           "strokeWidth" : 4,
           "tag" : "Realtime"
@@ -1004,9 +1015,12 @@
           "thickness" : 3
         }, {
           "color" : "#64748b",
-          "routing" : "Orthogonal",
+          "fontSize" : 18,
+          "routing" : "Direct",
+          "style" : "Solid",
           "tag" : "Relationship",
-          "thickness" : 2
+          "thickness" : 2,
+          "width" : 180
         } ]
       },
       "terminology" : { }
@@ -1014,11 +1028,607 @@
     "containerViews" : [ {
       "automaticLayout" : {
         "edgeSeparation" : 50,
-        "nodeSeparation" : 300,
-        "rankDirection" : "LeftRight",
-        "rankSeparation" : 500,
+        "nodeSeparation" : 250,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 350,
         "vertices" : true
       },
+      "description" : "Точки входа и основные доменные группы без баз данных и тяжёлой инфраструктуры.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-HighLevel",
+      "name" : "Container View: Careeria",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "106"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "54"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "57"
+      }, {
+        "id" : "58"
+      }, {
+        "id" : "59"
+      }, {
+        "id" : "60"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — верхнеуровневый обзор контейнеров"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Контейнеры, обеспечивающие работу рекрутеров и нанимающих руководителей.",
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "34",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-Hiring-Domain",
+      "name" : "Container View: Careeria",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "104"
+      }, {
+        "id" : "105"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "57"
+      }, {
+        "id" : "58"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "73"
+      }, {
+        "id" : "74"
+      }, {
+        "id" : "75"
+      }, {
+        "id" : "76"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — домен найма и рекрутинга"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Контейнеры, обеспечивающие профиль кандидата, поиск вакансий и работу с файлами.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "30",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-Candidate-Domain",
+      "name" : "Container View: Careeria",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "46"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "54"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "72"
+      }, {
+        "id" : "74"
+      }, {
+        "id" : "78"
+      }, {
+        "id" : "79"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — домен кандидатов и вакансий"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Чаты, realtime-доставка, видеосвязь, файлы и внешние каналы уведомлений.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "30",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "33",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "34",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-Communication",
+      "name" : "Container View: Careeria",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "101"
+      }, {
+        "id" : "102"
+      }, {
+        "id" : "103"
+      }, {
+        "id" : "105"
+      }, {
+        "id" : "106"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "59"
+      }, {
+        "id" : "60"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "77"
+      }, {
+        "id" : "79"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — коммуникации и уведомления"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Публикация transactional outbox, доставка событий и синхронизация технических проекций.",
+      "elements" : [ {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "35",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "36",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "37",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-Event-Driven",
+      "name" : "Container View: Careeria",
+      "order" : 6,
+      "relationships" : [ {
+        "id" : "100"
+      }, {
+        "id" : "106"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "68"
+      }, {
+        "id" : "75"
+      }, {
+        "id" : "80"
+      }, {
+        "id" : "81"
+      }, {
+        "id" : "82"
+      }, {
+        "id" : "83"
+      }, {
+        "id" : "84"
+      }, {
+        "id" : "85"
+      }, {
+        "id" : "86"
+      }, {
+        "id" : "87"
+      }, {
+        "id" : "88"
+      }, {
+        "id" : "89"
+      }, {
+        "id" : "90"
+      }, {
+        "id" : "91"
+      }, {
+        "id" : "92"
+      }, {
+        "id" : "93"
+      }, {
+        "id" : "94"
+      }, {
+        "id" : "95"
+      }, {
+        "id" : "96"
+      }, {
+        "id" : "97"
+      }, {
+        "id" : "98"
+      }, {
+        "id" : "99"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — асинхронное взаимодействие (Kafka и Debezium)"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 400,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 600,
+        "vertices" : true
+      },
+      "description" : "Все контейнеры платформы; сквозные связи OpenFGA, CDC и Schema Registry скрыты для читаемости.",
       "elements" : [ {
         "id" : "1",
         "x" : 0,
@@ -1165,9 +1775,252 @@
         "y" : 0
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
-      "key" : "C4-L2-Container",
+      "key" : "C4-L2-BigPicture",
       "name" : "Container View: Careeria",
-      "order" : 2,
+      "order" : 7,
+      "relationships" : [ {
+        "id" : "100"
+      }, {
+        "id" : "101"
+      }, {
+        "id" : "102"
+      }, {
+        "id" : "103"
+      }, {
+        "id" : "104"
+      }, {
+        "id" : "105"
+      }, {
+        "id" : "106"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "54"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "57"
+      }, {
+        "id" : "58"
+      }, {
+        "id" : "59"
+      }, {
+        "id" : "60"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "72"
+      }, {
+        "id" : "73"
+      }, {
+        "id" : "74"
+      }, {
+        "id" : "75"
+      }, {
+        "id" : "76"
+      }, {
+        "id" : "77"
+      }, {
+        "id" : "78"
+      }, {
+        "id" : "79"
+      }, {
+        "id" : "87"
+      }, {
+        "id" : "89"
+      }, {
+        "id" : "90"
+      }, {
+        "id" : "91"
+      }, {
+        "id" : "92"
+      }, {
+        "id" : "93"
+      }, {
+        "id" : "94"
+      } ],
+      "softwareSystemId" : "8",
+      "title" : "Careeria — генеральный план контейнеров"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 500,
+        "vertices" : true
+      },
+      "description" : "Master View со всеми контейнерами и связями, сохранённый для полного обзора и сравнения.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "30",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "33",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "34",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "35",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "36",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "37",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "C4-L2-Previous",
+      "name" : "Container View: Careeria",
+      "order" : 8,
       "relationships" : [ {
         "id" : "100"
       }, {
@@ -1292,7 +2145,140 @@
         "id" : "99"
       } ],
       "softwareSystemId" : "8",
-      "title" : "Careeria — контейнеры (C4, уровень 2)"
+      "title" : "Careeria — полная контейнерная диаграмма (предыдущая версия)"
+    } ],
+    "dynamicViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Приём изменения из внешней HR-системы и передача его владельцу доменных данных.",
+      "elementId" : "8",
+      "elements" : [ {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "35",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalBoundariesVisible" : false,
+      "key" : "C4-Dynamic-HRIntegration",
+      "name" : "Dynamic View: Careeria",
+      "order" : 9,
+      "relationships" : [ {
+        "description" : "Отправляет webhook",
+        "id" : "63",
+        "order" : "1",
+        "response" : false
+      }, {
+        "description" : "Передаёт webhook",
+        "id" : "62",
+        "order" : "2",
+        "response" : false
+      }, {
+        "description" : "Публикует событие",
+        "id" : "94",
+        "order" : "3",
+        "response" : false
+      }, {
+        "description" : "Доставляет событие",
+        "id" : "89",
+        "order" : "4",
+        "response" : false
+      }, {
+        "description" : "Сохраняет изменение",
+        "id" : "75",
+        "order" : "5",
+        "response" : false
+      } ],
+      "title" : "Careeria — обработка webhook от HR-системы"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 250,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 400,
+        "vertices" : true
+      },
+      "description" : "Публикация события из transactional outbox и формирование пользовательского уведомления.",
+      "elementId" : "8",
+      "elements" : [ {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "35",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "37",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalBoundariesVisible" : false,
+      "key" : "C4-Dynamic-DomainEvent",
+      "name" : "Dynamic View: Careeria",
+      "order" : 10,
+      "relationships" : [ {
+        "description" : "Записывает данные и outbox",
+        "id" : "75",
+        "order" : "1",
+        "response" : false
+      }, {
+        "description" : "Передаёт outbox",
+        "id" : "83",
+        "order" : "2",
+        "response" : false
+      }, {
+        "description" : "Публикует событие",
+        "id" : "87",
+        "order" : "3",
+        "response" : false
+      }, {
+        "description" : "Доставляет событие",
+        "id" : "90",
+        "order" : "4",
+        "response" : false
+      }, {
+        "description" : "Отправляет уведомление",
+        "id" : "106",
+        "order" : "5",
+        "response" : false
+      } ],
+      "title" : "Careeria — доставка доменного события"
     } ],
     "systemContextViews" : [ {
       "automaticLayout" : {
@@ -1302,6 +2288,7 @@
         "rankSeparation" : 400,
         "vertices" : true
       },
+      "description" : "Пользователи Careeria и внешние программные системы.",
       "elements" : [ {
         "id" : "1",
         "x" : 0,

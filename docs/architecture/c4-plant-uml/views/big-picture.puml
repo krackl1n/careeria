@@ -1,0 +1,13 @@
+@startuml C4-L2-BigPicture
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — генеральный план контейнеров
+LAYOUT_LEFT_RIGHT()
+
+!$hideInfrastructureConnections = 1
+!include ../model/all-elements.puml
+!include ../model/all-relationships.puml
+
+SHOW_LEGEND()
+@enduml

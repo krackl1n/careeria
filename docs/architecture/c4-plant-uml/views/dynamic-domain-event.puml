@@ -1,0 +1,24 @@
+@startuml C4-Dynamic-DomainEvent
+!include ../common/styles.puml
+
+title Careeria — доставка доменного события
+LAYOUT_LEFT_RIGHT()
+
+System_Ext(notificationProviders, "Notification Providers", "Email, push- и SMS-провайдеры.")
+
+System_Boundary(platform, "Careeria") {
+    Container(hiringService, "Hiring Service", "Service", "Владелец процесса найма.", $tags="business")
+    ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Данные и transactional outbox.", $tags="storage")
+    Container(debezium, "Debezium", "Debezium", "Публикует события из outbox.", $tags="eventInfrastructure")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина событий.", $tags="eventBus")
+    Container(notificationService, "Notification Service", "Service", "Формирует пользовательские уведомления.", $tags="platform")
+}
+
+Rel(hiringService, hiringDb, "1. Записывает данные и outbox", "SQL")
+Rel(hiringDb, debezium, "2. Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(debezium, kafka, "3. Публикует событие", "Kafka / Avro", $tags="async")
+Rel(kafka, notificationService, "4. Доставляет событие", "Kafka / Avro", $tags="async")
+Rel(notificationService, notificationProviders, "5. Отправляет уведомление", "Email / Push / SMS")
+
+SHOW_LEGEND()
+@enduml

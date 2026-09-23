@@ -1,0 +1,35 @@
+@startuml C4-L2-Communication
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — коммуникации и уведомления
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+NotificationProvidersSystem()
+
+System_Boundary(platform, "Careeria") {
+    EntryPoints()
+    CommunicationDomain(1, 1)
+    FilesDomain(1)
+    RealtimeMedia(1, 1, 1)
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает API", "HTTPS / gRPC")
+Rel(apiGateway, communicationService, "Обменивается сообщениями", "gRPC")
+Rel(apiGateway, notificationService, "Управляет уведомлениями", "gRPC")
+Rel(apiGateway, fileService, "Работает с файлами", "gRPC")
+Rel(communicationService, communicationDb, "Хранит сообщения", "SQL")
+Rel(fileService, objectStorage, "Хранит вложения", "S3 API")
+Rel(realtimePublisher, centrifugo, "Публикует сообщения", "Centrifugo API", $tags="realtimeFlow")
+Rel(web, centrifugo, "Подключается", "WebSocket", $tags="realtimeFlow")
+Rel(centrifugo, web, "Доставляет сообщения", "WebSocket", $tags="realtimeFlow")
+Rel(web, livekit, "Передаёт медиапоток", "WebRTC", $tags="mediaFlow")
+Rel(notificationService, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
+
+SHOW_LEGEND()
+@enduml

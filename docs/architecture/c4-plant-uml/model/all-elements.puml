@@ -1,0 +1,22 @@
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria") {
+    EntryPoints()
+    CandidateDomain(1)
+    CompanyDomain(1)
+    VacancyDomain(1)
+    HiringDomain(1)
+    AssessmentDomain(1)
+    CommunicationDomain(1, 1)
+    IdentityAccess(1, 1, 1)
+    FilesDomain(1)
+    IntegrationDomain()
+    RealtimeMedia(1, 1, 1)
+    EventPlatform()
+}

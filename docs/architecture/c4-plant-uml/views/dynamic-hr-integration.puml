@@ -1,0 +1,24 @@
+@startuml C4-Dynamic-HRIntegration
+!include ../common/styles.puml
+
+title Careeria — обработка webhook от HR-системы
+LAYOUT_LEFT_RIGHT()
+
+System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя.")
+
+System_Boundary(platform, "Careeria") {
+    Container(apiGateway, "API Gateway", "HTTP / gRPC", "Единая точка входа.", $tags="gateway")
+    Container(integrationService, "Integration Service", "Service", "Преобразует webhooks в события.", $tags="platform")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина событий.", $tags="eventBus")
+    Container(hiringService, "Hiring Service", "Service", "Владелец процесса найма.", $tags="business")
+    ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Отклики и этапы найма.", $tags="storage")
+}
+
+Rel(employerHrSystem, apiGateway, "1. Отправляет webhook", "HTTPS / JSON")
+Rel(apiGateway, integrationService, "2. Передаёт webhook", "HTTP / gRPC")
+Rel(integrationService, kafka, "3. Публикует событие", "Kafka / Avro", $tags="async")
+Rel(kafka, hiringService, "4. Доставляет событие", "Kafka / Avro", $tags="async")
+Rel(hiringService, hiringDb, "5. Сохраняет изменение", "SQL")
+
+SHOW_LEGEND()
+@enduml

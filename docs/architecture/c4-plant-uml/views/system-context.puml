@@ -1,0 +1,28 @@
+@startuml C4-L1-SystemContext
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — системный контекст (C4, уровень 1)
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System(platform, "Careeria", "Рекрутинговая система полного цикла: от публикации вакансии и отклика до найма.")
+
+Rel(candidate, platform, "Ищет вакансии и откликается", "HTTPS")
+Rel(recruiter, platform, "Управляет вакансиями и кандидатами", "HTTPS")
+Rel(hiringManager, platform, "Оценивает кандидатов", "HTTPS")
+Rel(companyAdmin, platform, "Управляет компанией и ролями", "HTTPS")
+Rel(platform, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
+Rel(platform, notificationProviders, "Доставляет уведомления", "Email / Push / SMS")
+Rel(platform, employerHrSystem, "Передаёт данные найма", "REST / Webhooks")
+Rel(employerHrSystem, platform, "Передаёт изменения", "Webhooks")
+
+SHOW_LEGEND()
+@enduml

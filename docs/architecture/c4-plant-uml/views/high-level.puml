@@ -1,0 +1,51 @@
+@startuml C4-L2-HighLevel
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — верхнеуровневый обзор контейнеров
+LAYOUT_TOP_DOWN()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria") {
+    EntryPoints()
+    CandidateDomain(0)
+    CompanyDomain(0)
+    VacancyDomain(0)
+    HiringDomain(0)
+    AssessmentDomain(0)
+    CommunicationDomain(0, 1)
+    IdentityAccess(0, 0, 1)
+    FilesDomain(0)
+    IntegrationDomain()
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(hiringManager, web, "Использует", "HTTPS")
+Rel(companyAdmin, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(apiGateway, candidateService, "Профили кандидатов", "gRPC")
+Rel(apiGateway, companyService, "Компании", "gRPC")
+Rel(apiGateway, vacancyService, "Вакансии", "gRPC")
+Rel(apiGateway, hiringService, "Процесс найма", "gRPC")
+Rel(apiGateway, assessmentService, "Оценивание", "gRPC")
+Rel(apiGateway, communicationService, "Сообщения", "gRPC")
+Rel(apiGateway, notificationService, "Уведомления", "gRPC")
+Rel(apiGateway, fileService, "Файлы", "gRPC")
+Rel(apiGateway, integrationService, "Webhooks", "HTTP / gRPC")
+Rel(identityService, identityProvider, "Аутентифицирует", "OAuth 2.0 / OIDC")
+Rel(notificationService, notificationProviders, "Отправляет", "Email / Push / SMS")
+Rel(employerHrSystem, apiGateway, "Отправляет webhook", "HTTPS / JSON")
+Rel(integrationService, employerHrSystem, "Передаёт события", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml
