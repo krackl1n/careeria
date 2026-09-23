@@ -1,4 +1,15 @@
 Рекрутинговая система
+
+0. Технологическая основа
+
+Frontend реализуется на Next.js, React и TypeScript. Для маршрутизации и серверного рендеринга используется Next.js App Router, для стилей — Tailwind CSS, для server state — TanStack Query, для форм — React Hook Form, для валидации DTO — Zod. Realtime-события доставляются через WebSocket/Centrifugo, аудио- и видеосвязь подключается через LiveKit React SDK.
+
+Все прикладные backend-сервисы реализуются на Go. Синхронные контракты описываются в Protobuf и вызываются по gRPC через `grpc-go`. API Gateway использует `grpc-gateway` для преобразования внешнего HTTP/JSON API в gRPC. BFF реализуется на Go и отвечает за HttpOnly-сессии, CSRF-защиту, обновление токенов и агрегацию ответов для frontend.
+
+Каждый доменный сервис владеет PostgreSQL-схемой или отдельной базой данных. Доступ выполняется через `pgx` и сгенерированный `sqlc`-код, миграции — через Goose. Доменные события сохраняются в transactional outbox в той же транзакции, что и бизнес-данные. Debezium PostgreSQL Connector читает outbox через logical replication и публикует Avro-события в Apache Kafka. Схемы регистрируются в Apicurio Registry.
+
+Авторизация построена на OpenFGA и ReBAC-модели. Identity Service реализует OAuth 2.0/OIDC, JWT, access/refresh sessions и интеграцию с Keycloak. Файлы хранятся в MinIO через S3 API. Уведомления доставляются через SendGrid, Firebase Cloud Messaging и Twilio. Наблюдаемость строится на OpenTelemetry, Prometheus, Grafana и Loki.
+
 1. Идея проекта
 Рекрутинговая платформа для взаимодействия кандидатов и работодателей.
 Система должна покрывать полный цикл найма:

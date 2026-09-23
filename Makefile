@@ -238,14 +238,20 @@ plantuml-architecture: ## Render C4-PlantUML architecture diagrams to SVG.
 		-v "$(CURDIR):/workspace" \
 		-w /workspace \
 		$(PLANTUML_IMAGE) \
-		-tsvg -o ../out $(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
+		-tsvg -o /workspace/$(PLANTUML_ARCHITECTURE_DIR)/out \
+		$(PLANTUML_ARCHITECTURE_DIR)/*.puml \
+		$(PLANTUML_ARCHITECTURE_DIR)/containers/*/*.puml \
+		$(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
 
 plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagrams.
 	docker run --rm \
 		-v "$(CURDIR):/workspace:ro" \
 		-w /workspace \
 		$(PLANTUML_IMAGE) \
-		-checkonly $(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
+		-checkonly \
+		$(PLANTUML_ARCHITECTURE_DIR)/*.puml \
+		$(PLANTUML_ARCHITECTURE_DIR)/containers/*/*.puml \
+		$(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
 
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway

@@ -4,14 +4,14 @@
 title Careeria — доставка доменного события
 LAYOUT_LEFT_RIGHT()
 
-System_Ext(notificationProviders, "Notification Providers", "Email, push- и SMS-провайдеры.")
+System_Ext(notificationProviders, "Notification Providers", "SendGrid, Firebase Cloud Messaging и Twilio.")
 
 System_Boundary(platform, "Careeria") {
-    Container(hiringService, "Hiring Service", "Service", "Владелец процесса найма.", $tags="business")
+    Container(hiringService, "Hiring Service", "Go, gRPC, Protobuf, pgx, sqlc", "Владелец state machine процесса найма.", $tags="business")
     ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Данные и transactional outbox.", $tags="storage")
-    Container(debezium, "Debezium", "Debezium", "Публикует события из outbox.", $tags="eventInfrastructure")
-    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина событий.", $tags="eventBus")
-    Container(notificationService, "Notification Service", "Service", "Формирует пользовательские уведомления.", $tags="platform")
+    Container(debezium, "Debezium", "Debezium PostgreSQL Connector", "Читает outbox через logical replication.", $tags="eventInfrastructure")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Шина доменных событий.", $tags="eventBus")
+    Container(notificationService, "Notification Service", "Go, Kafka consumer, REST clients", "Формирует и доставляет пользовательские уведомления.", $tags="platform")
 }
 
 Rel(hiringService, hiringDb, "1. Записывает данные и outbox", "SQL")

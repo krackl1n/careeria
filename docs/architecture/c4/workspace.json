@@ -5,7 +5,7 @@
   "description" : "Архитектурная модель рекрутинговой системы Careeria",
   "documentation" : { },
   "id" : 1,
-  "lastModifiedDate" : "2026-09-23T13:33:30Z",
+  "lastModifiedDate" : "2026-09-23T19:38:13Z",
   "model" : {
     "people" : [ {
       "description" : "Ищет работу, откликается на вакансии и проходит процесс найма.",
@@ -101,7 +101,7 @@
       "tags" : "Element,Person"
     } ],
     "softwareSystems" : [ {
-      "description" : "Внешний провайдер аутентификации по OAuth 2.0 и OpenID Connect.",
+      "description" : "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации пользователей.",
       "documentation" : { },
       "id" : "5",
       "name" : "Identity Provider",
@@ -110,7 +110,7 @@
       },
       "tags" : "Element,Software System,ExternalSystem"
     }, {
-      "description" : "Внешние сервисы доставки электронной почты, push- и SMS-уведомлений.",
+      "description" : "SendGrid для email, Firebase Cloud Messaging для push и Twilio для SMS.",
       "documentation" : { },
       "id" : "6",
       "name" : "Notification Providers",
@@ -144,7 +144,7 @@
       "tags" : "Element,Software System,ExternalSystem"
     }, {
       "containers" : [ {
-        "description" : "Клиентское приложение для кандидатов и сотрудников компаний.",
+        "description" : "App Router, SSR/CSR, TanStack Query, React Hook Form и Zod; интерфейс кандидатов и сотрудников компаний.",
         "documentation" : { },
         "group" : "Точки входа",
         "id" : "9",
@@ -175,9 +175,9 @@
           "technology" : "WebRTC"
         } ],
         "tags" : "Element,Container,Frontend",
-        "technology" : "SPA"
+        "technology" : "Next.js / React / TypeScript / Tailwind CSS"
       }, {
-        "description" : "Управляет пользовательской сессией, агрегирует данные сервисов и адаптирует API под веб-интерфейс.",
+        "description" : "HttpOnly-сессии, CSRF-защита, обновление токенов и агрегация ответов для Next.js.",
         "documentation" : { },
         "group" : "Точки входа",
         "id" : "10",
@@ -194,9 +194,9 @@
           "technology" : "HTTPS / gRPC"
         } ],
         "tags" : "Element,Container,Edge",
-        "technology" : "HTTP API"
+        "technology" : "Go / net/http / grpc-go / OIDC"
       }, {
-        "description" : "Единая точка входа во внутренние сервисы: маршрутизация, ограничение запросов, трассировка и передача доверенного контекста пользователя.",
+        "description" : "REST-to-gRPC маршрутизация, rate limiting, request ID, OpenTelemetry-трассировка и передача доверенного identity context.",
         "documentation" : { },
         "group" : "Точки входа",
         "id" : "11",
@@ -276,7 +276,7 @@
           "technology" : "HTTP / gRPC"
         } ],
         "tags" : "Element,Container,Gateway",
-        "technology" : "HTTP / gRPC"
+        "technology" : "Go / grpc-gateway / grpc-go / OpenTelemetry"
       }, {
         "description" : "Профили кандидатов, резюме, опыт работы, образование, навыки и карьерные предпочтения.",
         "documentation" : { },
@@ -301,7 +301,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Candidate Service и его транзакционный outbox.",
         "documentation" : { },
@@ -345,7 +346,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Company Service и его транзакционный outbox.",
         "documentation" : { },
@@ -389,7 +391,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Vacancy Service и его транзакционный outbox.",
         "documentation" : { },
@@ -447,7 +450,8 @@
           "tags" : "Relationship,MediaFlow",
           "technology" : "LiveKit API"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Hiring Service и его транзакционный outbox.",
         "documentation" : { },
@@ -491,7 +495,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Assessment Service и его транзакционный outbox.",
         "documentation" : { },
@@ -535,7 +540,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,BusinessService"
+        "tags" : "Element,Container,BusinessService",
+        "technology" : "Go / gRPC / Protobuf / pgx / sqlc"
       }, {
         "description" : "Данные Communication Service и его транзакционный outbox.",
         "documentation" : { },
@@ -579,9 +585,10 @@
           "tags" : "Relationship",
           "technology" : "Email / Push / SMS"
         } ],
-        "tags" : "Element,Container,PlatformService"
+        "tags" : "Element,Container,PlatformService",
+        "technology" : "Go / Kafka consumer / REST clients"
       }, {
-        "description" : "Регистрация, учётные данные, OAuth 2.0 и OpenID Connect, токены доступа и пользовательские сессии.",
+        "description" : "Регистрация, credentials, access/refresh tokens, ротация сессий и интеграция с Keycloak.",
         "documentation" : { },
         "group" : "Идентификация и доступ",
         "id" : "25",
@@ -604,7 +611,8 @@
           "tags" : "Relationship",
           "technology" : "SQL"
         } ],
-        "tags" : "Element,Container,PlatformService"
+        "tags" : "Element,Container,PlatformService",
+        "technology" : "Go / gRPC / OAuth 2.0 / OIDC / JWT / Argon2id"
       }, {
         "description" : "Данные Identity Service и его транзакционный outbox.",
         "documentation" : { },
@@ -648,9 +656,10 @@
           "tags" : "Relationship",
           "technology" : "OpenFGA API"
         } ],
-        "tags" : "Element,Container,PlatformService"
+        "tags" : "Element,Container,PlatformService",
+        "technology" : "Go / Kafka consumer / OpenFGA SDK"
       }, {
-        "description" : "Источник истины для ролевой и основанной на отношениях авторизации.",
+        "description" : "ReBAC-модель и tuples для проверок доступа к компаниям, вакансиям, откликам и интервью.",
         "documentation" : { },
         "group" : "Идентификация и доступ",
         "id" : "28",
@@ -659,9 +668,9 @@
           "structurizr.dsl.identifier" : "platform.openFga"
         },
         "tags" : "Element,Container,Authorization",
-        "technology" : "OpenFGA"
+        "technology" : "OpenFGA / PostgreSQL"
       }, {
-        "description" : "Загрузка и скачивание файлов, метаданные, временные ссылки, проверка и управление жизненным циклом.",
+        "description" : "Multipart upload, presigned URL, MIME/size validation, antivirus hook и управление жизненным циклом.",
         "documentation" : { },
         "group" : "Файлы",
         "id" : "29",
@@ -684,7 +693,8 @@
           "tags" : "Relationship",
           "technology" : "S3 API"
         } ],
-        "tags" : "Element,Container,PlatformService"
+        "tags" : "Element,Container,PlatformService",
+        "technology" : "Go / gRPC / MinIO Go SDK"
       }, {
         "description" : "Резюме, аватары, вложения, файлы оценочных заданий и записи собеседований.",
         "documentation" : { },
@@ -695,9 +705,9 @@
           "structurizr.dsl.identifier" : "platform.objectStorage"
         },
         "tags" : "Element,Container,ObjectStorage",
-        "technology" : "S3 / MinIO"
+        "technology" : "MinIO / S3 API"
       }, {
-        "description" : "Принимает и отправляет webhooks, преобразует внешние сообщения в события Careeria и управляет надёжной доставкой.",
+        "description" : "Проверяет подписи webhook, нормализует payload, публикует события и выполняет retry доставки.",
         "documentation" : { },
         "group" : "Интеграции",
         "id" : "31",
@@ -727,9 +737,10 @@
           "tags" : "Relationship,InfrastructureConnection",
           "technology" : "Schema Registry API / Avro"
         } ],
-        "tags" : "Element,Container,PlatformService"
+        "tags" : "Element,Container,PlatformService",
+        "technology" : "Go / REST / Webhooks / Kafka"
       }, {
-        "description" : "Получает события из Kafka, преобразует их для доставки в реальном времени и публикует в Centrifugo.",
+        "description" : "Фильтрует события, формирует пользовательские каналы и публикует realtime-сообщения.",
         "documentation" : { },
         "group" : "Realtime и медиа",
         "id" : "32",
@@ -752,9 +763,10 @@
           "tags" : "Relationship,RealtimeFlow",
           "technology" : "Centrifugo API"
         } ],
-        "tags" : "Element,Container,PlatformService,Infrastructure"
+        "tags" : "Element,Container,PlatformService,Infrastructure",
+        "technology" : "Go / Kafka consumer / Centrifugo HTTP API"
       }, {
-        "description" : "Публичная точка входа для WebSocket-соединений и доставки событий пользователям в реальном времени.",
+        "description" : "Управляет WebSocket-подключениями, каналами, presence и доставкой событий пользователям.",
         "documentation" : { },
         "group" : "Realtime и медиа",
         "id" : "33",
@@ -771,9 +783,9 @@
           "technology" : "WebSocket"
         } ],
         "tags" : "Element,Container,Realtime,Infrastructure",
-        "technology" : "Centrifugo / WebSocket"
+        "technology" : "Centrifugo / WebSocket / JWT"
       }, {
-        "description" : "Публичная точка входа для аудио, видео и демонстрации экрана во время собеседований.",
+        "description" : "Комнаты интервью, аудио, видео, screen sharing и опциональная запись.",
         "documentation" : { },
         "group" : "Realtime и медиа",
         "id" : "34",
@@ -782,9 +794,9 @@
           "structurizr.dsl.identifier" : "platform.livekit"
         },
         "tags" : "Element,Container,Media,Infrastructure",
-        "technology" : "LiveKit / WebRTC"
+        "technology" : "LiveKit / WebRTC / LiveKit React SDK"
       }, {
-        "description" : "Шина событий для асинхронного взаимодействия предметных областей.",
+        "description" : "Топики доменных событий, consumer groups, retention и асинхронное взаимодействие предметных областей.",
         "documentation" : { },
         "group" : "Событийная платформа",
         "id" : "35",
@@ -829,9 +841,9 @@
           "technology" : "Kafka / Avro"
         } ],
         "tags" : "Element,Container,EventBus,Infrastructure",
-        "technology" : "Apache Kafka"
+        "technology" : "Apache Kafka / KRaft"
       }, {
-        "description" : "Хранение, версионирование и проверка совместимости схем Avro.",
+        "description" : "Версионирование Avro-схем и backward compatibility для доменных событий.",
         "documentation" : { },
         "group" : "Событийная платформа",
         "id" : "36",
@@ -840,9 +852,9 @@
           "structurizr.dsl.identifier" : "platform.schemaRegistry"
         },
         "tags" : "Element,Container,EventInfrastructure,Infrastructure",
-        "technology" : "Schema Registry / Avro"
+        "technology" : "Apicurio Registry / Avro"
       }, {
-        "description" : "Публикует доменные события из транзакционных outbox в Kafka.",
+        "description" : "Читает transactional outbox через PostgreSQL logical replication и публикует события в Kafka.",
         "documentation" : { },
         "group" : "Событийная платформа",
         "id" : "37",
@@ -866,7 +878,7 @@
           "technology" : "Schema Registry API / Avro"
         } ],
         "tags" : "Element,Container,EventInfrastructure,Infrastructure",
-        "technology" : "Debezium"
+        "technology" : "Debezium PostgreSQL Connector"
       } ],
       "description" : "Рекрутинговая система полного цикла: от публикации вакансии и отклика до оценки, собеседования и найма кандидата.",
       "documentation" : { },
@@ -902,7 +914,7 @@
   },
   "name" : "Careeria",
   "properties" : {
-    "structurizr.inspection.error" : "14",
+    "structurizr.inspection.error" : "2",
     "structurizr.inspection.info" : "0",
     "structurizr.inspection.ignore" : "0",
     "structurizr.inspection.warning" : "0"

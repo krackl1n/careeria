@@ -1,10 +1,10 @@
 identityProvider = softwareSystem "Identity Provider" {
-    description "Внешний провайдер аутентификации по OAuth 2.0 и OpenID Connect."
+    description "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации пользователей."
     tags "ExternalSystem"
 }
 
 notificationProviders = softwareSystem "Notification Providers" {
-    description "Внешние сервисы доставки электронной почты, push- и SMS-уведомлений."
+    description "SendGrid для email, Firebase Cloud Messaging для push и Twilio для SMS."
     tags "ExternalSystem"
 }
 

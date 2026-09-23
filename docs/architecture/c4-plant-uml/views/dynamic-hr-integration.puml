@@ -7,10 +7,10 @@ LAYOUT_LEFT_RIGHT()
 System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя.")
 
 System_Boundary(platform, "Careeria") {
-    Container(apiGateway, "API Gateway", "HTTP / gRPC", "Единая точка входа.", $tags="gateway")
-    Container(integrationService, "Integration Service", "Service", "Преобразует webhooks в события.", $tags="platform")
-    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина событий.", $tags="eventBus")
-    Container(hiringService, "Hiring Service", "Service", "Владелец процесса найма.", $tags="business")
+    Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go", "REST-to-gRPC маршрутизация и проверка входных запросов.", $tags="gateway")
+    Container(integrationService, "Integration Service", "Go, REST, Webhooks, Kafka", "Проверяет подпись и преобразует webhook в событие.", $tags="platform")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Шина доменных событий.", $tags="eventBus")
+    Container(hiringService, "Hiring Service", "Go, gRPC, Protobuf, pgx, sqlc", "Владелец state machine процесса найма.", $tags="business")
     ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Отклики и этапы найма.", $tags="storage")
 }
 

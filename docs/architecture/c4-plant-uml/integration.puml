@@ -1,0 +1,75 @@
+@startuml C4-Team-L1-Integrated
+!include common/styles.puml
+!include model/elements.puml
+
+title Careeria — командный системный контекст
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System(platform, "Careeria", "Единая рекрутинговая экосистема полного цикла.")
+
+Rel(candidate, platform, "Ищет вакансии и откликается", "HTTPS")
+Rel(recruiter, platform, "Управляет вакансиями и кандидатами", "HTTPS")
+Rel(hiringManager, platform, "Оценивает кандидатов", "HTTPS")
+Rel(companyAdmin, platform, "Управляет компанией и ролями", "HTTPS")
+Rel(platform, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
+Rel(platform, notificationProviders, "Доставляет уведомления", "Email / Push / SMS")
+Rel(platform, employerHrSystem, "Обменивается данными найма", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml
+
+@startuml C4-Team-L2-Integrated
+!include common/styles.puml
+!include model/elements.puml
+
+title Careeria — интегрированная контейнерная диаграмма команды
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria") {
+    Container_Boundary(teamLeadZone, "Общий интеграционный слой / Team Lead") {
+        EntryPoints()
+    }
+    Container_Boundary(candidateVacancyZone, "Домен кандидатов и управления вакансиями") {
+        CandidateDomain(1)
+        VacancyDomain(1)
+    }
+    Container_Boundary(companyHiringZone, "Домен компаний и процесса найма") {
+        CompanyDomain(1)
+        HiringDomain(1)
+    }
+    Container_Boundary(interactionZone, "Домен оценки, коммуникаций, realtime-взаимодействия и медиа") {
+        AssessmentDomain(1)
+        CommunicationDomain(1, 0)
+        RealtimeMedia(1, 1, 1)
+    }
+    Container_Boundary(platformServicesZone, "Платформенный домен идентификации, авторизации и инфраструктурных сервисов") {
+        IdentityAccess(1, 1, 1)
+        FilesDomain(1)
+        IntegrationDomain()
+        EventPlatform()
+        Container_Boundary(notificationBoundary, "Уведомления") {
+            Container(notificationService, "Notification Service", "Go, Kafka consumer, REST clients", "In-app уведомления, SendGrid email, FCM push и Twilio SMS.", $tags="platform")
+        }
+    }
+}
+
+!include model/all-relationships.puml
+
+SHOW_LEGEND()
+@enduml

@@ -21,4 +21,3 @@ UpdateElementStyle("person", $bgColor="#334155", $fontColor="#FFFFFF", $borderCo
 UpdateElementStyle("external_system", $bgColor="#64748B", $fontColor="#FFFFFF", $borderColor="#475569")
 
 skinparam shadowing false
-skinparam linetype ortho
