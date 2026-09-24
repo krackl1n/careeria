@@ -1,0 +1,25 @@
+@startuml member4-l1
+!include ../../common/styles.puml
+
+title Платформенный домен идентификации, авторизации и инфраструктурных сервисов — системный контекст (L1)
+LAYOUT_LEFT_RIGHT()
+
+Person(candidate, "Кандидат", "Ищет работу, откликается на вакансии и проходит процесс найма.")
+Person(recruiter, "Рекрутер", "Публикует вакансии и ведёт кандидатов по процессу найма.")
+Person(hiringManager, "Нанимающий руководитель", "Участвует в собеседованиях и оценке кандидатов.")
+Person(companyAdmin, "Администратор компании", "Управляет компанией, пользователями и ролями.")
+System(platformServices, "Платформенный домен идентификации, авторизации и инфраструктурных сервисов", "Идентификация, управление доступом, уведомления, файлы, события и внешние интеграции.")
+System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации.")
+System_Ext(notificationProviders, "Notification Providers", "SendGrid для email, Firebase Cloud Messaging для push и Twilio для SMS.")
+System_Ext(employerHrSystem, "Employer HR System", "Внешняя корпоративная HR-система работодателя.")
+
+Rel(candidate, platformServices, "Аутентифицируется, получает уведомления и работает с файлами", "HTTPS")
+Rel(recruiter, platformServices, "Аутентифицируется, получает уведомления и работает с файлами", "HTTPS")
+Rel(hiringManager, platformServices, "Аутентифицируется и получает уведомления", "HTTPS")
+Rel(companyAdmin, platformServices, "Аутентифицируется и управляет доступом", "HTTPS")
+Rel(platformServices, identityProvider, "Аутентифицирует пользователя", "OAuth 2.0 / OIDC")
+Rel(platformServices, notificationProviders, "Доставляет уведомления", "Email / Push / SMS")
+Rel(platformServices, employerHrSystem, "Обменивается событиями найма", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml
