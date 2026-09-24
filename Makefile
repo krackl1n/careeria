@@ -46,6 +46,7 @@ OPENFGA_TEST_FILE := /model/model.fga.yaml
 STRUCTURIZR_DIR := $(CURDIR)/docs/architecture/c4
 STRUCTURIZR_WORKSPACE := /usr/local/structurizr/workspace.dsl
 PLANTUML_ARCHITECTURE_DIR := docs/architecture/c4-plant-uml
+PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort)
 
 MODULE_DIRS := $(shell find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; | sort)
 MIGRATION_SERVICES := identity
@@ -239,9 +240,7 @@ plantuml-architecture: ## Render C4-PlantUML architecture diagrams to SVG.
 		-w /workspace \
 		$(PLANTUML_IMAGE) \
 		-tsvg -o /workspace/$(PLANTUML_ARCHITECTURE_DIR)/out \
-		$(PLANTUML_ARCHITECTURE_DIR)/*.puml \
-		$(PLANTUML_ARCHITECTURE_DIR)/containers/*/*.puml \
-		$(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
+		$(PLANTUML_ARCHITECTURE_SOURCES)
 
 plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagrams.
 	docker run --rm \
@@ -249,9 +248,7 @@ plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagram
 		-w /workspace \
 		$(PLANTUML_IMAGE) \
 		-checkonly \
-		$(PLANTUML_ARCHITECTURE_DIR)/*.puml \
-		$(PLANTUML_ARCHITECTURE_DIR)/containers/*/*.puml \
-		$(PLANTUML_ARCHITECTURE_DIR)/views/*.puml
+		$(PLANTUML_ARCHITECTURE_SOURCES)
 
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway

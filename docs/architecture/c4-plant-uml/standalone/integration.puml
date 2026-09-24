@@ -1,0 +1,243 @@
+@startuml Careeria-Standalone-L1
+title Careeria — командный системный контекст
+left to right direction
+
+hide stereotype
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+skinparam ArrowColor #64748B
+skinparam ArrowFontColor #475569
+skinparam rectangle {
+    RoundCorner 8
+    BackgroundColor<<person>> #334155
+    BorderColor<<person>> #1E293B
+    FontColor<<person>> #FFFFFF
+    BackgroundColor<<system>> #1D70B8
+    BorderColor<<system>> #15558A
+    FontColor<<system>> #FFFFFF
+    BackgroundColor<<external>> #64748B
+    BorderColor<<external>> #475569
+    FontColor<<external>> #FFFFFF
+}
+
+rectangle "<b>Кандидат</b>\n\nИщет работу, откликается на вакансии\nи проходит процесс найма." as candidate <<person>>
+rectangle "<b>Рекрутер</b>\n\nПубликует вакансии и ведёт кандидатов\nпо процессу найма." as recruiter <<person>>
+rectangle "<b>Нанимающий руководитель</b>\n\nУчаствует в собеседованиях, оценке\nкандидатов и принятии решений." as hiringManager <<person>>
+rectangle "<b>Администратор компании</b>\n\nУправляет компанией, пользователями\nи ролями." as companyAdmin <<person>>
+
+rectangle "<b>Careeria</b>\n\nЕдиная рекрутинговая экосистема\nполного цикла." as platform <<system>>
+
+rectangle "<b>Identity Provider</b>\n\nKeycloak: федерация и внешняя\nаутентификация пользователей." as identityProvider <<external>>
+rectangle "<b>Notification Providers</b>\n\nSendGrid, Firebase Cloud Messaging\nи Twilio." as notificationProviders <<external>>
+rectangle "<b>Employer HR System</b>\n\nКорпоративная HR-система\nработодателя." as employerHrSystem <<external>>
+
+candidate --> platform : Ищет вакансии и откликается\n[HTTPS]
+recruiter --> platform : Управляет вакансиями и кандидатами\n[HTTPS]
+hiringManager --> platform : Оценивает кандидатов\n[HTTPS]
+companyAdmin --> platform : Управляет компанией и ролями\n[HTTPS]
+platform --> identityProvider : Аутентифицирует пользователей\n[OAuth 2.0 / OIDC]
+platform --> notificationProviders : Доставляет уведомления\n[Email / Push / SMS]
+platform --> employerHrSystem : Обменивается данными найма\n[REST / Webhooks]
+
+legend right
+  |= Обозначение |= Назначение |
+  | <#334155>   </#> | Пользователь системы |
+  | <#1D70B8>   </#> | Проектируемая система |
+  | <#64748B>   </#> | Внешняя система |
+endlegend
+@enduml
+
+@startuml Careeria-Standalone-L2
+title Careeria — интегрированная контейнерная диаграмма команды
+left to right direction
+
+hide stereotype
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+skinparam ArrowColor #64748B
+skinparam ArrowFontColor #475569
+skinparam rectangle {
+    RoundCorner 8
+    BackgroundColor #0891B2
+    BorderColor #0E7490
+    FontColor #FFFFFF
+    BackgroundColor<<person>> #334155
+    BorderColor<<person>> #1E293B
+    FontColor<<person>> #FFFFFF
+    BackgroundColor<<external>> #64748B
+    BorderColor<<external>> #475569
+    FontColor<<external>> #FFFFFF
+    BackgroundColor<<frontend>> #2563EB
+    BorderColor<<frontend>> #1D4ED8
+    FontColor<<frontend>> #FFFFFF
+    BackgroundColor<<edge>> #0EA5E9
+    BorderColor<<edge>> #0284C7
+    FontColor<<edge>> #FFFFFF
+    BackgroundColor<<gateway>> #0284C7
+    BorderColor<<gateway>> #075985
+    FontColor<<gateway>> #FFFFFF
+    BackgroundColor<<business>> #16A34A
+    BorderColor<<business>> #15803D
+    FontColor<<business>> #FFFFFF
+    BackgroundColor<<platform>> #0891B2
+    BorderColor<<platform>> #0E7490
+    FontColor<<platform>> #FFFFFF
+    BackgroundColor<<authorization>> #7C3AED
+    BorderColor<<authorization>> #6D28D9
+    FontColor<<authorization>> #FFFFFF
+    BackgroundColor<<event>> #D97706
+    BorderColor<<event>> #B45309
+    FontColor<<event>> #FFFFFF
+    BackgroundColor<<realtime>> #DB2777
+    BorderColor<<realtime>> #9D174D
+    FontColor<<realtime>> #FFFFFF
+    BackgroundColor<<media>> #9333EA
+    BorderColor<<media>> #6B21A8
+    FontColor<<media>> #FFFFFF
+    BackgroundColor<<boundary>> #FFFFFF
+    BorderColor<<boundary>> #94A3B8
+    FontColor<<boundary>> #334155
+}
+skinparam database {
+    BackgroundColor #475569
+    BorderColor #334155
+    FontColor #FFFFFF
+}
+skinparam queue {
+    BackgroundColor #F59E0B
+    BorderColor #B45309
+    FontColor #111827
+}
+
+rectangle "<b>Кандидат</b>\n\nИщет работу и проходит найм." as candidate <<person>>
+rectangle "<b>Рекрутер</b>\n\nУправляет вакансиями и кандидатами." as recruiter <<person>>
+rectangle "<b>Нанимающий руководитель</b>\n\nОценивает кандидатов." as hiringManager <<person>>
+rectangle "<b>Администратор компании</b>\n\nУправляет компанией и ролями." as companyAdmin <<person>>
+
+rectangle "<b>Identity Provider</b>\n\nKeycloak, OAuth 2.0 / OIDC" as identityProvider <<external>>
+rectangle "<b>Notification Providers</b>\n\nSendGrid, FCM, Twilio" as notificationProviders <<external>>
+rectangle "<b>Employer HR System</b>\n\nКорпоративная HR-система работодателя" as employerHrSystem <<external>>
+
+rectangle "Careeria" as platform <<boundary>> {
+    rectangle "Общий интеграционный слой" as entryZone <<boundary>> {
+        rectangle "<b>Web Application</b>\n<color:#DBEAFE>Next.js, React, TypeScript, Tailwind CSS</color>\n\nSSR/CSR-интерфейс кандидатов\nи сотрудников компаний." as web <<frontend>>
+        rectangle "<b>BFF</b>\n<color:#E0F2FE>Go, net/http, grpc-go, OIDC</color>\n\nHttpOnly-сессии, CSRF-защита\nи агрегация ответов." as bff <<edge>>
+        rectangle "<b>API Gateway</b>\n<color:#E0F2FE>Go, grpc-gateway, OpenTelemetry</color>\n\nREST-to-gRPC маршрутизация,\nrate limiting и трассировка." as apiGateway <<gateway>>
+    }
+
+    rectangle "Домен кандидатов и управления вакансиями" as candidateVacancyZone <<boundary>> {
+        rectangle "<b>Candidate Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nПрофили, резюме, опыт, образование\nи карьерные предпочтения." as candidateService <<business>>
+        database "<b>Candidate DB</b>\nPostgreSQL\n\nПрофили, резюме и transactional outbox." as candidateDb
+        rectangle "<b>Vacancy Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nВакансии, требования, условия\nи жизненный цикл публикации." as vacancyService <<business>>
+        database "<b>Vacancy DB</b>\nPostgreSQL\n\nВакансии и transactional outbox." as vacancyDb
+    }
+
+    rectangle "Домен компаний и процесса найма" as companyHiringZone <<boundary>> {
+        rectangle "<b>Company Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nКомпании, участники, рекрутеры\nи корпоративные роли." as companyService <<business>>
+        database "<b>Company DB</b>\nPostgreSQL\n\nКомпании, роли и transactional outbox." as companyDb
+        rectangle "<b>Hiring Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nОтклики, этапы найма, интервью,\nпредложения и история переходов." as hiringService <<business>>
+        database "<b>Hiring DB</b>\nPostgreSQL\n\nОтклики, этапы, интервью, офферы\nи transactional outbox." as hiringDb
+    }
+
+    rectangle "Домен оценки, коммуникаций, realtime и медиа" as interactionZone <<boundary>> {
+        rectangle "<b>Assessment Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nТесты, задания, submissions,\nscores и результаты проверки." as assessmentService <<business>>
+        database "<b>Assessment DB</b>\nPostgreSQL\n\nЗадания, сессии, решения, оценки\nи transactional outbox." as assessmentDb
+        rectangle "<b>Communication Service</b>\n<color:#DCFCE7>Go, gRPC, Protobuf, pgx, sqlc</color>\n\nДиалоги, сообщения, вложения,\nреакции и отметки о прочтении." as communicationService <<business>>
+        database "<b>Communication DB</b>\nPostgreSQL\n\nДиалоги, сообщения и transactional outbox." as communicationDb
+        rectangle "<b>Realtime Publisher</b>\n<color:#CFFAFE>Go, Kafka consumer, Centrifugo API</color>\n\nФильтрует события и публикует\nсообщения в пользовательские каналы." as realtimePublisher <<platform>>
+        rectangle "<b>Centrifugo</b>\n<color:#FCE7F3>WebSocket, JWT</color>\n\nПодключения, каналы, presence\nи realtime-доставка." as centrifugo <<realtime>>
+        rectangle "<b>LiveKit</b>\n<color:#F3E8FF>WebRTC, LiveKit React SDK</color>\n\nАудио-, видеоинтервью\nи демонстрация экрана." as livekit <<media>>
+    }
+
+    rectangle "Идентификация, авторизация и инфраструктурные сервисы" as platformZone <<boundary>> {
+        rectangle "<b>Identity Service</b>\n<color:#CFFAFE>Go, gRPC, OAuth 2.0/OIDC, JWT</color>\n\nРегистрация, credentials, токены,\nсессии и интеграция с Keycloak." as identityService <<platform>>
+        database "<b>Identity DB</b>\nPostgreSQL\n\nПользователи, credentials, сессии\nи transactional outbox." as identityDb
+        rectangle "<b>AuthZ Synchronization Service</b>\n<color:#CFFAFE>Go, Kafka consumer, OpenFGA SDK</color>\n\nПреобразует события в OpenFGA tuples." as authzProjection <<platform>>
+        rectangle "<b>OpenFGA</b>\n<color:#F3E8FF>OpenFGA, PostgreSQL</color>\n\nReBAC-модель ролей\nи отношений доступа." as openFga <<authorization>>
+        rectangle "<b>Notification Service</b>\n<color:#CFFAFE>Go, Kafka consumer, REST clients</color>\n\nIn-app, email, push\nи SMS-уведомления." as notificationService <<platform>>
+        rectangle "<b>File Service</b>\n<color:#CFFAFE>Go, gRPC, MinIO Go SDK</color>\n\nЗагрузка, presigned URL\nи проверка файлов." as fileService <<platform>>
+        database "<b>Object Storage</b>\nMinIO, S3 API\n\nРезюме, аватары, вложения\nи записи интервью." as objectStorage
+        rectangle "<b>Integration Service</b>\n<color:#CFFAFE>Go, REST, Webhooks, Kafka</color>\n\nWebhook, нормализация payload\nи интеграция с HR-системами." as integrationService <<platform>>
+        queue "<b>Kafka</b>\nApache Kafka, KRaft\n\nДоменные события и consumer groups." as kafka
+        rectangle "<b>Schema Registry</b>\n<color:#FEF3C7>Apicurio Registry, Avro</color>\n\nВерсионирование схем\nи backward compatibility." as schemaRegistry <<event>>
+        rectangle "<b>Debezium</b>\n<color:#FEF3C7>PostgreSQL Connector</color>\n\nЧитает transactional outbox\nчерез logical replication." as debezium <<event>>
+    }
+}
+
+candidate --> web : Использует\n[HTTPS]
+recruiter --> web : Использует\n[HTTPS]
+hiringManager --> web : Использует\n[HTTPS]
+companyAdmin --> web : Использует\n[HTTPS]
+web --> bff : Вызывает API\n[HTTPS / JSON]
+bff --> apiGateway : Вызывает API\n[HTTPS / gRPC]
+
+apiGateway --> identityService : Проверяет пользователя\n[gRPC]
+identityService --> identityProvider : Аутентифицирует\n[OAuth 2.0 / OIDC]
+apiGateway --> candidateService : Получает профили\n[gRPC]
+apiGateway --> companyService : Управляет компаниями\n[gRPC]
+apiGateway --> vacancyService : Управляет вакансиями\n[gRPC]
+apiGateway --> hiringService : Ведёт процесс найма\n[gRPC]
+apiGateway --> assessmentService : Управляет оцениванием\n[gRPC]
+apiGateway --> communicationService : Обменивается сообщениями\n[gRPC]
+apiGateway --> notificationService : Управляет уведомлениями\n[gRPC]
+apiGateway --> fileService : Работает с файлами\n[gRPC]
+apiGateway --> integrationService : Передаёт webhook\n[HTTP / gRPC]
+
+employerHrSystem --> apiGateway : Отправляет webhook\n[HTTPS / JSON]
+integrationService --> employerHrSystem : Передаёт события найма\n[REST / Webhooks]
+
+candidateService --> candidateDb : Хранит профили и резюме\n[SQL]
+companyService --> companyDb : Хранит компании и роли\n[SQL]
+vacancyService --> vacancyDb : Хранит вакансии\n[SQL]
+hiringService --> hiringDb : Хранит отклики и этапы\n[SQL]
+assessmentService --> assessmentDb : Хранит задания и оценки\n[SQL]
+communicationService --> communicationDb : Хранит сообщения\n[SQL]
+identityService --> identityDb : Хранит учётные данные\n[SQL]
+fileService --> objectStorage : Читает и записывает\n[S3 API]
+
+candidateService --> openFga : Проверяет доступ\n[OpenFGA API]
+companyService --> openFga : Проверяет доступ\n[OpenFGA API]
+vacancyService --> openFga : Проверяет доступ\n[OpenFGA API]
+hiringService --> openFga : Проверяет доступ\n[OpenFGA API]
+assessmentService --> openFga : Проверяет доступ\n[OpenFGA API]
+communicationService --> openFga : Проверяет доступ\n[OpenFGA API]
+fileService --> openFga : Проверяет доступ\n[OpenFGA API]
+
+candidateDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+companyDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+vacancyDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+hiringDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+assessmentDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+communicationDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+identityDb ..> debezium : Передаёт outbox\n[PostgreSQL WAL]
+
+debezium --> schemaRegistry : Получает схемы\n[Registry API]
+debezium -[#D97706,dashed]-> kafka : Публикует события\n[Kafka / Avro]
+kafka -[#D97706,dashed]-> hiringService : Доставляет события найма\n[Kafka / Avro]
+kafka -[#D97706,dashed]-> notificationService : Доставляет события уведомлений\n[Kafka / Avro]
+kafka -[#DB2777]-> realtimePublisher : Доставляет realtime-события\n[Kafka / Avro]
+kafka -[#D97706,dashed]-> authzProjection : Доставляет изменения ролей\n[Kafka / Avro]
+kafka -[#D97706,dashed]-> integrationService : Доставляет события интеграций\n[Kafka / Avro]
+integrationService -[#D97706,dashed]-> kafka : Публикует события\n[Kafka / Avro]
+authzProjection --> openFga : Обновляет роли и связи\n[OpenFGA API]
+
+realtimePublisher -[#DB2777]-> centrifugo : Публикует сообщения\n[Centrifugo API]
+web -[#DB2777]-> centrifugo : Подключается\n[WebSocket]
+centrifugo -[#DB2777]-> web : Доставляет сообщения\n[WebSocket]
+hiringService -[#9333EA]-> livekit : Создаёт комнаты\n[LiveKit API]
+web -[#9333EA]-> livekit : Передаёт медиапоток\n[WebRTC]
+notificationService --> notificationProviders : Отправляет уведомления\n[Email / Push / SMS]
+
+legend right
+  |= Цвет |= Назначение |
+  | <#2563EB>   </#> | Web-приложение |
+  | <#16A34A>   </#> | Доменный сервис |
+  | <#0891B2>   </#> | Платформенный сервис |
+  | <#475569>   </#> | Хранилище данных |
+  | <#F59E0B>   </#> | Событийная шина |
+  | <#DB2777>   </#> | Realtime-компонент |
+  | <#9333EA>   </#> | Медиа или авторизация |
+endlegend
+@enduml
