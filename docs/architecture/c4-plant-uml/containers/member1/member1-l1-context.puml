@@ -1,0 +1,17 @@
+@startuml member1-l1
+!include ../../common/styles.puml
+
+title Домен кандидатов и управления вакансиями — системный контекст (L1)
+LAYOUT_LEFT_RIGHT()
+
+Person(candidate, "Кандидат", "Создаёт профиль, ищет вакансии и откликается.")
+Person(recruiter, "Рекрутер", "Создаёт и публикует вакансии.")
+System(candidateVacancy, "Домен кандидатов и управления вакансиями", "Профили кандидатов, резюме, поиск, создание и публикация вакансий.")
+System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации.")
+
+Rel(candidate, candidateVacancy, "Управляет профилем и ищет вакансии", "HTTPS")
+Rel(recruiter, candidateVacancy, "Управляет вакансиями", "HTTPS")
+Rel(candidateVacancy, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
+
+SHOW_LEGEND()
+@enduml
