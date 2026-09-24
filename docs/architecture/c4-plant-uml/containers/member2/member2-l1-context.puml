@@ -1,0 +1,23 @@
+@startuml member2-l1
+!include ../../common/styles.puml
+
+title Домен компаний и процесса найма — системный контекст (L1)
+LAYOUT_LEFT_RIGHT()
+
+Person(candidate, "Кандидат", "Откликается и проходит процесс найма.")
+Person(recruiter, "Рекрутер", "Ведёт кандидатов по процессу найма.")
+Person(hiringManager, "Нанимающий руководитель", "Проводит интервью и принимает решения.")
+Person(companyAdmin, "Администратор компании", "Управляет компанией и участниками.")
+System(companyHiring, "Домен компаний и процесса найма", "Компании, корпоративные роли, отклики, этапы найма, интервью и предложения.")
+System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации.")
+System_Ext(employerHrSystem, "Employer HR System", "Внешняя корпоративная HR-система работодателя.")
+
+Rel(candidate, companyHiring, "Проходит процесс найма", "HTTPS")
+Rel(recruiter, companyHiring, "Ведёт процесс найма", "HTTPS")
+Rel(hiringManager, companyHiring, "Работает с кандидатами", "HTTPS")
+Rel(companyAdmin, companyHiring, "Управляет компанией", "HTTPS")
+Rel(companyHiring, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
+Rel(companyHiring, employerHrSystem, "Обменивается данными найма", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml
