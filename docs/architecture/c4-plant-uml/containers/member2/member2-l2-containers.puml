@@ -1,0 +1,37 @@
+@startuml member2-l2
+!include ../../common/styles.puml
+!include ../../model/elements.puml
+
+title Домен компаний и процесса найма — контейнерная диаграмма (L2)
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria — домен компаний и процесса найма") {
+    EntryPoints()
+    AuthenticationDependency()
+    CompanyDomain(1)
+    HiringDomain(1)
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(hiringManager, web, "Использует", "HTTPS")
+Rel(companyAdmin, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(identityService, identityProvider, "Аутентифицирует пользователя", "OAuth 2.0 / OIDC")
+Rel(apiGateway, companyService, "Управляет компаниями", "gRPC")
+Rel(apiGateway, hiringService, "Ведёт процесс найма", "gRPC")
+Rel(companyService, companyDb, "Хранит компании и роли", "SQL")
+Rel(hiringService, hiringDb, "Хранит отклики и этапы", "SQL")
+Rel(employerHrSystem, apiGateway, "Отправляет webhook", "HTTPS / JSON")
+
+SHOW_LEGEND()
+@enduml
