@@ -1,0 +1,50 @@
+@startuml member4-l2
+!include ../../common/styles.puml
+!include ../../model/elements.puml
+
+title Платформенный домен идентификации, авторизации и инфраструктурных сервисов — контейнерная диаграмма (L2)
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
+IdentityProviderSystem()
+NotificationProvidersSystem()
+EmployerHrSystem()
+
+System_Boundary(platform, "Careeria — платформенный домен идентификации, авторизации и инфраструктурных сервисов") {
+    EntryPoints()
+    IdentityAccess(1, 1, 1)
+    FilesDomain(1)
+    IntegrationDomain()
+    EventPlatform()
+    Container_Boundary(notificationBoundary, "Уведомления") {
+        Container(notificationService, "Notification Service", "Go, Kafka consumer, REST clients", "In-app уведомления, SendGrid email, FCM push и Twilio SMS.", $tags="platform")
+    }
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(hiringManager, web, "Использует", "HTTPS")
+Rel(companyAdmin, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(apiGateway, notificationService, "Управляет уведомлениями", "gRPC")
+Rel(apiGateway, fileService, "Работает с файлами", "gRPC")
+Rel(apiGateway, integrationService, "Передаёт webhook", "HTTP / gRPC")
+Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
+Rel(identityService, identityProvider, "Аутентифицирует", "OAuth 2.0 / OIDC")
+Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
+Rel(debezium, kafka, "Публикует события", "Kafka / Avro", $tags="async")
+Rel(debezium, schemaRegistry, "Получает схемы", "Registry API")
+Rel(kafka, authzProjection, "Доставляет изменения ролей", "Kafka / Avro", $tags="async")
+Rel(kafka, notificationService, "Доставляет события", "Kafka / Avro", $tags="async")
+Rel(kafka, integrationService, "Доставляет события", "Kafka / Avro", $tags="async")
+Rel(authzProjection, openFga, "Обновляет роли и связи", "OpenFGA API")
+Rel(notificationService, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
+Rel(integrationService, employerHrSystem, "Обменивается событиями", "REST / Webhooks")
+
+SHOW_LEGEND()
+@enduml
