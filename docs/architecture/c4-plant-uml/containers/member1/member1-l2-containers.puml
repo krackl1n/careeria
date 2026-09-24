@@ -1,0 +1,31 @@
+@startuml member1-l2
+!include ../../common/styles.puml
+!include ../../model/elements.puml
+
+title Домен кандидатов и управления вакансиями — контейнерная диаграмма (L2)
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+IdentityProviderSystem()
+
+System_Boundary(platform, "Careeria — домен кандидатов и управления вакансиями") {
+    EntryPoints()
+    AuthenticationDependency()
+    CandidateDomain(1)
+    VacancyDomain(1)
+}
+
+Rel(candidate, web, "Использует", "HTTPS")
+Rel(recruiter, web, "Использует", "HTTPS")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(identityService, identityProvider, "Аутентифицирует пользователя", "OAuth 2.0 / OIDC")
+Rel(apiGateway, candidateService, "Работает с профилями", "gRPC")
+Rel(apiGateway, vacancyService, "Работает с вакансиями", "gRPC")
+Rel(candidateService, candidateDb, "Хранит профили и резюме", "SQL")
+Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
+
+SHOW_LEGEND()
+@enduml
