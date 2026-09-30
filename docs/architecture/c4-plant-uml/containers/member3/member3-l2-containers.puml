@@ -1,0 +1,38 @@
+@startuml member3-l2
+!include ../../common/styles.puml
+!include ../../model/elements.puml
+
+title Домен оценки, коммуникаций, realtime-взаимодействия и медиа — контейнерная диаграмма (L2)
+LAYOUT_LEFT_RIGHT()
+
+CandidateActor()
+RecruiterActor()
+HiringManagerActor()
+IdentityProviderSystem()
+
+System_Boundary(platform, "Careeria — домен оценки, коммуникаций, realtime-взаимодействия и медиа") {
+    EntryPoints()
+    AuthenticationDependency()
+    AssessmentDomain(1)
+    CommunicationDomain(1, 0)
+    RealtimeMedia(1, 1, 1)
+}
+
+Rel(candidate, web, "Использует", "HTTPS / WebSocket / WebRTC")
+Rel(recruiter, web, "Использует", "HTTPS / WebSocket / WebRTC")
+Rel(hiringManager, web, "Использует", "HTTPS / WebRTC")
+Rel(web, bff, "Вызывает API", "HTTPS / JSON")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTPS / gRPC")
+Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
+Rel(identityService, identityProvider, "Аутентифицирует пользователя", "OAuth 2.0 / OIDC")
+Rel(apiGateway, assessmentService, "Управляет оцениванием", "gRPC")
+Rel(apiGateway, communicationService, "Обменивается сообщениями", "gRPC")
+Rel(assessmentService, assessmentDb, "Хранит задания и оценки", "SQL")
+Rel(communicationService, communicationDb, "Хранит сообщения", "SQL")
+Rel(realtimePublisher, centrifugo, "Публикует сообщения", "Centrifugo API", $tags="realtimeFlow")
+Rel(web, centrifugo, "Подключается", "WebSocket", $tags="realtimeFlow")
+Rel(centrifugo, web, "Доставляет сообщения", "WebSocket", $tags="realtimeFlow")
+Rel(web, livekit, "Передаёт медиапоток", "WebRTC", $tags="mediaFlow")
+
+SHOW_LEGEND()
+@enduml
