@@ -1,0 +1,43 @@
+site_name: Careeria — документация
+site_description: Документация проекта Careeria
+site_dir: .site-docs
+docs_dir: docs
+dev_addr: localhost:18882
+theme:
+  name: material
+  language: ru
+  font: false
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+plugins:
+  - search:
+      lang: [ru, en]
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - plantuml_markdown:
+      plantuml_cmd: docs/tools/plantuml.sh pipe
+      format: svg_inline
+validation:
+  nav:
+    omitted_files: info
+  links:
+    not_found: warn
+extra_css:
+  - theme/diagrams.css
+exclude_docs: |
+  architecture/c4-plant-uml/node_modules/
+  architecture/c4-plant-uml/.c4builder/
+  architecture/c4-plant-uml/.cache/
+  architecture/c4-plant-uml/out/
+  architecture/c4/.structurizr/
+
+# Navigation is inferred from the files that currently exist in docs/.
+# A removed diagram page therefore disappears from the menu instead of preventing MkDocs from starting.

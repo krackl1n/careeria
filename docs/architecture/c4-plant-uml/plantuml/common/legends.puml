@@ -1,0 +1,4 @@
+' Показывает только теги, использованные в текущей диаграмме.
+!unquoted procedure ShowArchitectureLegend()
+    SHOW_LEGEND()
+!endprocedure

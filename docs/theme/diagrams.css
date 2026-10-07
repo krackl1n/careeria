@@ -1,0 +1,12 @@
+/* PlantUML emits fixed dimensions and preserveAspectRatio=none.
+   Let the SVG's viewBox supply its aspect ratio instead of imposing a height. */
+.md-typeset svg.uml {
+  display: block;
+  max-width: 100%;
+  width: 100% !important;
+  height: auto !important;
+}
+.md-typeset img {
+  max-width: 100%;
+  height: auto;
+}

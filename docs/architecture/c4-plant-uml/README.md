@@ -4,6 +4,81 @@
 
 Технологии ниже являются целевым стеком проекта. Они фиксируют архитектурные решения для реализации и защиты лабораторных работ.
 
+## Структура каталога
+
+```text
+c4-plant-uml/
+├── README.md
+├── plantuml/
+│   ├── common/                  # Общий визуальный язык
+│   │   ├── styles.puml
+│   │   ├── component-styles.puml
+│   │   ├── component-wide-layout.puml
+│   │   ├── tags.puml
+│   │   └── legends.puml
+│   ├── model/                   # Переиспользуемые элементы и связи
+│   │   ├── elements.puml
+│   │   ├── component-elements.puml
+│   │   ├── all-elements.puml
+│   │   └── all-relationships.puml
+│   ├── context/                 # C4 L1
+│   │   └── system-context.puml
+│   ├── container/               # C4 L2: полная система
+│   │   └── full-system.puml
+│   ├── component/               # C4 L3: компоненты контейнеров
+│   │   └── backend/company-service.puml
+│   ├── projections/             # Срезы модели по теме и ответственности
+│   │   ├── high-level.puml
+│   │   ├── big-picture.puml
+│   │   ├── event-driven.puml
+│   │   ├── candidate-domain.puml
+│   │   ├── hiring-domain.puml
+│   │   ├── communication.puml
+│   │   └── members/
+│   │       ├── member1/          # member1-l1-context.puml, member1-l2-containers.puml
+│   │       ├── member2/          # member2-l1-context.puml, member2-l2-containers.puml
+│   │       ├── member3/          # member3-l1-context.puml, member3-l2-containers.puml
+│   │       └── member4/          # member4-l1-context.puml, member4-l2-containers.puml
+│   ├── integration/             # Сведение областей команды
+│   │   ├── team.puml             # C4 L1 и L2 с общими include
+│   │   └── standalone.puml       # Автономная версия без include
+│   └── dynamic/                 # Сценарии взаимодействия
+│       ├── hr-integration.puml
+│       └── domain-event.puml
+└── images/
+    └── generated/               # Генерируемые SVG, исключены из Git
+```
+
+### Как выбирать представление
+
+- **Уровень C4** определяет глубину описания: `context/` — системы и пользователи, `container/` — приложения, сервисы и хранилища.
+- **Проекция** выбирает часть той же архитектуры: домен, область участника команды, верхнеуровневый обзор или событийное взаимодействие. Проекции member сохраняют свои L1/L2 и технические имена файлов.
+- **Командная интеграция** в `integration/team.puml` объединяет области всех участников. Внешние HR-интеграции описаны в общей модели и сценарии `dynamic/hr-integration.puml`.
+- **Динамический сценарий** показывает порядок взаимодействий для конкретного процесса.
+
+Верхнеуровневая и event-driven диаграммы — тематические проекции L2. Слово «проекция» здесь обозначает архитектурное представление; сервис `AuthZ Synchronization Service` выполняет отдельную задачу обновления отношений доступа из событий.
+
+### Расширение структуры
+
+По мере появления соответствующих моделей добавляются:
+
+- `context/system-landscape.puml` — ландшафт нескольких систем;
+- `container/backend.puml` и `container/frontend.puml` — отдельные контейнерные представления;
+- новые L3-представления в `component/` — компоненты внутри конкретного контейнера;
+- `deployment/{production,local}.puml` — узлы развёртывания и размещённые экземпляры контейнеров;
+- новые сценарии в `dynamic/`, названные по процессам Careeria, например `user-login.puml` и `apply-to-vacancy.puml`.
+
+Диаграмма `component/backend/company-service.puml` уже раскрывает внутреннее устройство Company Service. Остальные L3-представления и deployment-модель будут добавляться по мере уточнения реализации. Контейнерные срезы не следует выдавать за компоненты L3, а `production` требует согласованной схемы инфраструктуры.
+
+### Правила сопровождения
+
+1. Переиспользуемые L1/L2-объявления элементов добавлять в `plantuml/model/elements.puml`, L3-элементы — в `plantuml/model/component-elements.puml`, общие связи — в `all-relationships.puml`.
+2. L1/L2-диаграммы подключают `common/styles.puml`; L3-диаграммы подключают `common/component-styles.puml`. В нём централизованы C4 Component, скруглённый стиль, шрифт, размеры, маршрутизация `polyline` и общие теги инфраструктуры. Для широких use case L3 дополнительно подключается `common/component-wide-layout.puml`.
+3. Использовать относительные `!include`. Файлы `common/` и `model/` — фрагменты без `@startuml`; остальные `.puml` — самостоятельные точки входа для генерации.
+4. При переносе диаграмм сохранять идентификаторы `@startuml`: они задают имена SVG. Файл `container/full-system.puml` ранее назывался `views/previous.puml` и сохраняет имя результата `C4-L2-Previous.svg`.
+5. `integration/standalone.puml` — отдельная автономная копия для обмена. При изменении модели обновлять её вместе с `integration/team.puml`; автоматически она не синхронизируется.
+6. Не редактировать SVG вручную. После изменения исходников запускать проверку и генерацию из корня репозитория.
+
 ## Назначение системы
 
 Careeria объединяет полный процесс найма:
@@ -55,32 +130,32 @@ Careeria объединяет полный процесс найма:
 
 ### Member 1 — домен кандидатов и управления вакансиями
 
-- `containers/member1/member1-l1-context.puml`
-- `containers/member1/member1-l2-containers.puml`
+- `plantuml/projections/members/member1/member1-l1-context.puml`
+- `plantuml/projections/members/member1/member1-l2-containers.puml`
 - контейнеры: Candidate Service, Candidate DB, Vacancy Service и Vacancy DB;
 - пользователи: кандидат и рекрутер;
 - ответственность: профили, резюме, карьерные предпочтения, создание, публикация и поиск вакансий.
 
 ### Member 2 — домен компаний и процесса найма
 
-- `containers/member2/member2-l1-context.puml`
-- `containers/member2/member2-l2-containers.puml`
+- `plantuml/projections/members/member2/member2-l1-context.puml`
+- `plantuml/projections/members/member2/member2-l2-containers.puml`
 - контейнеры: Company Service, Company DB, Hiring Service и Hiring DB;
 - пользователи: кандидат, рекрутер, нанимающий руководитель и администратор компании;
 - ответственность: компании, корпоративные роли, отклики, state machine найма, интервью, предложения и история переходов.
 
 ### Member 3 — домен оценки, коммуникаций, realtime-взаимодействия и медиа
 
-- `containers/member3/member3-l1-context.puml`
-- `containers/member3/member3-l2-containers.puml`
+- `plantuml/projections/members/member3/member3-l1-context.puml`
+- `plantuml/projections/members/member3/member3-l2-containers.puml`
 - контейнеры: Assessment Service/DB, Communication Service/DB, Realtime Publisher, Centrifugo и LiveKit;
 - пользователи: кандидат, рекрутер и нанимающий руководитель;
 - ответственность: тесты, задания, Live Coding, сообщения, WebSocket-доставка и видеособеседования.
 
 ### Member 4 — платформенный домен идентификации, авторизации и инфраструктурных сервисов
 
-- `containers/member4/member4-l1-context.puml`
-- `containers/member4/member4-l2-containers.puml`
+- `plantuml/projections/members/member4/member4-l1-context.puml`
+- `plantuml/projections/members/member4/member4-l2-containers.puml`
 - контейнеры: Identity Service/DB, AuthZ Synchronization Service, OpenFGA, Notification Service, File Service, MinIO, Integration Service, Kafka, Apicurio Registry и Debezium;
 - пользователи: все четыре роли Careeria;
 - ответственность: authentication, authorization, уведомления, файлы, события и внешние интеграции.
@@ -145,22 +220,53 @@ Go service → PostgreSQL transaction + outbox
 
 ## Архитектурные представления
 
-- `integration.puml` — интегрированные L1 и L2 для всей команды;
-- `views/system-context.puml` — общий системный контекст;
-- `views/high-level.puml` — обзор без БД и событийной инфраструктуры;
-- `views/hiring-domain.puml` — компании, вакансии, найм и оценивание;
-- `views/candidate-domain.puml` — кандидаты, вакансии, identity и файлы;
-- `views/communication.puml` — коммуникации, realtime, файлы и уведомления;
-- `views/event-driven.puml` — Kafka, Debezium, Avro и transactional outbox;
-- `views/big-picture.puml` — все контейнеры без наиболее шумных технических связей;
-- `views/previous.puml` — полная схема со всеми контейнерами и связями;
-- `views/dynamic-*.puml` — обработка webhook и доставка доменного события.
+| Представление | Назначение |
+|---|---|
+| [Системный контекст](plantuml/context/system-context.puml) | Пользователи Careeria и внешние системы, C4 L1 |
+| [Полная система](plantuml/container/full-system.puml) | Все контейнеры и связи, C4 L2 |
+| [Верхнеуровневая проекция](plantuml/projections/high-level.puml) | Обзор без БД и событийной инфраструктуры |
+| [Event-driven](plantuml/projections/event-driven.puml) | Kafka, Debezium, Avro и transactional outbox |
+| [Коммуникации](plantuml/projections/communication.puml) | Коммуникации, realtime, файлы и уведомления |
+| [Командная интеграция](plantuml/integration/team.puml) | Интегрированные L1 и L2 для всей команды |
+| [Автономная интеграция](plantuml/integration/standalone.puml) | Два представления без зависимостей от других файлов и C4-библиотеки |
+| [HR webhook](plantuml/dynamic/hr-integration.puml) | Последовательность обработки входящего webhook |
+| [Доменное событие](plantuml/dynamic/domain-event.puml) | Доставка события от outbox до уведомления |
 
-## Проверка и генерация
+## Сайт документации
+
+Архитектура — подраздел общей документации MkDocs с темой Material. Страницы и инструменты находятся в `docs/`, конфигурация сайта — в `mkdocs.yml` в корне репозитория. Node.js не требуется.
+
+```sh
+make docs                   # Общая документация
+make docs-build             # Статическая сборка
+make docs-test              # Проверка сайта
+```
+
+Для запуска нужен Docker с Compose. Образ документации содержит MkDocs, Java и PlantUML; MkDocs обновляет сайт при изменении Markdown и `.puml`.
+
+## Описания и схемы
+
+Markdown-файлы рядом со схемами являются самостоятельными страницами, без промежуточного генератора. Текст, таблицы, код и ссылки оформляются обычным Markdown. Блок `plantuml` в нужном месте страницы подключает схему через нативный `!include`.
+
+Пример — [system-context.md](plantuml/context/system-context.md). Полные правила находятся в [руководстве по документации](../../contributing.md).
+
+Для интеграционных файлов с несколькими диаграммами сохранены отдельные страницы L1/L2. Они подключают именованные секции `!startsub` / `!endsub` из исходного `.puml` через `!includesub`. Схемы не дублируются.
+
+### Переходы внутри диаграмм
+
+Расширение `plantuml-markdown` вставляет SVG в страницу; ссылки `$link` на элементах остаются активными. В системном контексте Careeria ведёт на `/architecture/c4-plant-uml/plantuml/container/full-system/`.
+
+Для обычных переходов между страницами используйте относительные ссылки на `.md`. Ссылки на `.puml` открывают исходники. В навигации сайта отображаются только страницы Markdown.
+
+## Проверка и генерация SVG
 
 ```sh
 make plantuml-architecture-validate
 make plantuml-architecture
 ```
 
-SVG создаются в `out/`. Персональные диаграммы называются `member1-l1.svg` … `member4-l2.svg`. Каталог `out/` исключён из Git.
+Makefile находит все `.puml` внутри `plantuml/`, кроме фрагментов `common/` и `model/`. Новые проекции, компоненты и deployment-диаграммы автоматически попадают в обе команды. Проверка и генерация останавливаются при синтаксических ошибках.
+
+SVG создаются в `images/generated/`. Имена определяются идентификаторами `@startuml`, например `member1-l1.svg` … `member4-l2.svg`; интеграционные файлы содержат по две диаграммы и создают по два SVG. Результаты исключены из Git, в каталоге хранится только `.gitkeep`. Старый каталог `out/`, если остался локально, больше не используется.
+
+Structurizr сохранён как дополнительный инструмент: `make structurizr-architecture` и `make structurizr-architecture-validate`. Команда `make architecture-validate` проверяет исходники C4-PlantUML.

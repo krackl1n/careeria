@@ -1,1 +1,8 @@
+images/generated/*
+!images/generated/.gitkeep
+
+# Результаты генерации до переноса структуры.
 out/
+.DS_Store
+
+.cache/

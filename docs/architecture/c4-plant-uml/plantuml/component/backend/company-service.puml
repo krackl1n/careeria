@@ -1,0 +1,43 @@
+@startuml company-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(company_container, "Company Service") {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Обработка синхронных команд и запросов CompanyService")
+        Component(company_svc, "Company Service", "Go Application Service", "Сценарии компании: Create, Get, Update, SubmitForVerification, Verify, Block")
+        Component(membership_svc, "Membership Service", "Go Application Service", "Сценарии участников: Invite, Activate, ChangeRole, Suspend, Remove, List")
+        Component(company_repo, "Company Repo", "Go / SQL", "Загрузка и сохранение агрегата Company")
+        Component(member_repo, "Member Repo", "Go / SQL", "Загрузка и сохранение агрегата Member и выборки состава компании")
+        Component(outbox, "Transactional Outbox", "Go / SQL", "Атомарная запись интеграционных событий вместе с изменением состояния")
+    }
+
+    ComponentCompanyDatabase()
+}
+
+company_svc -[hidden]R- membership_svc
+
+company_repo -[hidden]R- member_repo
+member_repo -[hidden]R- outbox
+
+Rel(apiGateway, grpc_handler, "Управляет компаниями и участниками", "gRPC")
+
+Rel(grpc_handler, company_svc, "Вызывает сценарии компании", "In-process")
+Rel(grpc_handler, membership_svc, "Вызывает сценарии участников", "In-process")
+
+Rel(company_svc, company_repo, "Работает с компаниями", "In-process")
+Rel(membership_svc, member_repo, "Работает с участниками", "In-process")
+Rel(membership_svc, company_repo, "Получает состояние компании", "In-process")
+
+Rel(company_svc, outbox, "Сохраняет события", "In-process")
+Rel(membership_svc, outbox, "Сохраняет события", "In-process")
+
+Rel(company_repo, companyDb, "Чтение / Запись компаний", "SQL / TCP")
+Rel(member_repo, companyDb, "Чтение / Запись участников", "SQL / TCP")
+Rel(outbox, companyDb, "Запись событий", "SQL / TCP")
+
+SHOW_FLOATING_LEGEND()
+@enduml

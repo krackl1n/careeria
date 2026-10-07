@@ -1,0 +1,13 @@
+services:
+  docs:
+    build:
+      context: ..
+      dockerfile: docs/Dockerfile
+      args:
+        PLANTUML_VERSION: ${PLANTUML_VERSION:-1.2026.8}
+    image: careeria-docs:local
+    ports:
+      - "127.0.0.1:${DOCS_PORT:-18882}:18882"
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace

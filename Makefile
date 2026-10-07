@@ -31,6 +31,14 @@ STRUCTURIZR_IMAGE ?= structurizr/structurizr:$(STRUCTURIZR_VERSION)
 STRUCTURIZR_PORT ?= 18882
 PLANTUML_VERSION ?= 1.2026.8
 PLANTUML_IMAGE ?= plantuml/plantuml:$(PLANTUML_VERSION)
+PLANTUML_JAR ?=
+DOCS_DIR := docs
+-include $(DOCS_DIR)/.env
+DOCS_PORT ?= 18882
+DOCS_OPEN ?= 1
+DOCS_START_TIMEOUT ?= 60
+DOCS_COMPOSE := DOCS_PORT=$(DOCS_PORT) docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml
+DOCS_ENV := $(DOCS_DIR)/.env
 
 BUF ?= $(GO_TOOL_BIN)/buf
 GOOSE ?= $(GO_TOOL_BIN)/goose
@@ -46,7 +54,9 @@ OPENFGA_TEST_FILE := /model/model.fga.yaml
 STRUCTURIZR_DIR := $(CURDIR)/docs/architecture/c4
 STRUCTURIZR_WORKSPACE := /usr/local/structurizr/workspace.dsl
 PLANTUML_ARCHITECTURE_DIR := docs/architecture/c4-plant-uml
-PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort)
+PLANTUML_ARCHITECTURE_SOURCE_DIR := $(PLANTUML_ARCHITECTURE_DIR)/plantuml
+PLANTUML_ARCHITECTURE_OUTPUT_DIR := $(PLANTUML_ARCHITECTURE_DIR)/images/generated
+PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_SOURCE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort)
 
 MODULE_DIRS := $(shell find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; | sort)
 MIGRATION_SERVICES := identity
@@ -61,7 +71,9 @@ MIGRATION_SERVICES := identity
 	docker-build compose-config compose-config-server \
 	build test vet check fmt \
 	authz-model-test authz-store-create authz-model-write \
-	architecture architecture-validate plantuml-architecture plantuml-architecture-validate \
+	docs docs-build docs-stop docs-test \
+	architecture-validate \
+	structurizr-architecture structurizr-architecture-validate plantuml-architecture plantuml-architecture-validate \
 	run-gateway run-identity \
 	migrate-new migrate-up migrate-status migrate-version \
 	proto-generate proto-lint proto-format
@@ -213,7 +225,7 @@ authz-model-write: ## Write a new immutable model version; OPENFGA_STORE_ID is r
 			--store-id "$(OPENFGA_STORE_ID)" \
 			--file $(OPENFGA_MODEL_FILE)
 
-architecture: ## Start the local Structurizr architecture viewer.
+structurizr-architecture: ## Start the optional Structurizr viewer.
 	@test -f "$(STRUCTURIZR_DIR)/workspace.dsl" || { \
 		printf '%s\n' 'Structurizr workspace not found: $(STRUCTURIZR_DIR)/workspace.dsl' >&2; \
 		exit 2; \
@@ -224,7 +236,7 @@ architecture: ## Start the local Structurizr architecture viewer.
 		$(STRUCTURIZR_IMAGE) \
 		local
 
-architecture-validate: ## Validate the Structurizr architecture workspace.
+structurizr-architecture-validate: ## Validate the optional Structurizr workspace.
 	@test -f "$(STRUCTURIZR_DIR)/workspace.dsl" || { \
 		printf '%s\n' 'Structurizr workspace not found: $(STRUCTURIZR_DIR)/workspace.dsl' >&2; \
 		exit 2; \
@@ -234,21 +246,56 @@ architecture-validate: ## Validate the Structurizr architecture workspace.
 		$(STRUCTURIZR_IMAGE) \
 		validate -workspace $(STRUCTURIZR_WORKSPACE)
 
-plantuml-architecture: ## Render C4-PlantUML architecture diagrams to SVG.
-	docker run --rm \
-		-v "$(CURDIR):/workspace" \
-		-w /workspace \
-		$(PLANTUML_IMAGE) \
-		-tsvg -o /workspace/$(PLANTUML_ARCHITECTURE_DIR)/out \
-		$(PLANTUML_ARCHITECTURE_SOURCES)
+
+$(DOCS_ENV): $(DOCS_DIR)/.env.example
+	@cp "$<" "$@"
+
+docs-build: $(DOCS_ENV) ## Build the static documentation site in a container.
+	@$(DOCS_COMPOSE) run --build --rm docs python -m mkdocs build --config-file mkdocs.yml --strict
+
+docs: $(DOCS_ENV) ## Start the documentation container with live reload.
+	@set -eu; \
+	port='$(DOCS_PORT)'; \
+	while lsof -nP -iTCP:"$$port" -sTCP:LISTEN >/dev/null 2>&1; do \
+		port=$$((port + 1)); \
+	done; \
+	url="http://localhost:$$port/"; \
+	env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml up --build --detach docs; \
+	attempt=0; \
+	until curl --fail --silent --output /dev/null "$$url"; do \
+		if [ "$$attempt" -ge "$(DOCS_START_TIMEOUT)" ]; then \
+			printf '%s\n' "Документация не стала доступна за $(DOCS_START_TIMEOUT) с: $$url" >&2; \
+			env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml logs --tail=100 docs >&2; \
+			exit 1; \
+		fi; \
+		if ! env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml ps --status running --services | grep -qx docs; then \
+			printf '%s\n' 'Контейнер документации завершился до запуска. Последние логи:' >&2; \
+			env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml logs --tail=100 docs >&2; \
+			exit 1; \
+		fi; \
+		attempt=$$((attempt + 1)); \
+		sleep 1; \
+	done; \
+	if [ "$(DOCS_OPEN)" != "0" ]; then \
+		case "$(shell uname -s)" in Darwin) open "$$url" ;; Linux) xdg-open "$$url" ;; esac; \
+	fi; \
+	printf '%s\n' "Документация: $$url · остановка: make docs-stop"
+
+docs-stop: ## Stop the documentation container.
+	@$(DOCS_COMPOSE) down
+
+docs-test: $(DOCS_ENV) ## Build and verify documentation in a container.
+	@$(DOCS_COMPOSE) run --build --rm docs sh -c 'python -m mkdocs build --config-file mkdocs.yml --strict && python docs/tools/check.py'
+
+architecture-validate: plantuml-architecture-validate ## Validate the PlantUML architecture sources.
+
+plantuml-architecture: ## Render C4-PlantUML diagrams using Docker, or Java when Docker is unavailable.
+	@PLANTUML_VERSION="$(PLANTUML_VERSION)" PLANTUML_IMAGE="$(PLANTUML_IMAGE)" PLANTUML_JAR="$(PLANTUML_JAR)" \
+		./docs/tools/plantuml.sh render $(PLANTUML_ARCHITECTURE_SOURCES)
 
 plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagrams.
-	docker run --rm \
-		-v "$(CURDIR):/workspace:ro" \
-		-w /workspace \
-		$(PLANTUML_IMAGE) \
-		-checkonly \
-		$(PLANTUML_ARCHITECTURE_SOURCES)
+	@PLANTUML_VERSION="$(PLANTUML_VERSION)" PLANTUML_IMAGE="$(PLANTUML_IMAGE)" PLANTUML_JAR="$(PLANTUML_JAR)" \
+		./docs/tools/plantuml.sh validate $(PLANTUML_ARCHITECTURE_SOURCES)
 
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway

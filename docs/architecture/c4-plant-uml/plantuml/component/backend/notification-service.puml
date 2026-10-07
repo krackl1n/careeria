@@ -1,0 +1,63 @@
+@startuml notification-service-l3
+!include ../../common/component-styles.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+    ComponentKafka()
+    ComponentSchemaRegistry()
+
+    Container_Boundary(notification_container, "Notification Service") {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Обработка синхронных запросов и команд")
+        Component(stream_handler, "Stream Server", "Go / gRPC Stream", "Двунаправленные стримы для in-app push")
+        Component(event_consumer, "Events Consumer", "Go / Kafka Client", "Подписка на триггерные события из шины")
+        Component(worker_comp, "Worker Pool", "Go Async Workers", "Асинхронный пулинг и запуск задач")
+
+        Component(notification_svc, "Notification Service", "Go Application Service", "Бизнес-сценарии: Schedule, Cancel, FetchPending, Execute")
+
+        Component(template_repo, "Template Repo", "Go / SQL", "Загрузка сырых шаблонов сообщений")
+        Component(job_repo, "Job Repo", "Go / SQL", "Конкурентный пулинг фоновых задач")
+        Component(inapp_repo, "In-App Repo", "Go / SQL", "Персистентный Inbox пользователей")
+        Component(template_engine, "Template Engine", "Go Template", "Рендеринг текста на основе payload джобы")
+        Component(notification_provider_adapter, "Notification Provider Adapter", "Go REST Clients", "Изолирует бизнес-логику от SendGrid, FCM и Twilio")
+    }
+
+    ComponentNotificationDatabase()
+}
+
+ComponentNotificationProviders()
+
+grpc_handler -[hidden]R- stream_handler
+stream_handler -[hidden]R- event_consumer
+event_consumer -[hidden]R- worker_comp
+
+template_repo -[hidden]R- job_repo
+job_repo -[hidden]R- inapp_repo
+inapp_repo -[hidden]R- template_engine
+template_engine -[hidden]R- notification_provider_adapter
+
+Rel(apiGateway, grpc_handler, "Управляет уведомлениями", "gRPC")
+Rel(apiGateway, stream_handler, "Удержание стримов", "gRPC Stream")
+Rel(kafka, event_consumer, "Доставляет события уведомлений", "Kafka / Avro")
+
+Rel(grpc_handler, notification_svc, "Вызов сценариев", "In-process")
+Rel(event_consumer, notification_svc, "Создание джобы", "In-process")
+Rel(worker_comp, notification_svc, "Запуск джоб", "In-process")
+
+Rel(notification_svc, stream_handler, "Push события", "Go Channels")
+
+Rel(notification_svc, job_repo, "Управление Jobs", "In-process")
+Rel(notification_svc, inapp_repo, "Управление Inbox", "In-process")
+Rel(notification_svc, template_engine, "Рендеринг текста", "In-process")
+Rel(notification_svc, notification_provider_adapter, "Передача уведомления", "In-process")
+Rel(event_consumer, schemaRegistry, "Получает Avro-схемы", "Registry API")
+
+Rel(template_engine, template_repo, "Запрос шаблона", "In-process")
+Rel(notification_provider_adapter, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
+
+Rel(template_repo, notificationDb, "Чтение шаблонов", "SQL / TCP")
+Rel(job_repo, notificationDb, "Пулинг задач (SKIP LOCKED)", "SQL / TCP")
+Rel(inapp_repo, notificationDb, "Запись / Выборка Inbox", "SQL / TCP")
+
+SHOW_FLOATING_LEGEND()
+@enduml

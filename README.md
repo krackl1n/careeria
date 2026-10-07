@@ -14,13 +14,27 @@ Careeria — рекрутинговая платформа полного цик
 
 Подробное описание контейнеров, протоколов, владения данными и командной сегментации находится в [документации C4-PlantUML](docs/architecture/c4-plant-uml/README.md).
 
-## Архитектурные схемы
+## Документация
 
 ```sh
-make architecture-validate
-make plantuml-architecture-validate
-make plantuml-architecture
+make docs
 ```
 
-- Structurizr DSL: `docs/architecture/c4/`
-- C4-PlantUML: `docs/architecture/c4-plant-uml/`
+Команда собирает Docker-образ с MkDocs, PlantUML и Java, запускает готовый сайт на `http://localhost:18882` и открывает браузер. Изменения Markdown и PlantUML автоматически обновляют сайт. Остановка — `make docs-stop`.
+
+Для документации нужен Docker с Compose. Node.js, Python и Java на рабочей машине не требуются.
+
+```sh
+make docs-build              # Статический сайт в .site-docs/
+make docs-test               # Проверка страниц, схем и ссылок
+make architecture-validate   # Проверка исходников PlantUML
+cp docs/.env.example docs/.env  # Один раз: локальные настройки сайта
+make docs
+```
+
+- [Обзор документации](docs/index.md).
+- [Как писать страницы и подключать диаграммы](docs/contributing.md).
+- Конфигурация сайта: `mkdocs.yml`; зависимости: `docs/requirements.txt`.
+- Локальные настройки контейнера: `docs/.env` (шаблон — `docs/.env.example`).
+- Схемы C4-PlantUML: `docs/architecture/c4-plant-uml/plantuml/`.
+- Дополнительная модель Structurizr: `docs/architecture/c4/`; запуск — `make structurizr-architecture`, проверка — `make structurizr-architecture-validate`.

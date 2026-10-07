@@ -1,0 +1,165 @@
+!unquoted procedure CandidateActor()
+    Person(candidate, "Кандидат", "Ищет работу, откликается на вакансии и проходит процесс найма.")
+!endprocedure
+
+!unquoted procedure RecruiterActor()
+    Person(recruiter, "Рекрутер", "Публикует вакансии и ведёт кандидатов по процессу найма.")
+!endprocedure
+
+!unquoted procedure HiringManagerActor()
+    Person(hiringManager, "Нанимающий руководитель", "Участвует в собеседованиях, оценке кандидатов и принятии решений.")
+!endprocedure
+
+!unquoted procedure CompanyAdminActor()
+    Person(companyAdmin, "Администратор компании", "Управляет компанией, пользователями и ролями.")
+!endprocedure
+
+!unquoted procedure IdentityProviderSystem()
+    System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak; федерация и внешняя аутентификация пользователей.")
+!endprocedure
+
+!unquoted procedure NotificationProvidersSystem()
+    System_Ext(notificationProviders, "Notification Providers", "SendGrid для email, Firebase Cloud Messaging для push и Twilio для SMS.")
+!endprocedure
+
+!unquoted procedure EmployerHrSystem()
+    System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя.")
+!endprocedure
+
+!unquoted procedure EntryPoints()
+    Container_Boundary(entryPoints, "Точки входа") {
+        Container(web, "Web Application", "Next.js, React, TypeScript, Tailwind CSS", "App Router, SSR/CSR, TanStack Query, React Hook Form и Zod; интерфейс кандидатов и сотрудников компаний.", $tags="frontend")
+        Container(bff, "BFF", "Go, net/http, grpc-go, OIDC", "HttpOnly-сессии, CSRF-защита, обновление токенов и агрегация ответов для Next.js.", $tags="edge")
+        Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.", $tags="gateway")
+    }
+!endprocedure
+
+!unquoted procedure AuthenticationDependency()
+    Container_Boundary(authenticationBoundary, "Общая аутентификация") {
+        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT", "Проверяет access token, управляет сессиями и интеграцией с Keycloak.", $tags="platform")
+    }
+!endprocedure
+
+!unquoted procedure CandidateDomain($withDatabase)
+    Container_Boundary(candidateBoundary, "Домен кандидатов") {
+        Container(candidateService, "Candidate Service", "Go, gRPC, Protobuf, pgx, sqlc", "Профили, резюме, опыт, образование, навыки и карьерные предпочтения.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Схема Candidate Service, ACID-транзакции и таблица transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure CompanyDomain($withDatabase)
+    Container_Boundary(companyBoundary, "Домен компаний") {
+        Container(companyService, "Company Service", "Go, gRPC, Protobuf, pgx, sqlc", "Работодатели, участники компаний, рекрутеры и корпоративные роли.", $tags="business", $link="/architecture/c4-plant-uml/plantuml/component/backend/company-service/")
+        !if ($withDatabase == 1)
+            ContainerDb(companyDb, "Company DB", "PostgreSQL", "Схема Company Service и таблица transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure VacancyDomain($withDatabase)
+    Container_Boundary(vacancyBoundary, "Домен вакансий") {
+        Container(vacancyService, "Vacancy Service", "Go, gRPC, Protobuf, pgx, sqlc", "Вакансии, требования, условия, компенсация и жизненный цикл публикации.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Схема Vacancy Service и таблица transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure HiringDomain($withDatabase)
+    Container_Boundary(hiringBoundary, "Домен найма") {
+        Container(hiringService, "Hiring Service", "Go, gRPC, Protobuf, pgx, sqlc", "Отклики, state machine этапов найма, интервью, предложения и история переходов.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Applications, pipeline transitions, interviews, offers и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure AssessmentDomain($withDatabase)
+    Container_Boundary(assessmentBoundary, "Домен оценки") {
+        Container(assessmentService, "Assessment Service", "Go, gRPC, Protobuf, pgx, sqlc", "Тесты, практические задания, Live Coding, submissions, scores и результаты проверки.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessments, sessions, submissions, evaluations и transactional outbox.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure CommunicationDomain($withDatabase, $withNotification)
+    Container_Boundary(communicationBoundary, "Коммуникации") {
+        Container(communicationService, "Communication Service", "Go, gRPC, Protobuf, pgx, sqlc", "Диалоги, участники, сообщения, вложения, реакции и отметки о прочтении.", $tags="business")
+        !if ($withDatabase == 1)
+            ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Conversations, messages, read receipts и transactional outbox.", $tags="storage")
+        !endif
+        !if ($withNotification == 1)
+            Container(notificationService, "Notification Service", "Go, Kafka consumer, REST clients", "Шаблоны и доставка in-app, email через SendGrid, push через FCM и SMS через Twilio.", $tags="platform", $link="/architecture/c4-plant-uml/plantuml/component/backend/notification-service/")
+            !if ($withDatabase == 1)
+                ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Шаблоны уведомлений, delivery jobs и in-app Inbox.", $tags="storage")
+            !endif
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure IdentityAccess($withDatabase, $withProjection, $withOpenFga)
+    Container_Boundary(identityBoundary, "Идентификация и доступ") {
+        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT, Argon2id", "Регистрация, credentials, access/refresh tokens, ротация сессий и интеграция с Keycloak.", $tags="platform")
+        !if ($withDatabase == 1)
+            ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Пользователи, credentials, refresh sessions и transactional outbox.", $tags="storage")
+        !endif
+        !if ($withProjection == 1)
+            Container(authzProjection, "AuthZ Synchronization Service", "Go, Kafka consumer, OpenFGA SDK", "Преобразует доменные события в tuples ролей и отношений доступа OpenFGA.", $tags="platform")
+        !endif
+        !if ($withOpenFga == 1)
+            Container(openFga, "OpenFGA", "OpenFGA, PostgreSQL", "ReBAC-модель и tuples для проверок доступа к компаниям, вакансиям, откликам и интервью.", $tags="authorization")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure FilesDomain($withStorage)
+    Container_Boundary(filesBoundary, "Файлы") {
+        Container(fileService, "File Service", "Go, gRPC, MinIO Go SDK", "Multipart upload, presigned URL, MIME/size validation, antivirus hook и lifecycle файлов.", $tags="platform")
+        !if ($withStorage == 1)
+            ContainerDb(objectStorage, "Object Storage", "MinIO, S3 API", "Резюме, аватары, вложения, assessment-файлы и записи интервью.", $tags="storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure IntegrationDomain()
+    Container_Boundary(integrationBoundary, "Интеграции") {
+        Container(integrationService, "Integration Service", "Go, REST, Webhooks, Kafka", "Проверяет подписи webhook, нормализует payload, публикует события и выполняет retry доставки.", $tags="platform")
+    }
+!endprocedure
+
+!unquoted procedure RealtimeMedia($withPublisher, $withCentrifugo, $withLivekit)
+    Container_Boundary(realtimeBoundary, "Realtime и медиа") {
+        !if ($withPublisher == 1)
+            Container(realtimePublisher, "Realtime Publisher", "Go, Kafka consumer, Centrifugo HTTP API", "Фильтрует события, формирует пользовательские каналы и публикует realtime-сообщения.", $tags="platform")
+        !endif
+        !if ($withCentrifugo == 1)
+            Container(centrifugo, "Centrifugo", "Centrifugo, WebSocket, JWT", "Управляет WebSocket-подключениями, каналами, presence и доставкой событий.", $tags="realtime")
+        !endif
+        !if ($withLivekit == 1)
+            Container(livekit, "LiveKit", "LiveKit, WebRTC, LiveKit React SDK", "Комнаты интервью, аудио, видео, screen sharing и опциональная запись.", $tags="media")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure EventPlatform()
+    Container_Boundary(eventBoundary, "Событийная платформа") {
+        ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Топики доменных событий, consumer groups, retention и асинхронное взаимодействие.", $tags="eventBus")
+        Container(schemaRegistry, "Schema Registry", "Apicurio Registry, Avro", "Версионирование Avro-схем и backward compatibility для событий.", $tags="eventInfrastructure")
+        Container(debezium, "Debezium", "Debezium PostgreSQL Connector", "Читает таблицы transactional outbox через PostgreSQL logical replication и публикует в Kafka.", $tags="eventInfrastructure")
+    }
+!endprocedure
+
+!unquoted procedure OutboxDatabases()
+    Container_Boundary(outboxBoundary, "Transactional outbox источники") {
+        ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Candidate outbox.", $tags="storage")
+        ContainerDb(companyDb, "Company DB", "PostgreSQL", "Company outbox.", $tags="storage")
+        ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Vacancy outbox.", $tags="storage")
+        ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Hiring outbox.", $tags="storage")
+        ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessment outbox.", $tags="storage")
+        ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Communication outbox.", $tags="storage")
+        ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Identity outbox.", $tags="storage")
+    }
+!endprocedure

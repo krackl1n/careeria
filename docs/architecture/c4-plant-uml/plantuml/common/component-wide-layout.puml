@@ -1,0 +1,9 @@
+' Общий вариант раскладки для L3 со сложными use case и широкими описаниями.
+skinparam stereotypeDisplay true
+
+skinparam {
+    wrapWidth 220
+    MaxMessageSize 120
+    nodesep 95
+    ranksep 70
+}

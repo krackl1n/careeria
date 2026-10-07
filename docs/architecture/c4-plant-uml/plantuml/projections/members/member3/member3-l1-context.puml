@@ -1,0 +1,19 @@
+@startuml member3-l1
+!include ../../../common/styles.puml
+
+title Домен оценки, коммуникаций, realtime-взаимодействия и медиа — системный контекст (L1)
+LAYOUT_LEFT_RIGHT()
+
+Person(candidate, "Кандидат", "Проходит оценивание, общается и участвует в интервью.")
+Person(recruiter, "Рекрутер", "Общается с кандидатами и организует интервью.")
+Person(hiringManager, "Нанимающий руководитель", "Оценивает кандидатов и проводит интервью.")
+System(interaction, "Домен оценки, коммуникаций, realtime-взаимодействия и медиа", "Оценивание, сообщения, доставка событий в реальном времени и видеосвязь.")
+System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak для федерации и внешней аутентификации.")
+
+Rel(candidate, interaction, "Проходит оценивание и общается", "HTTPS / WebSocket / WebRTC")
+Rel(recruiter, interaction, "Общается и проводит интервью", "HTTPS / WebSocket / WebRTC")
+Rel(hiringManager, interaction, "Оценивает и проводит интервью", "HTTPS / WebRTC")
+Rel(interaction, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
+
+ShowArchitectureLegend()
+@enduml

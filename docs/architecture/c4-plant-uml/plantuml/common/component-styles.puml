@@ -1,0 +1,16 @@
+!include <C4/C4_Component>
+
+!define ROUNDED_STYLE 1
+
+skinparam {
+    DefaultFontName "Helvetica Neue", Arial, sans-serif
+    DefaultFontSize 12
+    wrapWidth 150
+    MaxMessageSize 90
+    Linetype polyline
+    Splines false
+    nodesep 70
+    ranksep 60
+}
+
+AddElementTag("managedInfrastructure", $bgColor="#E5E7EB", $fontColor="#1F2937", $borderColor="#9CA3AF")

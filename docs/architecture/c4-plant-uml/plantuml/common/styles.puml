@@ -1,0 +1,12 @@
+!include <C4/C4_Container>
+
+!include tags.puml
+!include legends.puml
+
+UpdateElementStyle("person", $bgColor="#334155", $fontColor="#FFFFFF", $borderColor="#1E293B")
+UpdateElementStyle("external_system", $bgColor="#64748B", $fontColor="#FFFFFF", $borderColor="#475569")
+
+skinparam shadowing false
+
+' Ссылки из SVG, встроенного в документацию, открывают страницу сайта.
+skinparam svgLinkTarget _top

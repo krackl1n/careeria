@@ -1,0 +1,26 @@
+' Переиспользуемые элементы для C4 L3.
+' Подключается после common/component-styles.puml.
+
+!unquoted procedure ComponentApiGateway()
+    Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.")
+!endprocedure
+
+!unquoted procedure ComponentCompanyDatabase()
+    ContainerDb(companyDb, "Company DB", "PostgreSQL", "Компании, участники и transactional outbox.", $tags="managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentNotificationDatabase()
+    ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "Шаблоны уведомлений, delivery jobs и in-app Inbox.", $tags="managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentKafka()
+    ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Топики доменных событий, consumer groups, retention и асинхронное взаимодействие.", $tags="managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentSchemaRegistry()
+    Container(schemaRegistry, "Schema Registry", "Apicurio Registry, Avro", "Версионирование Avro-схем и backward compatibility для событий.", $tags="managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentNotificationProviders()
+    System_Ext(notificationProviders, "Notification Providers", "SendGrid, Firebase Cloud Messaging, Twilio", "Email, push и SMS-провайдеры.")
+!endprocedure
