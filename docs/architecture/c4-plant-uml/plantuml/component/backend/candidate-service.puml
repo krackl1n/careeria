@@ -30,36 +30,36 @@ System_Boundary(careeria, "Careeria") {
     ComponentObjectStorage()
 }
 
-Lay_R(profile_svc, resume_svc)
-Lay_R(authorization_client, candidate_repo)
-Lay_R(candidate_repo, outbox)
-Lay_R(outbox, resume_repo)
-Lay_R(resume_repo, file_client)
-Lay_D(profile_svc, candidate_repo)
-Lay_D(resume_svc, resume_repo)
-Lay_D(resume_repo, cleanup_worker)
-Lay_R(openFga, candidateDb)
-Lay_R(candidateDb, fileService)
+' Явные lowercase-направления удерживают горизонтальный порядок в Graphviz.
+profile_svc -[hidden]right- resume_svc
+resume_svc -[hidden]right- cleanup_worker
+candidate_repo -[hidden]right- authorization_client
+authorization_client -[hidden]right- outbox
+outbox -[hidden]right- resume_repo
+resume_repo -[hidden]right- file_client
+grpc_handler -[hidden]down- cleanup_worker
+openFga -[hidden]right- candidateDb
+candidateDb -[hidden]right- fileService
 
-Rel_D(apiGateway, grpc_handler, "Профиль и резюме", "gRPC")
-Rel_D(grpc_handler, profile_svc, "Профиль", "In-process")
-Rel_D(grpc_handler, resume_svc, "Резюме", "In-process")
+Rel_(apiGateway, grpc_handler, "Профиль и резюме", "gRPC", "-down->>")
+Rel_(grpc_handler, profile_svc, "Профиль", "In-process", "-down->>")
+Rel_(grpc_handler, resume_svc, "Резюме", "In-process", "-down->>")
 Rel(profile_svc, authorization_client, "Доступ", "In-process")
 Rel(resume_svc, authorization_client, "Доступ", "In-process")
-Rel_D(profile_svc, candidate_repo, "Читает / сохраняет", "In-process")
-Rel_D(resume_svc, resume_repo, "Читает / сохраняет", "In-process")
+Rel_(profile_svc, candidate_repo, "Читает / сохраняет", "In-process", "-down->>")
+Rel_(resume_svc, resume_repo, "Читает / сохраняет", "In-process", "-down->>")
 Rel(profile_svc, outbox, "События профиля", "In-process")
 Rel(resume_svc, outbox, "События резюме", "In-process")
 Rel(resume_svc, file_client, "Проверяет и связывает файл", "In-process")
-Rel(cleanup_worker, resume_repo, "Захватывает / завершает jobs", "In-process")
-Rel(cleanup_worker, file_client, "Освобождает ссылки", "In-process")
+Rel_(cleanup_worker, resume_repo, "Cleanup jobs", "In-process", "-down->>")
+Rel_(cleanup_worker, file_client, "Освобождает файлы", "In-process", "-down->>")
 
-Rel_D(authorization_client, openFga, "Проверяет доступ", "OpenFGA API")
-Rel_D(candidate_repo, candidateDb, "Профили", "SQL / TCP")
-Rel_D(outbox, candidateDb, "События", "SQL / TCP")
-Rel_D(resume_repo, candidateDb, "Метаданные и jobs", "SQL / TCP")
-Rel_D(file_client, fileService, "Операции с файлами", "gRPC")
-Rel_D(fileService, objectStorage, "Файлы резюме", "S3 API")
+Rel_(authorization_client, openFga, "Проверяет доступ", "OpenFGA API", "-down->>")
+Rel_(candidate_repo, candidateDb, "Профили", "SQL / TCP", "-down->>")
+Rel_(outbox, candidateDb, "События", "SQL / TCP", "-down->>")
+Rel_(resume_repo, candidateDb, "Метаданные и jobs", "SQL / TCP", "-down->>")
+Rel_(file_client, fileService, "Операции с файлами", "gRPC", "-down->>")
+Rel_(fileService, objectStorage, "Файлы резюме", "S3 API", "-down->>")
 
 SHOW_FLOATING_LEGEND()
 @enduml
