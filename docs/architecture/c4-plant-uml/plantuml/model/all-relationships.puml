@@ -31,7 +31,8 @@ Rel(integrationService, employerHrSystem, "Передаёт события на�
     Rel(fileService, openFga, "Проверяет доступ", "OpenFGA API")
 !endif
 
-Rel(candidateService, candidateDb, "Хранит профили и резюме", "SQL")
+Rel(candidateService, candidateDb, "Хранит профили и метаданные резюме", "SQL")
+Rel(candidateService, fileService, "Загружает и связывает резюме", "gRPC")
 Rel(companyService, companyDb, "Хранит компании и роли", "SQL")
 Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
 Rel(hiringService, hiringDb, "Хранит отклики и этапы", "SQL")

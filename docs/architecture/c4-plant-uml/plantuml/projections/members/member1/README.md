@@ -6,3 +6,5 @@
 
 - [Контекст области](member1-l1-context.md)
 - [Контейнеры области](member1-l2-containers.md)
+- [Компоненты Vacancy Service · L3](../../../component/backend/vacancy-service.md)
+- [Компоненты Candidate Service · L3](../../../component/backend/candidate-service.md)

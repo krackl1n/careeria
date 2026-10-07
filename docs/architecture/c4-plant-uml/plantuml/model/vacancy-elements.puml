@@ -1,0 +1,11 @@
+' Общие объявления контейнера вакансий и его БД для L2/L3.
+' Внутренние компоненты остаются в component/backend/vacancy-service.puml.
+!global $vacancyServiceName = "Vacancy Service"
+
+!unquoted procedure VacancyServiceContainer($tags)
+    Container(vacancyService, $vacancyServiceName, "Go, gRPC, Protobuf, pgx, sqlc", "Вакансии, требования, условия, компенсация и жизненный цикл публикации.", $tags=$tags, $link="/architecture/c4-plant-uml/plantuml/component/backend/vacancy-service/")
+!endprocedure
+
+!unquoted procedure VacancyDatabase($tags)
+    ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Вакансии, навыки и transactional outbox.", $tags=$tags)
+!endprocedure

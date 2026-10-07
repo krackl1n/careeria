@@ -1,0 +1,52 @@
+@startuml vacancy-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(vacancy_container, $vacancyServiceName) {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Команды и запросы VacancyService")
+
+        Component(vacancy_query_svc, "Vacancy Query Service", "Go Application Service", "GetVacancyByID, ListCompanyVacancies: чтение и выборки вакансий")
+        Component(vacancy_svc, "Vacancy Service", "Go Application Service", "Создание и изменение вакансии; Publish, Close, Archive, Restore через агрегат Vacancy")
+
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Проверка доступа к компании и вакансии")
+        Component(vacancy_repo, "Vacancy Repo", "Go / pgx, sqlc", "Загрузка и сохранение Vacancy и skills; выборки вакансий")
+        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарная запись событий вместе с состоянием вакансии")
+    }
+
+    together {
+        ComponentOpenFga()
+        ComponentVacancyDatabase()
+    }
+}
+
+' Порядок модулей и нижней инфраструктуры относится только к представлению.
+Lay_R(vacancy_query_svc, vacancy_svc)
+Lay_R(authorization_client, vacancy_repo)
+Lay_R(vacancy_repo, outbox)
+Lay_R(openFga, vacancyDb)
+Lay_D(vacancy_query_svc, authorization_client)
+Lay_D(vacancy_svc, vacancy_repo)
+
+Rel(apiGateway, grpc_handler, "Управляет вакансиями", "gRPC")
+
+Rel(grpc_handler, vacancy_query_svc, "Запросы вакансий", "In-process")
+Rel(grpc_handler, vacancy_svc, "Команды вакансии", "In-process")
+
+Rel(vacancy_query_svc, authorization_client, "Видимость", "In-process")
+Rel(vacancy_svc, authorization_client, "Полномочия", "In-process")
+
+Rel(vacancy_query_svc, vacancy_repo, "Читает вакансии", "In-process")
+Rel(vacancy_svc, vacancy_repo, "Сохраняет вакансию", "In-process")
+
+Rel(vacancy_svc, outbox, "События", "In-process")
+
+Rel(authorization_client, openFga, "Проверяет доступ", "OpenFGA API")
+Rel(vacancy_repo, vacancyDb, "Читает / пишет вакансии", "SQL / TCP")
+Rel(outbox, vacancyDb, "Записывает события", "SQL / TCP")
+
+SHOW_FLOATING_LEGEND()
+@enduml

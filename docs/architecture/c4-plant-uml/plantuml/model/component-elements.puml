@@ -1,10 +1,28 @@
 ' Переиспользуемые элементы для C4 L3.
 ' Подключается после common/component-styles.puml.
 !include hiring-elements.puml
+!include vacancy-elements.puml
+!include candidate-elements.puml
 !include infrastructure-elements.puml
+
+!unquoted procedure ComponentCandidateDatabase()
+    CandidateDatabase("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentFileService()
+    FileServiceContainer("")
+!endprocedure
+
+!unquoted procedure ComponentObjectStorage()
+    ObjectStorageContainer("managedInfrastructure")
+!endprocedure
 
 !unquoted procedure ComponentHiringDatabase()
     HiringDatabase("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentVacancyDatabase()
+    VacancyDatabase("managedInfrastructure")
 !endprocedure
 
 !unquoted procedure ComponentDebezium()
@@ -36,7 +54,7 @@
 !endprocedure
 
 !unquoted procedure ComponentOpenFga()
-    Container(openFga, "OpenFGA", "OpenFGA, PostgreSQL", "ReBAC-модель и tuples для проверок доступа к компаниям, вакансиям, откликам и интервью.", $tags="managedInfrastructure")
+    OpenFgaContainer("managedInfrastructure")
 !endprocedure
 
 !unquoted procedure ComponentNotificationProviders()

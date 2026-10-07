@@ -14,6 +14,8 @@ System_Boundary(platform, "Careeria — домен кандидатов и уп�
     AuthenticationDependency()
     CandidateDomain(1)
     VacancyDomain(1)
+    FilesDomain(1)
+    OpenFgaContainer("authorization")
 }
 
 Rel(candidate, web, "Использует", "HTTPS")
@@ -24,7 +26,12 @@ Rel(apiGateway, identityService, "Проверяет пользователя", 
 Rel(identityService, identityProvider, "Аутентифицирует пользователя", "OAuth 2.0 / OIDC")
 Rel(apiGateway, candidateService, "Работает с профилями", "gRPC")
 Rel(apiGateway, vacancyService, "Работает с вакансиями", "gRPC")
-Rel(candidateService, candidateDb, "Хранит профили и резюме", "SQL")
+Rel(candidateService, candidateDb, "Хранит профили и метаданные резюме", "SQL")
+Rel(candidateService, openFga, "Проверяет доступ", "OpenFGA API")
+Rel(vacancyService, openFga, "Проверяет доступ", "OpenFGA API")
+Rel(candidateService, fileService, "Загружает и связывает резюме", "gRPC")
+Rel(fileService, objectStorage, "Читает и записывает файлы", "S3 API")
+Rel(web, objectStorage, "Загружает файл по presigned URL", "HTTPS / S3 API")
 Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
 
 ShowArchitectureLegend()

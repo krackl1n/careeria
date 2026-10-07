@@ -1,4 +1,6 @@
 !include hiring-elements.puml
+!include vacancy-elements.puml
+!include candidate-elements.puml
 !include infrastructure-elements.puml
 
 !unquoted procedure CandidateActor()
@@ -45,9 +47,9 @@
 
 !unquoted procedure CandidateDomain($withDatabase)
     Container_Boundary(candidateBoundary, "Домен кандидатов") {
-        Container(candidateService, "Candidate Service", "Go, gRPC, Protobuf, pgx, sqlc", "Профили, резюме, опыт, образование, навыки и карьерные предпочтения.", $tags="business")
+        CandidateServiceContainer("business")
         !if ($withDatabase == 1)
-            ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Схема Candidate Service, ACID-транзакции и таблица transactional outbox.", $tags="storage")
+            CandidateDatabase("storage")
         !endif
     }
 !endprocedure
@@ -63,9 +65,9 @@
 
 !unquoted procedure VacancyDomain($withDatabase)
     Container_Boundary(vacancyBoundary, "Домен вакансий") {
-        Container(vacancyService, "Vacancy Service", "Go, gRPC, Protobuf, pgx, sqlc", "Вакансии, требования, условия, компенсация и жизненный цикл публикации.", $tags="business")
+        VacancyServiceContainer("business")
         !if ($withDatabase == 1)
-            ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Схема Vacancy Service и таблица transactional outbox.", $tags="storage")
+            VacancyDatabase("storage")
         !endif
     }
 !endprocedure
@@ -113,16 +115,16 @@
             Container(authzProjection, "AuthZ Synchronization Service", "Go, Kafka consumer, OpenFGA SDK", "Преобразует доменные события в tuples ролей и отношений доступа OpenFGA.", $tags="platform")
         !endif
         !if ($withOpenFga == 1)
-            Container(openFga, "OpenFGA", "OpenFGA, PostgreSQL", "ReBAC-модель и tuples для проверок доступа к компаниям, вакансиям, откликам и интервью.", $tags="authorization")
+            OpenFgaContainer("authorization")
         !endif
     }
 !endprocedure
 
 !unquoted procedure FilesDomain($withStorage)
     Container_Boundary(filesBoundary, "Файлы") {
-        Container(fileService, "File Service", "Go, gRPC, MinIO Go SDK", "Multipart upload, presigned URL, MIME/size validation, antivirus hook и lifecycle файлов.", $tags="platform")
+        FileServiceContainer("platform")
         !if ($withStorage == 1)
-            ContainerDb(objectStorage, "Object Storage", "MinIO, S3 API", "Резюме, аватары, вложения, assessment-файлы и записи интервью.", $tags="storage")
+            ObjectStorageContainer("storage")
         !endif
     }
 !endprocedure
@@ -157,9 +159,9 @@
 
 !unquoted procedure OutboxDatabases()
     Container_Boundary(outboxBoundary, "Transactional outbox источники") {
-        ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Candidate outbox.", $tags="storage")
+        CandidateDatabase("storage")
         ContainerDb(companyDb, "Company DB", "PostgreSQL", "Company outbox.", $tags="storage")
-        ContainerDb(vacancyDb, "Vacancy DB", "PostgreSQL", "Vacancy outbox.", $tags="storage")
+        VacancyDatabase("storage")
         ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Hiring outbox.", $tags="storage")
         ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessment outbox.", $tags="storage")
         ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Communication outbox.", $tags="storage")

@@ -3,6 +3,8 @@ site_description: Документация проекта Careeria
 site_dir: .site-docs
 docs_dir: docs
 dev_addr: localhost:18882
+hooks:
+  - docs/tools/navigation.py
 theme:
   name: material
   language: ru

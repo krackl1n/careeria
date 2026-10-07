@@ -1,9 +1,7 @@
-' Общий вариант раскладки для L3 со сложными use case и широкими описаниями.
+' Широкие описания L3; расстояния наследуются из component-styles.puml.
 skinparam stereotypeDisplay true
 
 skinparam {
     wrapWidth 220
     MaxMessageSize 120
-    nodesep 95
-    ranksep 70
 }

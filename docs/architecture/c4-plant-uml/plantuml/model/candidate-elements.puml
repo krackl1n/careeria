@@ -1,0 +1,10 @@
+' Общие контейнеры L2/L3; внутренние компоненты объявлены только в Candidate L3.
+!global $candidateServiceName = "Candidate Service"
+
+!unquoted procedure CandidateServiceContainer($tags)
+    Container(candidateService, $candidateServiceName, "Go, gRPC, Protobuf, pgx, sqlc", "Профиль, опыт, образование, навыки, предпочтения, статус поиска и метаданные резюме.", $tags=$tags, $link="/architecture/c4-plant-uml/plantuml/component/backend/candidate-service/")
+!endprocedure
+
+!unquoted procedure CandidateDatabase($tags)
+    ContainerDb(candidateDb, "Candidate DB", "PostgreSQL", "Профили, статусы, метаданные версий резюме, cleanup jobs и transactional outbox; без файлов.", $tags=$tags)
+!endprocedure

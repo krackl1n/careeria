@@ -1,0 +1,65 @@
+@startuml candidate-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(candidate_container, $candidateServiceName) {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Команды и запросы CandidateService")
+
+        together {
+            Component(profile_svc, "Candidate Profile Service", "Go Application Service", "Профиль, опыт, навыки, предпочтения, статус поиска и видимость")
+            Component(resume_svc, "Resume Service", "Go Application Service", "Загрузка, версии, основное резюме, скачивание и удаление")
+        }
+
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "ReBAC-проверки; бизнес-политики остаются в сервисах и домене")
+        Component(candidate_repo, "Candidate Repo", "Go / pgx, sqlc", "Агрегат CandidateProfile и доступные представления")
+        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарная запись событий с изменением состояния")
+        Component(resume_repo, "Resume Repo", "Go / pgx, sqlc", "Resume, версии файлов и задачи освобождения ссылок")
+        Component(file_client, "File Service Client", "Go / gRPC", "Загрузка, проверка готовности, привязка и освобождение файлов")
+        Component(cleanup_worker, "Resume Cleanup Worker", "Go Background Worker", "Захват cleanup jobs, повторы освобождения файлов и reconciliation")
+    }
+
+    together {
+        ComponentOpenFga()
+        ComponentCandidateDatabase()
+        ComponentFileService()
+    }
+    ComponentObjectStorage()
+}
+
+Lay_R(profile_svc, resume_svc)
+Lay_R(authorization_client, candidate_repo)
+Lay_R(candidate_repo, outbox)
+Lay_R(outbox, resume_repo)
+Lay_R(resume_repo, file_client)
+Lay_D(profile_svc, candidate_repo)
+Lay_D(resume_svc, resume_repo)
+Lay_D(resume_repo, cleanup_worker)
+Lay_R(openFga, candidateDb)
+Lay_R(candidateDb, fileService)
+
+Rel_D(apiGateway, grpc_handler, "Профиль и резюме", "gRPC")
+Rel_D(grpc_handler, profile_svc, "Профиль", "In-process")
+Rel_D(grpc_handler, resume_svc, "Резюме", "In-process")
+Rel(profile_svc, authorization_client, "Доступ", "In-process")
+Rel(resume_svc, authorization_client, "Доступ", "In-process")
+Rel_D(profile_svc, candidate_repo, "Читает / сохраняет", "In-process")
+Rel_D(resume_svc, resume_repo, "Читает / сохраняет", "In-process")
+Rel(profile_svc, outbox, "События профиля", "In-process")
+Rel(resume_svc, outbox, "События резюме", "In-process")
+Rel(resume_svc, file_client, "Проверяет и связывает файл", "In-process")
+Rel(cleanup_worker, resume_repo, "Захватывает / завершает jobs", "In-process")
+Rel(cleanup_worker, file_client, "Освобождает ссылки", "In-process")
+
+Rel_D(authorization_client, openFga, "Проверяет доступ", "OpenFGA API")
+Rel_D(candidate_repo, candidateDb, "Профили", "SQL / TCP")
+Rel_D(outbox, candidateDb, "События", "SQL / TCP")
+Rel_D(resume_repo, candidateDb, "Метаданные и jobs", "SQL / TCP")
+Rel_D(file_client, fileService, "Операции с файлами", "gRPC")
+Rel_D(fileService, objectStorage, "Файлы резюме", "S3 API")
+
+SHOW_FLOATING_LEGEND()
+@enduml

@@ -1,4 +1,16 @@
 ' Единые объявления готовой инфраструктуры; уровень диаграммы выбирает только тег цвета.
+!unquoted procedure OpenFgaContainer($tags)
+    Container(openFga, "OpenFGA", "OpenFGA, PostgreSQL", "ReBAC-модель и tuples для доступа к профилям кандидатов, компаниям, вакансиям, откликам и интервью.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure FileServiceContainer($tags)
+    Container(fileService, "File Service", "Go, gRPC, MinIO Go SDK", "Multipart upload, presigned URL, MIME/size validation, antivirus hook и lifecycle файлов.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure ObjectStorageContainer($tags)
+    ContainerDb(objectStorage, "Object Storage", "MinIO, S3 API", "Резюме, аватары, вложения, assessment-файлы и записи интервью.", $tags=$tags)
+!endprocedure
+
 !unquoted procedure DebeziumContainer($tags)
     Container(debezium, "Debezium", "Debezium PostgreSQL Connector", "Читает таблицы transactional outbox через PostgreSQL logical replication и публикует в Kafka.", $tags=$tags)
 !endprocedure

@@ -1,89 +1,86 @@
 @startuml hiring-service-l3
-!include <C4/C4_Component>
-
-!define ROUNDED_STYLE 1
-
-skinparam stereotypeDisplay true
-
-skinparam {
-    DefaultFontName "Helvetica Neue", Arial, sans-serif
-    DefaultFontSize 12
-    wrapWidth 220
-    MaxMessageSize 120
-    Linetype polyline
-    Splines false
-    nodesep 100
-    ranksep 80
-}
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
 
 System_Boundary(careeria, "Careeria") {
-    
-    ' Явно объявляем внешние контейнеры верхнего уровня
-    Container(apiGateway, "API Gateway", "Go / grpc-gateway", "REST-to-gRPC маршрутизация трафика")
-    ContainerQueue(kafka, "Kafka", "Apache Kafka", "Шина доменных событий")
-    Container(schemaRegistry, "Schema Registry", "Apicurio Registry", "Реестр Avro-схем")
+    together {
+        ComponentKafka()
+        ComponentApiGateway()
+    }
+    ComponentSchemaRegistry()
 
-    Container_Boundary(hiring_container, "Hiring Service") {
-        
-        ' 1. Входные точки (Объявляем строго первыми)
-        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Команды и запросы HiringService")
-        Component(event_consumer, "Events Consumer", "Go / Kafka Client", "Асинхронная обработка событий")
-        Component(expiration_worker, "Offer Expiration Worker", "Go Background Worker", "Фоновый воркер просроченных офферов")
-
-        ' 2. Сервисы (Объявляем вторыми)
-        Component(application_svc, "Application Service", "Go Application Service", "Управление откликами и этапами")
-        Component(interview_svc, "Interview Service", "Go Application Service", "Управление интервью и слотами")
-        Component(offer_svc, "Offer Service", "Go Application Service", "Жизненный цикл джоб-офферов")
-        Component(conference_svc, "Conference Service", "Go Application Service", "Управление комнатами конференций")
-        
-        ' 3. Репозитории и клиенты (Объявляем третьими)
-        Component(application_repo, "Application Repo", "Go / pgx, sqlc", "Доступ к откликам и истории")
-        Component(interview_repo, "Interview Repo", "Go / pgx, sqlc", "Доступ к интервью и фидбекам")
-        Component(offer_repo, "Offer Repo", "Go / pgx, sqlc", "Доступ к офферам и условиям")
-        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Запись доменных событий")
-        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Клиент проверки ReBAC-прав")
-        Component(livekit_client, "LiveKit Client", "Go / LiveKit SDK", "Клиент интеграции с медиа-сервером")
+    Container_Boundary(hiring_container, $hiringServiceName) {
+        ' Невидимые группы удерживают цепочки модулей вместе.
+        together {
+            Component(event_consumer, "Events Consumer", "Go / Kafka Client", "Асинхронная обработка событий")
+            Component(application_svc, "Application Service", "Go Application Service", "Управление откликами и этапами")
+            Component(application_repo, "Application Repo", "Go / pgx, sqlc", "Доступ к откликам и истории")
+        }
+        together {
+            Component(grpc_handler, "gRPC Server", "Go / gRPC", "Команды и запросы HiringService")
+            Component(interview_svc, "Interview Service", "Go Application Service", "Управление интервью и слотами")
+            Component(interview_repo, "Interview Repo", "Go / pgx, sqlc", "Доступ к интервью и фидбекам")
+            Component(conference_svc, "Conference Service", "Go Application Service", "Управление комнатами конференций")
+            Component(livekit_client, "LiveKit Client", "Go / LiveKit SDK", "Клиент интеграции с медиа-сервером")
+        }
+        together {
+            Component(expiration_worker, "Offer Expiration Worker", "Go Background Worker", "Фоновый воркер просроченных офферов")
+            Component(offer_svc, "Offer Service", "Go Application Service", "Жизненный цикл джоб-офферов")
+            Component(offer_repo, "Offer Repo", "Go / pgx, sqlc", "Доступ к офферам и условиям")
+        }
+        together {
+            Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Клиент проверки ReBAC-прав")
+            Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Запись доменных событий")
+        }
     }
 
-    ' Явно объявляем инфраструктуру на "дне" схемы (Строго под репозиториями!)
-    ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "База данных PostgreSQL")
-    System_Ext(openFga, "OpenFGA", "OpenFGA Server", "Сервис авторизации отношений")
-    System_Ext(livekit, "LiveKit", "LiveKit Server", "Медиа-сервер конференций")
+    together {
+        ComponentOpenFga()
+        ComponentHiringDatabase()
+        ComponentLiveKit()
+    }
 }
 
-' Связи (Используем только базовый макрос Rel без направлений, чтобы polyline работал по кратчайшему пути)
+Lay_R(schemaRegistry, event_consumer)
+Lay_R(kafka, apiGateway)
+Lay_R(event_consumer, grpc_handler)
+Lay_R(grpc_handler, expiration_worker)
+Lay_R(application_svc, interview_svc)
+Lay_R(interview_svc, offer_svc)
+Lay_D(kafka, event_consumer)
+Lay_D(apiGateway, grpc_handler)
+Lay_R(authorization_client, outbox)
+Lay_R(openFga, hiringDb)
+Lay_R(hiringDb, livekit)
+
+' Связи и их направления относятся к этому L3-представлению.
 Rel(apiGateway, grpc_handler, "Процесс найма", "gRPC")
 Rel(kafka, event_consumer, "События найма", "Kafka / Avro")
-Rel(event_consumer, schemaRegistry, "Схемы", "Registry API")
-
+Rel_(schemaRegistry, event_consumer, "Схемы", "Registry API", "<<-right-")
 Rel(grpc_handler, application_svc, "Отклики", "In-process")
 Rel(grpc_handler, interview_svc, "Интервью", "In-process")
 Rel(grpc_handler, offer_svc, "Офферы", "In-process")
 Rel(event_consumer, application_svc, "Внешние события", "In-process")
 Rel(expiration_worker, offer_svc, "Истечение оффера", "In-process")
-
-Rel(application_svc, authorization_client, "Полномочия", "In-process")
-Rel(interview_svc, authorization_client, "Полномочия", "In-process")
-Rel(offer_svc, authorization_client, "Полномочия", "In-process")
-Rel(authorization_client, openFga, "Доступ", "gRPC")
-
+Rel_(application_svc, authorization_client, "Полномочия", "In-process", "-down->>")
+Rel_(interview_svc, authorization_client, "Полномочия", "In-process", "-down->>")
+Rel_(offer_svc, authorization_client, "Полномочия", "In-process", "-down->>")
+Rel(authorization_client, openFga, "Доступ", "OpenFGA API")
 Rel(interview_svc, conference_svc, "Организует конференцию", "In-process")
 Rel(conference_svc, livekit_client, "Управляет комнатой", "In-process")
-Rel(livekit_client, livekit, "Создаёт комнаты", "REST / HTTP")
-
+Rel(livekit_client, livekit, "Создаёт комнаты", "LiveKit API")
 Rel(application_svc, application_repo, "Запросы данных", "In-process")
 Rel(interview_svc, interview_repo, "Запросы данных", "In-process")
 Rel(offer_svc, offer_repo, "Запросы данных", "In-process")
-Rel(offer_svc, application_svc, "Согласует переход этапа", "In-process")
-
-Rel(application_svc, outbox, "Сохраняет события", "In-process")
-Rel(interview_svc, outbox, "Сохраняет события", "In-process")
-Rel(offer_svc, outbox, "Сохраняет события", "In-process")
-
+Rel_(application_svc, offer_svc, "Согласует переход этапа", "In-process", "<<-[norank]-")
+Rel_(application_svc, outbox, "Сохраняет события", "In-process", "-down->>")
+Rel_(interview_svc, outbox, "Сохраняет события", "In-process", "-down->>")
+Rel_(offer_svc, outbox, "Сохраняет события", "In-process", "-down->>")
 Rel(application_repo, hiringDb, "Запись / Чтение", "SQL")
 Rel(interview_repo, hiringDb, "Запись / Чтение", "SQL")
 Rel(offer_repo, hiringDb, "Запись / Чтение", "SQL")
 Rel(outbox, hiringDb, "Запись событий", "SQL")
 
 SHOW_FLOATING_LEGEND()
-@endluml
+@enduml
