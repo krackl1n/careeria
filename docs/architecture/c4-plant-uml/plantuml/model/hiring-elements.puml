@@ -1,0 +1,8 @@
+' Единственные объявления контейнера Hiring Service и его БД для L2/L3.
+!unquoted procedure HiringServiceContainer($tags)
+    Container(hiringService, "Hiring Service", "Go, gRPC, Protobuf, pgx, sqlc", "Отклики, state machine этапов найма, интервью, предложения и история переходов.", $tags=$tags, $link="/architecture/c4-plant-uml/plantuml/component/backend/hiring-service/")
+!endprocedure
+
+!unquoted procedure HiringDatabase($tags)
+    ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Applications, pipeline transitions, interviews, offers и transactional outbox.", $tags=$tags)
+!endprocedure

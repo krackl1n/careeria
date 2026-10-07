@@ -4,3 +4,4 @@
 
 - [Company Service](backend/company-service.md)
 - [Notification Service](backend/notification-service.md)
+- [Hiring Service](backend/hiring-service.md)

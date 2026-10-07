@@ -7,3 +7,4 @@
 - [Контекст области](member2-l1-context.md)
 - [Контейнеры области](member2-l2-containers.md)
 - [Компоненты Company Service · L3](../../../component/backend/company-service.md)
+- [Компоненты Hiring Service · L3](../../../component/backend/hiring-service.md)

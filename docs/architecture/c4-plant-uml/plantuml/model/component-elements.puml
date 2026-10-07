@@ -1,5 +1,19 @@
 ' Переиспользуемые элементы для C4 L3.
 ' Подключается после common/component-styles.puml.
+!include hiring-elements.puml
+!include infrastructure-elements.puml
+
+!unquoted procedure ComponentHiringDatabase()
+    HiringDatabase("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentDebezium()
+    DebeziumContainer("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentLiveKit()
+    LiveKitContainer("managedInfrastructure")
+!endprocedure
 
 !unquoted procedure ComponentApiGateway()
     Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.")
@@ -19,6 +33,10 @@
 
 !unquoted procedure ComponentSchemaRegistry()
     Container(schemaRegistry, "Schema Registry", "Apicurio Registry, Avro", "Версионирование Avro-схем и backward compatibility для событий.", $tags="managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentOpenFga()
+    Container(openFga, "OpenFGA", "OpenFGA, PostgreSQL", "ReBAC-модель и tuples для проверок доступа к компаниям, вакансиям, откликам и интервью.", $tags="managedInfrastructure")
 !endprocedure
 
 !unquoted procedure ComponentNotificationProviders()

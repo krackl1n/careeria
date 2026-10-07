@@ -13,15 +13,18 @@ System_Boundary(careeria, "Careeria") {
         Component(company_repo, "Company Repo", "Go / SQL", "Загрузка и сохранение агрегата Company")
         Component(member_repo, "Member Repo", "Go / SQL", "Загрузка и сохранение агрегата Member и выборки состава компании")
         Component(outbox, "Transactional Outbox", "Go / SQL", "Атомарная запись интеграционных событий вместе с изменением состояния")
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Проверяет ReBAC-права на ресурсы компании")
     }
 
     ComponentCompanyDatabase()
+    ComponentOpenFga()
 }
 
 company_svc -[hidden]R- membership_svc
 
-company_repo -[hidden]R- member_repo
-member_repo -[hidden]R- outbox
+company_repo -[hidden]R- outbox
+outbox -[hidden]R- member_repo
+company_svc -[hidden]D- outbox
 
 Rel(apiGateway, grpc_handler, "Управляет компаниями и участниками", "gRPC")
 
@@ -32,8 +35,11 @@ Rel(company_svc, company_repo, "Работает с компаниями", "In-p
 Rel(membership_svc, member_repo, "Работает с участниками", "In-process")
 Rel(membership_svc, company_repo, "Получает состояние компании", "In-process")
 
-Rel(company_svc, outbox, "Сохраняет события", "In-process")
+Rel_D(company_svc, outbox, "Сохраняет события", "In-process")
 Rel(membership_svc, outbox, "Сохраняет события", "In-process")
+Rel(company_svc, authorization_client, "Проверяет полномочия", "In-process")
+Rel(membership_svc, authorization_client, "Проверяет полномочия", "In-process")
+Rel(authorization_client, openFga, "Проверяет доступ", "OpenFGA SDK")
 
 Rel(company_repo, companyDb, "Чтение / Запись компаний", "SQL / TCP")
 Rel(member_repo, companyDb, "Чтение / Запись участников", "SQL / TCP")

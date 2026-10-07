@@ -1,3 +1,6 @@
+!include hiring-elements.puml
+!include infrastructure-elements.puml
+
 !unquoted procedure CandidateActor()
     Person(candidate, "Кандидат", "Ищет работу, откликается на вакансии и проходит процесс найма.")
 !endprocedure
@@ -69,9 +72,9 @@
 
 !unquoted procedure HiringDomain($withDatabase)
     Container_Boundary(hiringBoundary, "Домен найма") {
-        Container(hiringService, "Hiring Service", "Go, gRPC, Protobuf, pgx, sqlc", "Отклики, state machine этапов найма, интервью, предложения и история переходов.", $tags="business")
+        HiringServiceContainer("business")
         !if ($withDatabase == 1)
-            ContainerDb(hiringDb, "Hiring DB", "PostgreSQL", "Applications, pipeline transitions, interviews, offers и transactional outbox.", $tags="storage")
+            HiringDatabase("storage")
         !endif
     }
 !endprocedure
@@ -139,7 +142,7 @@
             Container(centrifugo, "Centrifugo", "Centrifugo, WebSocket, JWT", "Управляет WebSocket-подключениями, каналами, presence и доставкой событий.", $tags="realtime")
         !endif
         !if ($withLivekit == 1)
-            Container(livekit, "LiveKit", "LiveKit, WebRTC, LiveKit React SDK", "Комнаты интервью, аудио, видео, screen sharing и опциональная запись.", $tags="media")
+            LiveKitContainer("media")
         !endif
     }
 !endprocedure
@@ -148,7 +151,7 @@
     Container_Boundary(eventBoundary, "Событийная платформа") {
         ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Топики доменных событий, consumer groups, retention и асинхронное взаимодействие.", $tags="eventBus")
         Container(schemaRegistry, "Schema Registry", "Apicurio Registry, Avro", "Версионирование Avro-схем и backward compatibility для событий.", $tags="eventInfrastructure")
-        Container(debezium, "Debezium", "Debezium PostgreSQL Connector", "Читает таблицы transactional outbox через PostgreSQL logical replication и публикует в Kafka.", $tags="eventInfrastructure")
+        DebeziumContainer("eventInfrastructure")
     }
 !endprocedure
 

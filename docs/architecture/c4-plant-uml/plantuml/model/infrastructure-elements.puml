@@ -1,0 +1,8 @@
+' Единые объявления готовой инфраструктуры; уровень диаграммы выбирает только тег цвета.
+!unquoted procedure DebeziumContainer($tags)
+    Container(debezium, "Debezium", "Debezium PostgreSQL Connector", "Читает таблицы transactional outbox через PostgreSQL logical replication и публикует в Kafka.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure LiveKitContainer($tags)
+    Container(livekit, "LiveKit", "LiveKit, WebRTC, LiveKit React SDK", "Комнаты интервью, аудио, видео, screen sharing и опциональная запись.", $tags=$tags)
+!endprocedure
