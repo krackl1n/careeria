@@ -41,6 +41,7 @@ Rel(communicationService, communicationDb, "Хранит сообщения", "S
 Rel(notificationService, notificationDb, "Хранит шаблоны, jobs и Inbox", "SQL")
 Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
 Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
+Rel(web, objectStorage, "Загружает файл по presigned URL", "HTTPS / S3 API")
 
 !if %not(%variable_exists("$hideInfrastructureConnections"))
     Rel(candidateDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")

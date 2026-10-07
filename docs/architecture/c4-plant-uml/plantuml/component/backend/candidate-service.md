@@ -70,13 +70,14 @@ Repository и outbox получают один transaction handle от прик�
 | CandidateSkill | candidate ID, нормализованный skill key, отображаемое имя, необязательный уровень | Уникальность навыка в профиле; self-reported уровень не равен подтверждённому результату Assessment. |
 | CareerPreferences | желаемые роли, уровни, employment types, work formats, locations, relocation, зарплатные ожидания и валюта | Диапазон компенсации валиден; валюта и период указаны; предпочтения не означают принятие оффера. |
 | Resume | resume ID, candidate ID, название, язык, ACTIVE/DELETED, activeVersionId, isPrimary, version, timestamps | У кандидата несколько резюме; не более одного основного. Основным может быть только ACTIVE с READY-версией. |
+| CandidateResumePreferences | candidate ID, primary selection version | Отдельный токен конкурентного выбора основного резюме; блокировка строки сериализует SetPrimaryResume и удаление основного документа. |
 | ResumeVersion | version ID, resume ID, порядковый номер, file ID, upload operation ID, состояние, проверенные MIME/size/checksum, timestamps | Файл версии после READY неизменяем. Новый файл — новая версия, а не перезапись S3 key старой. file ID принадлежит владельцу и назначению resume. |
 | ResumeCleanupJob | job ID, binding ID/file ID, причина, lease owner/until, attempts, nextAttemptAt, lastError, state | Освобождение идемпотентно; несколько workers не должны выполнять один job одновременно без lease. |
 | OutboxEvent | event ID, aggregate ID/type/version, event type, schema version, occurredAt, минимальный payload | Уникальный event ID; состояние и события фиксируются атомарно. |
 
 Профиль с опытом/образованием/навыками сохраняется как агрегат CandidateProfile. Resume — отдельный агрегат, чтобы загрузка файла не блокировала редактирование описания. Межагрегатный инвариант «одно основное резюме» обеспечивается SQL-транзакцией и частичным уникальным индексом по candidate ID для `is_primary = true AND lifecycle = 'ACTIVE'`, а не одним предварительным SELECT.
 
-Предлагаемые таблицы: `candidate_profiles`, `candidate_experiences`, `candidate_educations`, `candidate_skills`, `candidate_preferences`, `resumes`, `resume_versions`, `resume_cleanup_jobs`, `idempotency_keys`, `outbox`. Внутри Candidate DB используются внешние ключи и ограничения. Между сервисами — только идентификаторы и согласованные контракты, без cross-database FK.
+Предлагаемые таблицы: `candidate_profiles`, `candidate_experiences`, `candidate_educations`, `candidate_skills`, `candidate_preferences`, `resumes`, `candidate_resume_preferences`, `resume_versions`, `resume_cleanup_jobs`, `idempotency_keys`, `outbox`. Внутри Candidate DB используются внешние ключи и ограничения. Между сервисами — только идентификаторы и согласованные контракты, без cross-database FK.
 
 В S3 — только бинарный документ. Candidate DB не хранит файл, base64, постоянный публичный URL, credentials или копию upload session. S3 key и технические ссылки принадлежат File Service; Candidate Service использует стабильный file ID. Имя файла от клиента — недоверенная отображаемая строка, не путь хранения.
 
@@ -93,7 +94,7 @@ Repository и outbox получают один transaction handle от прик�
 | Жизненный цикл Resume | ACTIVE, DELETED | Удаление прекращает новые выдачи документа из профиля. Терминальное состояние; восстановление удалённого файла не обещается. |
 | Состояние ResumeVersion | UPLOADING, CHECKING, READY, REJECTED, EXPIRED | Только READY разрешает скачивание и выбор основной версии. REJECTED/EXPIRED — терминальные для этой попытки. |
 
-Переходы версии: `UPLOADING → CHECKING → READY / REJECTED`, а незавершённая загрузка по истечении допустимого срока переходит в EXPIRED. Полная загрузка байтов ещё не делает версию READY: File Service подтверждает существование объекта, реальный тип/размер и успешную проверку безопасности. Если проверка ещё идёт, CompleteResumeUpload возвращает CHECKING; повторный вызов или GetResume обновляет статус через проверенное состояние File Service. Cleanup Worker периодически reconciles незавершённые операции, поэтому пользователь не обязан держать вкладку открытой.
+Переходы версии: `UPLOADING → CHECKING → READY / REJECTED`, а незавершённая загрузка по истечении допустимого срока переходит в EXPIRED. Полная загрузка байтов ещё не делает версию READY: File Service подтверждает существование объекта, реальный тип/размер и успешную проверку безопасности. Если проверка ещё идёт, CompleteResumeUpload возвращает CHECKING; повторный вызов или GetResume обновляет статус через проверенное состояние File Service. Cleanup Worker периодически согласует незавершённые операции с File Service, поэтому пользователь не обязан держать вкладку открытой.
 
 Доменные методы CandidateProfile управляют состоянием/видимостью и не позволяют архивному профилю стать доступным рекрутерам. Восстановление переводит его в ACTIVE с PRIVATE, HIDDEN и NOT_LOOKING; публикация выполняется отдельным явным действием. Archive не удаляет данные и не закрывает отклики в Hiring Service.
 
@@ -216,7 +217,7 @@ Archive сохраняет CandidateProfileArchived, но не удаляет ф
 
 **Порядок:** Resume Service сначала сохраняет pending Resume/ResumeVersion и устойчивый operation ID. После commit вызывает File Service BeginUpload с owner, purpose=resume, binding target=version ID и тем же operation ID. File Service возвращает file ID, upload session, presigned URL/параметры и срок действия. Метаданные операции сохраняются; клиент передаёт байты непосредственно в приватное S3-хранилище по этой ограниченной ссылке. На L3 этот пользовательский data path не раскрыт как внутренний компонент; он отмечен в L2 и описан здесь.
 
-**Сбой и повтор:** SQL и S3 не образуют общую транзакцию. Timeout File Service не создаёт второе резюме при retry: возвращается/восстанавливается та же операция. Если ответ File Service потерян, запрос по operation ID возвращает созданную session, а не новую загрузку. Незавершённая запись остаётся resumable до expiry; worker reconciles её. Upload URL разрешает только выделенный объект/операцию и ограниченный размер, не доступ ко всему bucket.
+**Сбой и повтор:** SQL и S3 не образуют общую транзакцию. Timeout File Service не создаёт второе резюме при retry: возвращается/восстанавливается та же операция. Если ответ File Service потерян, запрос по operation ID возвращает созданную session, а не новую загрузку. Незавершённая операция может быть продолжена до expiry; worker согласует её состояние с File Service. Upload URL разрешает только выделенный объект/операцию и ограниченный размер, не доступ ко всему bucket.
 
 ### 15. CompleteResumeUpload — подтвердить документ
 
@@ -252,13 +253,13 @@ List использует bounded cursor pagination. Download URL не гене�
 
 **Вход:** resume ID и expected version/токен конкурентного выбора кандидата. Сервис проверяет владельца, ACTIVE-профиль, ACTIVE Resume и READY activeVersion. В одной транзакции блокирует изменение primary для данного candidate ID, снимает прежнюю отметку, ставит новую и записывает PrimaryResumeChanged. Уникальный индекс служит последней защитой; две параллельные команды не оставляют два основных документа.
 
-Начальная загрузка не делает резюме основным без явной команды. Основное — предпочтение профиля, не разрешение для recruiter download и не замена резюме в уже отправленных откликах. Чтобы отличать устаревший выбор, предлагается отдельный `primary_selection_version` на уровне кандидата в таблице управления резюме; менять CandidateProfile ради этого не требуется.
+Начальная загрузка не делает резюме основным без явной команды. Основное — предпочтение профиля, не разрешение для recruiter download и не замена резюме в уже отправленных откликах. Чтобы отличать устаревший выбор, используется отдельный `primary_selection_version` на уровне кандидата в `candidate_resume_preferences`; менять CandidateProfile ради этого не требуется. SetPrimaryResume и удаление основного резюме блокируют эту строку и увеличивают selection version в своей транзакции.
 
 ### 21. GetResumeDownloadURL — доступ к файлу
 
 **Вход:** resume ID и конкретная version ID либо запрос текущей версии. Сервис заново проверяет текущие ownership/lifecycle/visibility/resource permission, READY и право на выбранную версию; произвольный file ID из тела не используется. Для чужого пользователя по умолчанию доступна только активная версия, а не весь архив.
 
-File Service получает доверенный resource binding и выдаёт краткоживущую presigned download URL с безопасным filename и сроком действия. Ответ не кешируется как публичная страница. Proposed TTL — до 5 минут, согласуется общей политикой File Service; ссылки не пишутся в события, аналитику или логи.
+File Service получает доверенный resource binding и выдаёт краткоживущую presigned download URL с безопасным filename и сроком действия. Ответ не кешируется как публичная страница. Предлагаемый TTL — до 5 минут, согласуется общей политикой File Service; ссылки не пишутся в события, аналитику или логи.
 
 После смены видимости новые ссылки запрещены немедленно. Уже выданная S3-ссылка может действовать до expiry: если требуется мгновенный отзыв, понадобится другой механизм выдачи/проксирования, а не обещание, что OpenFGA отзовёт готовую URL. Выдача проверяется и аудитируется, но сам переход по прямой ссылке не является SQL-транзакцией Candidate Service.
 
