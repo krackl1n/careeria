@@ -14,7 +14,7 @@ System_Boundary(platform, "Careeria") {
     HiringDomain(0)
     CommunicationDomain(0, 1)
     IdentityAccess(0, 1, 1)
-    IntegrationDomain()
+    IntegrationDomain(0)
     RealtimeMedia(1, 0, 0)
 }
 
@@ -25,6 +25,7 @@ Rel(hiringDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc"
 Rel(assessmentDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
 Rel(communicationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
 Rel(identityDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(integrationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
 Rel(debezium, schemaRegistry, "Получает схемы", "Registry API")
 Rel(debezium, kafka, "Публикует события", "Kafka / Avro", $tags="async")
 Rel(kafka, hiringService, "События найма", "Kafka / Avro", $tags="async")
@@ -32,9 +33,10 @@ Rel(kafka, notificationService, "События уведомлений", "Kafka 
 Rel(kafka, realtimePublisher, "Realtime-события", "Kafka / Avro", $tags="realtimeFlow")
 Rel(kafka, authzProjection, "Изменения ролей", "Kafka / Avro", $tags="async")
 Rel(kafka, integrationService, "События интеграций", "Kafka / Avro", $tags="async")
-Rel(integrationService, kafka, "Публикует события", "Kafka / Avro", $tags="async")
+Rel(integrationService, integrationDb, "Фиксирует входящий webhook и outbox", "SQL")
+Rel(integrationService, schemaRegistry, "Получает схемы событий", "Registry API")
 Rel(authzProjection, openFga, "Обновляет роли и связи", "OpenFGA API")
-Rel(integrationService, employerHrSystem, "Передаёт события", "REST / Webhooks")
+Rel(integrationService, employerHrSystem, "Исходящие webhooks", "HTTPS / JSON")
 Rel(notificationService, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
 
 ShowArchitectureLegend()

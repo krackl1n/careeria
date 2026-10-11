@@ -8,9 +8,44 @@ the inexpensive theme HTML for all pages. PlantUML runs only for changed pages.
 
 from __future__ import annotations
 
+from mkdocs.structure.nav import _add_parent_links, _add_previous_and_next_links, _get_by_type
+from mkdocs.structure.pages import Page
+
 _rendered: dict[str, dict] = {}
 _render_config: str | None = None
 _FIELDS = ("content", "toc", "_title_from_render", "present_anchor_ids", "links_to_anchors")
+
+
+def _first_src_uri(item) -> str:
+    if getattr(item, "is_page", False) and getattr(item, "file", None) is not None:
+        return item.file.src_uri
+    for child in getattr(item, "children", None) or ():
+        uri = _first_src_uri(child)
+        if uri:
+            return uri
+    return ""
+
+
+def _top_key(item) -> tuple[str, str]:
+    uri = _first_src_uri(item).replace("\\", "/")
+    top = uri.split("/", 1)[0] if uri else ""
+    return uri, top
+
+
+def _apply_section_titles(items, titles: dict[str, str]) -> None:
+    for item in items:
+        children = getattr(item, "children", None)
+        if not children:
+            continue
+        _apply_section_titles(children, titles)
+        slug = (item.title or "").strip().lower().replace(" ", "-")
+        if slug in titles:
+            item.title = titles[slug]
+            continue
+        for child in children:
+            if getattr(child, "is_index", False) and child.title:
+                item.title = child.title
+                break
 
 
 def on_config(config):
@@ -36,6 +71,44 @@ def on_nav(nav, *, config, files):
             else:
                 # Also recover if the output exists but this process has no cache.
                 file.is_modified = lambda: True
+
+    nav_extra = (config.get("extra") or {}).get("navigation") or {}
+    raw_titles = nav_extra.get("titles") or {}
+    titles = {str(k).strip().lower().replace(" ", "-"): str(v) for k, v in raw_titles.items()}
+    _apply_section_titles(nav.items, titles)
+
+    # Unwrap top-level single-page sections so they render as regular links instead of empty section headers.
+    unwrapped = []
+    for item in nav.items:
+        children = getattr(item, "children", None)
+        if children and len(children) == 1 and getattr(children[0], "is_index", False):
+            page = children[0]
+            page.parent = None
+            unwrapped.append(page)
+        else:
+            unwrapped.append(item)
+    nav.items[:] = unwrapped
+
+    order = [str(x).strip().strip("/") for x in (nav_extra.get("order") or [])]
+    if order:
+        order_index = {key: idx for idx, key in enumerate(order)}
+
+        def sort_key(enumerated_item):
+            idx, item = enumerated_item
+            uri, top = _top_key(item)
+            if uri in order_index:
+                return (0, order_index[uri], idx)
+            if top in order_index:
+                return (0, order_index[top], idx)
+            return (1, idx, idx)
+
+        nav.items[:] = [item for _, item in sorted(enumerate(nav.items), key=sort_key)]
+
+    for item in nav.items:
+        item.parent = None
+    _add_parent_links(nav.items)
+    nav.pages[:] = _get_by_type(nav.items, Page)
+    _add_previous_and_next_links(nav.pages)
     return nav
 
 

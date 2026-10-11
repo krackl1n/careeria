@@ -34,7 +34,12 @@ Rel(bff, apiGateway, "Вызывает внутренний API", "HTTPS / gRPC"
 Rel(apiGateway, identityService, "Проверяет пользователя", "gRPC")
 Rel(apiGateway, notificationService, "Управляет уведомлениями", "gRPC")
 Rel(apiGateway, fileService, "Работает с файлами", "gRPC")
-Rel(apiGateway, integrationService, "Передаёт webhook", "HTTP / gRPC")
+Rel(apiGateway, integrationService, "Вебхуки и управление", "HTTP / gRPC")
+Rel(employerHrSystem, apiGateway, "Отправляет входящие webhooks", "HTTPS / JSON")
+Rel(integrationService, integrationDb, "Хранит inbox, настройки и доставки", "SQL")
+Rel(integrationService, openFga, "Проверяет управление интеграциями", "OpenFGA API")
+Rel(integrationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+Rel(integrationService, schemaRegistry, "Получает схемы событий", "Registry API")
 Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
 Rel(identityService, identityProvider, "Аутентифицирует", "OAuth 2.0 / OIDC")
 Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
@@ -46,7 +51,7 @@ Rel(notificationService, notificationDb, "Хранит шаблоны, jobs и I
 Rel(kafka, integrationService, "Доставляет события", "Kafka / Avro", $tags="async")
 Rel(authzProjection, openFga, "Обновляет роли и связи", "OpenFGA API")
 Rel(notificationService, notificationProviders, "Отправляет уведомления", "Email / Push / SMS")
-Rel(integrationService, employerHrSystem, "Обменивается событиями", "REST / Webhooks")
+Rel(integrationService, employerHrSystem, "Доставляет исходящие webhooks", "HTTPS / JSON")
 
 ShowArchitectureLegend()
 @enduml

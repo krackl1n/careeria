@@ -16,10 +16,10 @@ Rel(apiGateway, assessmentService, "Управляет оцениванием", 
 Rel(apiGateway, communicationService, "Обменивается сообщениями", "gRPC")
 Rel(apiGateway, notificationService, "Управляет уведомлениями", "gRPC")
 Rel(apiGateway, fileService, "Работает с файлами", "gRPC")
-Rel(apiGateway, integrationService, "Передаёт webhook", "HTTP / gRPC")
+Rel(apiGateway, integrationService, "Вебхуки и управление", "HTTP / gRPC")
 
 Rel(employerHrSystem, apiGateway, "Отправляет webhook", "HTTPS / JSON")
-Rel(integrationService, employerHrSystem, "Передаёт события найма", "REST / Webhooks")
+Rel(integrationService, employerHrSystem, "Доставляет исходящие webhooks", "HTTPS / JSON")
 
 !if %not(%variable_exists("$hideInfrastructureConnections"))
     Rel(candidateService, openFga, "Проверяет доступ", "OpenFGA API")
@@ -29,6 +29,7 @@ Rel(integrationService, employerHrSystem, "Передаёт события на�
     Rel(assessmentService, openFga, "Проверяет доступ", "OpenFGA API")
     Rel(communicationService, openFga, "Проверяет доступ", "OpenFGA API")
     Rel(fileService, openFga, "Проверяет доступ", "OpenFGA API")
+    Rel(integrationService, openFga, "Проверяет управление интеграциями", "OpenFGA API")
 !endif
 
 Rel(candidateService, candidateDb, "Хранит профили и метаданные резюме", "SQL")
@@ -40,6 +41,7 @@ Rel(assessmentService, assessmentDb, "Хранит задания и оценк�
 Rel(communicationService, communicationDb, "Хранит сообщения", "SQL")
 Rel(notificationService, notificationDb, "Хранит шаблоны, jobs и Inbox", "SQL")
 Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
+Rel(integrationService, integrationDb, "Хранит inbox, настройки и доставки", "SQL")
 Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
 Rel(web, objectStorage, "Загружает файл по presigned URL", "HTTPS / S3 API")
 
@@ -51,12 +53,13 @@ Rel(web, objectStorage, "Загружает файл по presigned URL", "HTTPS
     Rel(assessmentDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
     Rel(communicationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
     Rel(identityDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
+    Rel(integrationDb, debezium, "Передаёт outbox", "PostgreSQL WAL", $tags="cdc")
     Rel(debezium, schemaRegistry, "Получает схемы", "Registry API")
     Rel(hiringService, schemaRegistry, "Получает схемы", "Registry API")
     Rel(notificationService, schemaRegistry, "Получает схемы", "Registry API")
     Rel(realtimePublisher, schemaRegistry, "Получает схемы", "Registry API")
     Rel(authzProjection, schemaRegistry, "Получает схемы", "Registry API")
-    Rel(integrationService, schemaRegistry, "Управляет схемами", "Registry API")
+    Rel(integrationService, schemaRegistry, "Получает схемы событий", "Registry API")
 !endif
 
 Rel(debezium, kafka, "Публикует события", "Kafka / Avro", $tags="async")
@@ -65,7 +68,6 @@ Rel(kafka, notificationService, "Доставляет события уведо�
 Rel(kafka, realtimePublisher, "Доставляет realtime-события", "Kafka / Avro", $tags="realtimeFlow")
 Rel(kafka, authzProjection, "Доставляет изменения ролей", "Kafka / Avro", $tags="async")
 Rel(kafka, integrationService, "Доставляет события интеграций", "Kafka / Avro", $tags="async")
-Rel(integrationService, kafka, "Публикует события", "Kafka / Avro", $tags="async")
 Rel(authzProjection, openFga, "Обновляет роли и связи", "OpenFGA API")
 
 Rel(realtimePublisher, centrifugo, "Публикует сообщения", "Centrifugo API", $tags="realtimeFlow")

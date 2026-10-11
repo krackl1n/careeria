@@ -6,3 +6,4 @@
 
 - [Контекст области](member4-l1-context.md)
 - [Контейнеры области](member4-l2-containers.md)
+- [Компоненты Integration Service · L3](../../../component/backend/integration-service.md)

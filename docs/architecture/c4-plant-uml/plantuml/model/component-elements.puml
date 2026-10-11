@@ -3,7 +3,12 @@
 !include hiring-elements.puml
 !include vacancy-elements.puml
 !include candidate-elements.puml
+!include integration-elements.puml
 !include infrastructure-elements.puml
+
+!unquoted procedure ComponentIntegrationDatabase()
+    IntegrationDatabase("managedInfrastructure")
+!endprocedure
 
 !unquoted procedure ComponentCandidateDatabase()
     CandidateDatabase("managedInfrastructure")

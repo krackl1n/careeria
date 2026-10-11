@@ -1,0 +1,23 @@
+' Общие контейнеры L2/L3; компоненты находятся только в Integration L3.
+!global $integrationServiceName = "Integration Service"
+
+!unquoted procedure IntegrationServiceContainer($tags)
+    Container(integrationService, $integrationServiceName, "Go, HTTP, gRPC, Kafka, pgx, sqlc", "Входящие и исходящие webhooks, подключения компаний, подписки, идемпотентность и повторы доставки.", $tags=$tags, $link="/architecture/c4-plant-uml/plantuml/component/backend/integration-service/")
+!endprocedure
+
+!unquoted procedure IntegrationDatabase($tags)
+    ContainerDb(integrationDb, "Integration DB", "PostgreSQL", "Подключения, подписки, inbox, delivery jobs, попытки и transactional outbox.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure IntegrationDomain($withDatabase=1)
+    Container_Boundary(integrationBoundary, "Интеграции") {
+        IntegrationServiceContainer("platform")
+        !if ($withDatabase == 1)
+            IntegrationDatabase("storage")
+        !endif
+    }
+!endprocedure
+
+!unquoted procedure EmployerHrContainer()
+    System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя; отправляет и принимает webhooks.")
+!endprocedure

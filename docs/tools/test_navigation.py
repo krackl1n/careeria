@@ -65,6 +65,34 @@ class NavigationTests(unittest.TestCase):
                 self.assertEqual(rendered, [])
                 assert_menus({"alpha": "Alpha Service", "beta": "Renamed Service"}, ["Gamma Service"])
 
+    def test_section_titles_and_top_level_order(self):
+        hook = Path(__file__).with_name("navigation.py").resolve()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            docs = root / "docs"
+            (docs / "project" / "01-general").mkdir(parents=True)
+            (docs / "deployment").mkdir(parents=True)
+            (docs / "index.md").write_text("# Главная\n", encoding="utf-8")
+            (docs / "project" / "index.md").write_text("# Описание проекта\n", encoding="utf-8")
+            (docs / "project" / "01-general" / "index.md").write_text("# 1. Общие сведения\n", encoding="utf-8")
+            (docs / "project" / "01-general" / "01-goal.md").write_text("# 1.1. Цель\n", encoding="utf-8")
+            (docs / "deployment" / "index.md").write_text("# Развёртывание\n", encoding="utf-8")
+
+            config_file = root / "mkdocs.yml"
+            config_file.write_text(
+                f"site_name: Test\ndocs_dir: docs\nsite_dir: site\n"
+                f"hooks:\n  - {hook}\nplugins: []\n"
+                f"theme:\n  name: material\n  features:\n    - navigation.expand\n    - navigation.indexes\n"
+                f"extra:\n  navigation:\n    order:\n      - index.md\n      - project\n      - deployment\n",
+                encoding="utf-8",
+            )
+            build(load_config(config_file=str(config_file)))
+            html = (root / "site" / "index.html").read_text(encoding="utf-8")
+            self.assertIn("1. Общие сведения", html)
+            self.assertIn("1.1. Цель", html)
+            self.assertIn("Развёртывание", html)
+            self.assertIn("md-toggle--indeterminate", html)
+
 
 if __name__ == "__main__":
     unittest.main()

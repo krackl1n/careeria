@@ -68,7 +68,7 @@ c4-plant-uml/
 - `deployment/{production,local}.puml` — узлы развёртывания и размещённые экземпляры контейнеров;
 - новые сценарии в `dynamic/`, названные по процессам Careeria, например `user-login.puml` и `apply-to-vacancy.puml`.
 
-Компонентные диаграммы Company Service, Notification Service, Hiring Service, Vacancy Service и Candidate Service находятся в `component/backend/`. Их [описания L3](plantuml/component/README.md) содержат таблицы элементов, каталоги юзкейсов, правила выполнения и открытые архитектурные вопросы. Остальные L3-представления и deployment-модель будут добавляться по мере уточнения реализации. Контейнерные срезы не следует выдавать за компоненты L3, а `production` требует согласованной схемы инфраструктуры.
+Компонентные диаграммы Company Service, Notification Service, Hiring Service, Vacancy Service, Candidate Service и Integration Service находятся в `component/backend/`. Их [описания L3](plantuml/component/README.md) содержат таблицы элементов, каталоги юзкейсов, правила выполнения и открытые архитектурные вопросы. Остальные L3-представления и deployment-модель будут добавляться по мере уточнения реализации. Контейнерные срезы не следует выдавать за компоненты L3, а `production` требует согласованной схемы инфраструктуры.
 
 ### Правила сопровождения
 
@@ -92,6 +92,8 @@ c4-plant-uml/
 Vacancy Service и Vacancy DB определены в `model/vacancy-elements.puml`: L2 выбирает архитектурные теги, L3 — общий серый тег готовой инфраструктуры для БД. Название границы L3 использует то же имя сервиса. Контейнер L2 содержит ссылку на страницу Vacancy L3; внутренняя структура остаётся только в `component/backend/vacancy-service.puml`.
 
 Candidate Service и Candidate DB аналогично определены в `model/candidate-elements.puml`; внутренние компоненты остаются в `component/backend/candidate-service.puml`. PostgreSQL хранит профиль, статусы, метаданные версий резюме и cleanup jobs, а бинарные документы — Object Storage через общий File Service. Объявления File Service, Object Storage и OpenFGA едины для L2/L3 в `model/infrastructure-elements.puml`. L2 кандидатов показывает файловый путь и ресурсную авторизацию; контейнер Candidate Service ссылается на свою L3. Каталог включает 24 группы предлагаемых сценариев, а не уже реализованный API.
+
+Integration Service и Integration DB определены в `model/integration-elements.puml`; внутренние компоненты — только в `component/backend/integration-service.puml`. Приём HTTP webhook и gRPC-управление разделены. Входящий inbox и нормализованный outbox сохраняются одной SQL-транзакцией; публикация идёт через существующий CDC. Исходящие deliveries создаются из Kafka и исполняются worker с lease, устойчивым delivery ID и повторными попытками. L2 платформы и HR-сценарий используют ту же модель; каталог L3 содержит 21 группу предлагаемых сценариев.
 
 Общий L3-стиль включает `horizontalLineBetweenDifferentPackageAllowed`, чтобы разрешить горизонтальные связи между компонентом внутри контейнера и соседней инфраструктурой вне него ([объяснение PlantUML](https://forum.plantuml.net/1132)). Для Hiring это позволяет разместить Schema Registry непосредственно слева от Events Consumer. Визуальную проверку выполняем тем же движком, что использует документация: Graphviz. Результат другого движка, например локального fallback без установленного Graphviz, не подтверждает раскладку сайта.
 
@@ -190,7 +192,7 @@ Careeria объединяет полный процесс найма:
 - **AuthZ Synchronization Service:** Go-консьюмер Kafka, преобразующий доменные события в OpenFGA tuples.
 - **Notification Service:** Go-консьюмер Kafka и адаптеры SendGrid, FCM и Twilio.
 - **File Service:** multipart upload, presigned URL, проверка MIME/размера, antivirus hook и MinIO SDK.
-- **Integration Service:** валидация подписи webhook, нормализация payload, публикация Kafka events и retry доставки.
+- **Integration Service:** входящие и исходящие webhooks; подписи, подключения компаний и subscriptions; Integration DB с inbox/outbox, deliveries и attempts; Kafka consumer и надёжная HTTP-доставка с повторами.
 - **Realtime Publisher:** Kafka consumer, преобразующий доменные события в пользовательские каналы Centrifugo.
 
 ## Синхронное и асинхронное взаимодействие

@@ -1,6 +1,7 @@
 !include hiring-elements.puml
 !include vacancy-elements.puml
 !include candidate-elements.puml
+!include integration-elements.puml
 !include infrastructure-elements.puml
 
 !unquoted procedure CandidateActor()
@@ -28,7 +29,7 @@
 !endprocedure
 
 !unquoted procedure EmployerHrSystem()
-    System_Ext(employerHrSystem, "Employer HR System", "Корпоративная HR-система работодателя.")
+    EmployerHrContainer()
 !endprocedure
 
 !unquoted procedure EntryPoints()
@@ -129,12 +130,6 @@
     }
 !endprocedure
 
-!unquoted procedure IntegrationDomain()
-    Container_Boundary(integrationBoundary, "Интеграции") {
-        Container(integrationService, "Integration Service", "Go, REST, Webhooks, Kafka", "Проверяет подписи webhook, нормализует payload, публикует события и выполняет retry доставки.", $tags="platform")
-    }
-!endprocedure
-
 !unquoted procedure RealtimeMedia($withPublisher, $withCentrifugo, $withLivekit)
     Container_Boundary(realtimeBoundary, "Realtime и медиа") {
         !if ($withPublisher == 1)
@@ -166,5 +161,6 @@
         ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessment outbox.", $tags="storage")
         ContainerDb(communicationDb, "Communication DB", "PostgreSQL", "Communication outbox.", $tags="storage")
         ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Identity outbox.", $tags="storage")
+        IntegrationDatabase("storage")
     }
 !endprocedure

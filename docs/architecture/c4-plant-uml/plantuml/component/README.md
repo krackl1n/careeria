@@ -7,6 +7,7 @@
 - [Hiring Service](backend/hiring-service.md)
 - [Vacancy Service](backend/vacancy-service.md)
 - [Candidate Service](backend/candidate-service.md)
+- [Integration Service](backend/integration-service.md)
 
 ## Содержание описаний
 
@@ -17,6 +18,7 @@
 | [Hiring Service](backend/hiring-service.md) | 13 | 18 сценариев; 7 RPC приведены в исходной спецификации | Отклики и FSM, интервью и feedback, жизненный цикл оффера, конференции, внешняя синхронизация и межагрегатные транзакции. |
 | [Vacancy Service](backend/vacancy-service.md) | 6 | 8 сценариев; 6 RPC перечислены в исходной спецификации | Содержание вакансии, требования и компенсация, жизненный цикл доменного агрегата Vacancy, видимость и выборки, авторизация и outbox. |
 | [Candidate Service](backend/candidate-service.md) | 9 | 24 группы сценариев; предлагаемые контракты | Профиль и профессиональные данные, статус поиска и видимость, версии резюме в S3 через File Service, безопасное скачивание, cleanup и снимки для найма. |
+| [Integration Service](backend/integration-service.md) | 13 | 21 группа сценариев; предлагаемые контракты | Входящие и исходящие webhooks, подключения компаний, подписи и ключи, inbox/outbox, подписки, deliveries, leases, retry/redrive и SSRF-защита. |
 
 На каждой странице есть таблицы внутренних компонентов и соседних контейнеров. Юзкейсы описаны через вход, инициатора, проверки, порядок выполнения, результат и ограничения; отдельно разобраны конкуренция, ошибки и границы транзакций.
 

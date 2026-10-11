@@ -10,7 +10,8 @@ theme:
   language: ru
   font: false
   features:
-    - navigation.tabs
+    - navigation.instant
+    - navigation.expand
     - navigation.sections
     - navigation.indexes
     - navigation.top
@@ -34,6 +35,26 @@ validation:
     not_found: warn
 extra_css:
   - theme/diagrams.css
+extra:
+  navigation:
+    order:
+      - index.md
+      - getting-started
+      - project
+      - architecture
+      - deployment
+      - security
+      - contributing.md
+      - readme.md
+    titles:
+      architecture: Архитектура
+      c4-plant-uml: C4 в PlantUML
+      plantuml: Диаграммы и модели
+      backend: Backend-сервисы
+      project: Описание проекта
+      getting-started: Начало работы
+      deployment: Развёртывание
+      security: Безопасность и доступ
 exclude_docs: |
   architecture/c4-plant-uml/node_modules/
   architecture/c4-plant-uml/.c4builder/

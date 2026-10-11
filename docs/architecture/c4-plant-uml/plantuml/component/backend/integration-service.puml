@@ -1,0 +1,80 @@
+@startuml integration-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+EmployerHrContainer()
+
+System_Boundary(careeria, "Careeria") {
+    together {
+        ComponentApiGateway()
+        ComponentSchemaRegistry()
+        ComponentKafka()
+    }
+
+    Container_Boundary(integration_container, $integrationServiceName) {
+        Component(webhook_handler, "Webhook HTTP Handler", "Go / net/http", "Сырые байты запроса, лимиты тела и ответ отправителю")
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Управление подключениями, подписками и доставками")
+        Component(event_consumer, "Events Consumer", "Go / Kafka Client", "Внутренние события; commit offset после SQL commit")
+        Component(delivery_worker, "Webhook Delivery Worker", "Go Background Worker", "Захват jobs с lease и запуск попыток доставки")
+        Component(inbound_svc, "Inbound Webhook Service", "Go Application Service", "Подпись, нормализация, дедупликация и надёжный приём")
+        Component(management_svc, "Integration Management Service", "Go Application Service", "Настройки, ключи, подписки, журнал и ручные повторы")
+        Component(outbound_svc, "Outbound Webhook Service", "Go Application Service", "Маршрутизация событий, deliveries, исполнение и повторы")
+        Component(inbound_adapter, "Inbound Webhook Adapter", "Go / JSON, HMAC", "Проверка подписи и нормализация provider payload")
+        Component(outbound_adapter, "Outbound Webhook Adapter", "Go / JSON, HMAC", "Сериализация внешнего контракта и подпись доставки")
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Права управления интеграцией своей компании")
+        Component(integration_repo, "Integration Repo", "Go / pgx, sqlc", "Подключения, inbox, deliveries, leases и attempts")
+        Component(http_client, "Webhook HTTP Client", "Go / net/http", "HTTPS, проверка destination, timeout; без redirects")
+        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарная запись нормализованных входящих событий")
+    }
+
+    together {
+        ComponentIntegrationDatabase()
+        ComponentOpenFga()
+    }
+}
+
+apiGateway -[hidden]right- schemaRegistry
+schemaRegistry -[hidden]right- kafka
+employerHrSystem -[hidden]right- apiGateway
+apiGateway -[hidden]down- grpc_handler
+kafka -[hidden]down- event_consumer
+webhook_handler -[hidden]right- grpc_handler
+grpc_handler -[hidden]right- event_consumer
+event_consumer -[hidden]right- delivery_worker
+inbound_svc -[hidden]right- management_svc
+management_svc -[hidden]right- outbound_svc
+webhook_handler -[hidden]down- inbound_svc
+grpc_handler -[hidden]down- management_svc
+event_consumer -[hidden]down- outbound_svc
+authorization_client -[hidden]right- inbound_adapter
+inbound_adapter -[hidden]right- outbox
+outbox -[hidden]right- integration_repo
+integration_repo -[hidden]right- outbound_adapter
+outbound_adapter -[hidden]right- http_client
+integrationDb -[hidden]right- openFga
+
+Rel(employerHrSystem, apiGateway, "Входящий webhook", "HTTPS / JSON")
+Rel_(apiGateway, webhook_handler, "Без изменения тела", "HTTP", "-down->>")
+Rel_(apiGateway, grpc_handler, "Управление", "gRPC", "-down->>")
+Rel_(kafka, event_consumer, "Бизнес-события", "Kafka / Avro", "-down->>")
+Rel_(event_consumer, schemaRegistry, "Схемы", "Registry API", "-[norank]->>")
+Rel_(webhook_handler, inbound_svc, "Принимает", "In-process", "-down->>")
+Rel_(grpc_handler, management_svc, "Сценарии управления", "In-process", "-down->>")
+Rel_(event_consumer, outbound_svc, "Планирует доставки", "In-process", "-down->>")
+Rel_(inbound_svc, inbound_adapter, "Проверяет / преобразует", "In-process", "-down->>")
+Rel_(inbound_svc, integration_repo, "Настройки / inbox", "In-process", "-down->>")
+Rel_(inbound_svc, outbox, "Событие", "In-process", "-down->>")
+Rel_(management_svc, authorization_client, "Полномочия", "In-process", "-down->>")
+Rel_(management_svc, integration_repo, "Настройки / журнал", "In-process", "-down->>")
+Rel_(outbound_svc, outbound_adapter, "Payload / подпись", "In-process", "-down->>")
+Rel_(outbound_svc, integration_repo, "Подписки / доставки", "In-process", "-down->>")
+Rel_(delivery_worker, outbound_svc, "Исполняет due jobs", "In-process", "-down->>")
+Rel_(outbound_svc, http_client, "Отправляет", "In-process", "-down->>")
+Rel_(http_client, employerHrSystem, "Исходящий webhook", "HTTPS / JSON", "-[norank]->>")
+Rel_(integration_repo, integrationDb, "Читает / пишет", "SQL / TCP", "-down->>")
+Rel_(outbox, integrationDb, "События", "SQL / TCP", "-down->>")
+Rel_(authorization_client, openFga, "Проверяет доступ", "OpenFGA API", "-down->>")
+
+SHOW_FLOATING_LEGEND()
+@enduml

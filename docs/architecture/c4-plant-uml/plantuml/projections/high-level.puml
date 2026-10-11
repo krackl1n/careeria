@@ -23,7 +23,7 @@ System_Boundary(platform, "Careeria") {
     CommunicationDomain(0, 1)
     IdentityAccess(0, 0, 1)
     FilesDomain(0)
-    IntegrationDomain()
+    IntegrationDomain(0)
 }
 
 Rel(candidate, web, "Использует", "HTTPS")
@@ -41,11 +41,11 @@ Rel(apiGateway, assessmentService, "Оценивание", "gRPC")
 Rel(apiGateway, communicationService, "Сообщения", "gRPC")
 Rel(apiGateway, notificationService, "Уведомления", "gRPC")
 Rel(apiGateway, fileService, "Файлы", "gRPC")
-Rel(apiGateway, integrationService, "Webhooks", "HTTP / gRPC")
+Rel(apiGateway, integrationService, "Вебхуки и управление", "HTTP / gRPC")
 Rel(identityService, identityProvider, "Аутентифицирует", "OAuth 2.0 / OIDC")
 Rel(notificationService, notificationProviders, "Отправляет", "Email / Push / SMS")
 Rel(employerHrSystem, apiGateway, "Отправляет webhook", "HTTPS / JSON")
-Rel(integrationService, employerHrSystem, "Передаёт события", "REST / Webhooks")
+Rel(integrationService, employerHrSystem, "Исходящие webhooks", "HTTPS / JSON")
 
 ShowArchitectureLegend()
 @enduml
