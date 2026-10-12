@@ -8,6 +8,7 @@
 - [1.1. Идентификация и декомпозиция](01-general/01-identification-decomposition.md)
 - [1.2. Формулировка задач](01-general/02-formulation-of-tasks.md)
 - [1.3. SWOT-анализ](01-general/03-swot-analysis.md)
+- [1.4. SMART-анализ целей разработки](01-general/04-smart-analysis.md)
 - [1.5. Анализ аналогов ПО](01-general/05-analogs-analysis.md)
 - [1.6. Задачи и функциональные возможности](01-general/06-capabilities.md)
 - [1.7. Пользователи и роли](01-general/07-roles.md)

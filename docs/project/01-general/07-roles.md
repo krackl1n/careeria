@@ -27,5 +27,6 @@
 * [1.1. Идентификация и декомпозиция](01-identification-decomposition.md)
 * [1.2. Формулировка задач](02-formulation-of-tasks.md)
 * [1.3. SWOT-анализ](03-swot-analysis.md)
+* [1.4. SMART-анализ целей разработки](04-smart-analysis.md) — исследование данных, преимущества и недостатки цели, формулировка по SMART.
 * [1.5. Анализ аналогов ПО](05-analogs-analysis.md)
 * [1.6. Задачи и функциональные возможности](06-capabilities.md)
