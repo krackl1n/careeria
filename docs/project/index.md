@@ -8,7 +8,8 @@
 - [1.1. Идентификация и декомпозиция](01-general/01-identification-decomposition.md)
 - [1.2. Формулировка задач](01-general/02-formulation-of-tasks.md)
 - [1.3. Задачи и функциональные возможности](01-general/03-capabilities.md)
-- [1.4. Пользователи и роли](01-general/04-roles.md)
+- [1.4. SMART-анализ целей разработки](01-general/04-smart-analysis.md)
+- [1.5. Пользователи и роли](01-general/05-roles.md)
 
 ### [2. Бизнес-сервисы и доменная модель](02-business-services/index.md)
 - [2.1. Выбор методологии и технологии концептуального моделирования ИС](02-business-services/01-choice-methodology-technology.md)
