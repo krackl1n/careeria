@@ -4,7 +4,9 @@ import unittest
 import re
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 
+import idef0_inline
 from idef0_inline import export_markdown_diagrams, render_inline_diagrams
 from idef0_render import MODELS
 
@@ -58,13 +60,13 @@ Review Profile produces Assessment
 
     def test_cyrillic_function_can_be_selected_for_a_nested_view(self):
         markdown = """```idef0
-@view focus Обработать заявку
-@view decompose Обработать заявку
-Обработать заявку получает Заявка
-Обработать заявку создаёт Решение
-Обработать заявку состоит из Проверить заявку
-Проверить заявку получает Заявка
-Проверить заявку создаёт Решение
+@view focus `Обработать заявку`
+@view decompose `Обработать заявку`
+`Обработать заявку` receives `Заявка`
+`Обработать заявку` produces `Решение`
+`Обработать заявку` is composed of `Проверить заявку`
+`Проверить заявку` receives `Заявка`
+`Проверить заявку` produces `Решение`
 ```
 """
         result = render_inline_diagrams(markdown, "russian.md")
@@ -94,7 +96,7 @@ Record Result produces Assessment
         guide = (Path(__file__).resolve().parents[1] / "contributing" / "idef0" / "index.md")
         examples = re.findall(r"````markdown\n(```idef0\n.*?\n```)\n````",
                               guide.read_text(encoding="utf-8"), re.S)
-        markdown = next(example for example in examples if "@view focus Manage Hiring" in example)
+        markdown = next(example for example in examples if "@view focus `Manage Hiring`" in example)
         result = render_inline_diagrams(markdown, "hiring.md")
         self.assertEqual(result.count('<figure class="idef0-inline">'), 3)
         self.assertIn("data-idef0-tunnel-marker='parent'", result)
@@ -110,6 +112,20 @@ Issue Invoice produces Invoice
 """
         result = render_inline_diagrams(markdown, "invoice.md")
         self.assertIn("data-idef0-block='Issue Invoice'", result)
+
+    def test_quoted_names_and_english_predicates(self):
+        markdown = """```idef0
+@view decompose "Обработать заявку"
+@block `Проверить заявку` | fill=#EAF6EE
+`Обработать заявку` receives "Заявка"
+`Обработать заявку` produces `Решение`
+`Обработать заявку` is composed of `Проверить заявку`
+`Проверить заявку` receives `Заявка`
+`Проверить заявку` produces `Решение`
+```\n"""
+        result = render_inline_diagrams(markdown, "example.md")
+        self.assertIn("data-idef0-block='Проверить заявку'", result)
+        self.assertIn("fill='#EAF6EE'", result)
 
     def test_example_inside_longer_fence_stays_literal(self):
         markdown = """````markdown
@@ -154,10 +170,12 @@ Process produces Output
                                            "Process receives Input\nProcess produces Output\n```\n",
                                            encoding="utf-8")
             errors = []
-            self.assertEqual(export_markdown_diagrams(docs, on_error=errors.append), 1)
+            self.assertEqual(export_markdown_diagrams(
+                docs, on_error=lambda page, export, views, error: errors.append((page, export, views, error))), 1)
             self.assertTrue((docs / "good.svg").exists())
             self.assertEqual(len(errors), 1)
-            self.assertIn("bad.md:3: IDEF0", str(errors[0]))
+            self.assertEqual(errors[0][1], "bad.svg")
+            self.assertIn("bad.md:3: IDEF0", str(errors[0][3]))
             with self.assertRaisesRegex(ValueError, "bad.md:3: IDEF0"):
                 export_markdown_diagrams(docs)
 
@@ -169,6 +187,39 @@ Process invents Result
 ```\n"""
         with self.assertRaisesRegex(ValueError, "example.md:4: IDEF0: .*unknown predicate"):
             render_inline_diagrams(markdown, "example.md")
+
+    def test_build_keeps_page_and_replaces_invalid_diagram(self):
+        page = SimpleNamespace(file=SimpleNamespace(src_uri="project/demo.md"))
+        config = SimpleNamespace(extra={"_idef0_errors": {
+            "models": [{"source": "idef0-svg/models/bad.idef0", "message": "bad.idef0: line 2"}],
+            "exports": [],
+        }})
+        markdown = """# Demo
+
+![Broken model](../idef0-svg/models/bad.svg)
+
+```idef0
+@view wrong `Процесс`
+`Процесс` receives `Вход`
+```
+"""
+        result = idef0_inline.on_page_markdown(markdown, page=page, config=config, files=None)
+        self.assertEqual(result.count('class="idef0-error"'), 3)
+        self.assertNotIn("![Broken model]", result)
+        self.assertIn("project/demo.md:6: IDEF0", result)
+
+    def test_failed_export_image_is_replaced_but_code_example_is_kept(self):
+        page = SimpleNamespace(file=SimpleNamespace(src_uri="project/demo.md"))
+        config = SimpleNamespace(extra={"_idef0_errors": {
+            "models": [],
+            "exports": [{"target": "contributing/idef0/figure.svg", "message": "export failed"}],
+        }})
+        image = "![Nested view](../contributing/idef0/figure-2.svg)"
+        markdown = f"# Demo\n\n{image}\n\n```markdown\n{image}\n```\n"
+        result = idef0_inline.on_page_markdown(markdown, page=page, config=config, files=None)
+        self.assertEqual(result.count('class="idef0-error"'), 2)
+        self.assertIn("export failed", result)
+        self.assertIn(f"```markdown\n{image}\n```", result)
 
 
 if __name__ == "__main__":

@@ -1,26 +1,26 @@
 # Example without tunnels: every child boundary matches its parent box.
-Publish Vacancy receives Vacancy Brief
-Publish Vacancy respects Publication Policy
-Publish Vacancy requires Recruiting Team
-Publish Vacancy produces Published Vacancy
-Publish Vacancy is composed of Prepare Vacancy
-Publish Vacancy is composed of Approve Vacancy
-Publish Vacancy is composed of Publish Listing
-Prepare Vacancy receives Vacancy Brief
-Prepare Vacancy requires Recruiting Team
-Prepare Vacancy produces Vacancy Draft
-Prepare Vacancy is composed of Analyze Requirements
-Prepare Vacancy is composed of Write Description
-Prepare Vacancy is composed of Assemble Draft
-Analyze Requirements receives Vacancy Brief
-Analyze Requirements produces Role Requirements
-Write Description receives Role Requirements
-Write Description requires Recruiting Team
-Write Description produces Vacancy Text
-Assemble Draft receives Vacancy Text
-Assemble Draft produces Vacancy Draft
-Approve Vacancy receives Vacancy Draft
-Approve Vacancy respects Publication Policy
-Approve Vacancy produces Approved Vacancy
-Publish Listing receives Approved Vacancy
-Publish Listing produces Published Vacancy
+`Publish Vacancy` receives `Vacancy Brief`
+`Publish Vacancy` respects `Publication Policy`
+`Publish Vacancy` requires `Recruiting Team`
+`Publish Vacancy` produces `Published Vacancy`
+`Publish Vacancy` is composed of `Prepare Vacancy`
+`Publish Vacancy` is composed of `Approve Vacancy`
+`Publish Vacancy` is composed of `Publish Listing`
+`Prepare Vacancy` receives `Vacancy Brief`
+`Prepare Vacancy` requires `Recruiting Team`
+`Prepare Vacancy` produces `Vacancy Draft`
+`Prepare Vacancy` is composed of `Analyze Requirements`
+`Prepare Vacancy` is composed of `Write Description`
+`Prepare Vacancy` is composed of `Assemble Draft`
+`Analyze Requirements` receives `Vacancy Brief`
+`Analyze Requirements` produces `Role Requirements`
+`Write Description` receives `Role Requirements`
+`Write Description` requires `Recruiting Team`
+`Write Description` produces `Vacancy Text`
+`Assemble Draft` receives `Vacancy Text`
+`Assemble Draft` produces `Vacancy Draft`
+`Approve Vacancy` receives `Vacancy Draft`
+`Approve Vacancy` respects `Publication Policy`
+`Approve Vacancy` produces `Approved Vacancy`
+`Publish Listing` receives `Approved Vacancy`
+`Publish Listing` produces `Published Vacancy`

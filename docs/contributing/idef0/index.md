@@ -4,29 +4,29 @@ IDEF0 показывает **что делает функция** и какие 
 
 Схемы строятся из текста через [IDEF0-SVG](https://github.com/jimmyjazz/IDEF0-SVG). В репозитории закреплён исходный Ruby-генератор; локальный адаптер добавляет цвета, несколько представлений одной модели, проверку границ, ICOM-коды и обозначение туннелей.
 
-Подробный синтаксис каждой строки и настройки находится в [справочнике команд IDEF0](01-commands.md). Для начала с копируемого кода откройте [пошаговые примеры на русском](03-practical-examples.md); отдельные многоуровневые модели с разбором стрелок — в [примерах](02-examples.md).
+Подробный синтаксис каждой строки и настройки находится в [справочнике команд IDEF0](01-commands.md). Для начала с копируемого кода откройте [пошаговые примеры с русскими названиями](03-practical-examples.md); отдельные многоуровневые модели с разбором стрелок — в [примерах](02-examples.md).
 
-Если в исходнике есть ошибка, `make docs` покажет её прямо на странице или в заметном предупреждении для отдельной модели. Формат сообщений и порядок исправления описаны в [разделе об ошибках](01-commands.md#как-показываются-ошибки).
+Если в исходнике есть ошибка, `make docs` покажет её прямо на странице или в заметном предупреждении для отдельной модели. Формат сообщений и порядок исправления описаны в [разделе об ошибках](01-commands.md#idef0-errors).
 
-## Самый простой способ: схема прямо на странице
+## Самый простой способ: схема прямо на странице {#idef0-inline}
 
-Вставьте блок `idef0` в нужную Markdown-страницу. Ни `.idef0`, ни JSON, ни путь к SVG указывать не требуется. Имена функций, стрелок и предикаты можно писать по-русски:
+Вставьте блок `idef0` в нужную Markdown-страницу. Ни `.idef0`, ни JSON, ни путь к SVG указывать не требуется. Команды и предикаты пишите по-английски; русские названия функций и стрелок заключайте в бэктики или кавычки:
 
 ````markdown
 ```idef0
 @export obrabotka-zayavki.svg
-Обработать заявку получает Заявка кандидата
-Обработать заявку подчиняется Правила отбора
-Обработать заявку требует Команда подбора
-Обработать заявку создаёт Решение по кандидату
-Обработать заявку состоит из Проверить опыт кандидата и соответствие требованиям вакансии
-Обработать заявку состоит из Подготовить итоговое решение по результатам рассмотрения
-Проверить опыт кандидата и соответствие требованиям вакансии получает Заявка кандидата
-Проверить опыт кандидата и соответствие требованиям вакансии подчиняется Правила отбора
-Проверить опыт кандидата и соответствие требованиям вакансии использует Команда подбора
-Проверить опыт кандидата и соответствие требованиям вакансии создаёт Результаты проверки
-Подготовить итоговое решение по результатам рассмотрения получает Результаты проверки
-Подготовить итоговое решение по результатам рассмотрения создаёт Решение по кандидату
+`Обработать заявку` receives `Заявка кандидата`
+`Обработать заявку` respects `Правила отбора`
+`Обработать заявку` requires `Команда подбора`
+`Обработать заявку` produces `Решение по кандидату`
+`Обработать заявку` is composed of `Проверить опыт кандидата и соответствие требованиям вакансии`
+`Обработать заявку` is composed of `Подготовить итоговое решение по результатам рассмотрения`
+`Проверить опыт кандидата и соответствие требованиям вакансии` receives `Заявка кандидата`
+`Проверить опыт кандидата и соответствие требованиям вакансии` respects `Правила отбора`
+`Проверить опыт кандидата и соответствие требованиям вакансии` requires `Команда подбора`
+`Проверить опыт кандидата и соответствие требованиям вакансии` produces `Результаты проверки`
+`Подготовить итоговое решение по результатам рассмотрения` receives `Результаты проверки`
+`Подготовить итоговое решение по результатам рассмотрения` produces `Решение по кандидату`
 ```
 ````
 
@@ -34,18 +34,18 @@ IDEF0 показывает **что делает функция** и какие 
 
 ```idef0
 @export obrabotka-zayavki.svg
-Обработать заявку получает Заявка кандидата
-Обработать заявку подчиняется Правила отбора
-Обработать заявку требует Команда подбора
-Обработать заявку создаёт Решение по кандидату
-Обработать заявку состоит из Проверить опыт кандидата и соответствие требованиям вакансии
-Обработать заявку состоит из Подготовить итоговое решение по результатам рассмотрения
-Проверить опыт кандидата и соответствие требованиям вакансии получает Заявка кандидата
-Проверить опыт кандидата и соответствие требованиям вакансии подчиняется Правила отбора
-Проверить опыт кандидата и соответствие требованиям вакансии использует Команда подбора
-Проверить опыт кандидата и соответствие требованиям вакансии создаёт Результаты проверки
-Подготовить итоговое решение по результатам рассмотрения получает Результаты проверки
-Подготовить итоговое решение по результатам рассмотрения создаёт Решение по кандидату
+`Обработать заявку` receives `Заявка кандидата`
+`Обработать заявку` respects `Правила отбора`
+`Обработать заявку` requires `Команда подбора`
+`Обработать заявку` produces `Решение по кандидату`
+`Обработать заявку` is composed of `Проверить опыт кандидата и соответствие требованиям вакансии`
+`Обработать заявку` is composed of `Подготовить итоговое решение по результатам рассмотрения`
+`Проверить опыт кандидата и соответствие требованиям вакансии` receives `Заявка кандидата`
+`Проверить опыт кандидата и соответствие требованиям вакансии` respects `Правила отбора`
+`Проверить опыт кандидата и соответствие требованиям вакансии` requires `Команда подбора`
+`Проверить опыт кандидата и соответствие требованиям вакансии` produces `Результаты проверки`
+`Подготовить итоговое решение по результатам рассмотрения` receives `Результаты проверки`
+`Подготовить итоговое решение по результатам рассмотрения` produces `Решение по кандидату`
 ```
 
 При `make docs` страница и встроенная SVG пересобираются после сохранения Markdown. Статическая сборка `make docs-build` делает то же. Длинные названия блоков переносятся на несколько строк. Исходником схемы служит блок на странице.
@@ -60,106 +60,106 @@ IDEF0 показывает **что делает функция** и какие 
 
 ````markdown
 ```idef0
-@view focus Manage Hiring
-@view decompose Manage Hiring
-@view decompose Review Applications
+@view focus `Manage Hiring`
+@view decompose `Manage Hiring`
+@view decompose `Review Applications`
 
 @defaults arrow=#43566D arrow_text=#26384B block_fill=#F3F7FB block_stroke=#27466A block_text=#172B41
-@block Make Decision | fill=#EAF6EE text=#14532D
-@arrow Hiring Decision | stroke=#15803D text=#14532D
+@block `Make Decision` | fill=#EAF6EE text=#14532D
+@arrow `Hiring Decision` | stroke=#15803D text=#14532D
 
-@tunnel parent | Review Applications | control | Hiring Policy
-@tunnel child | Review Applications | mechanism | Screening Tool
+@tunnel parent | `Review Applications` | control | `Hiring Policy`
+@tunnel child | `Review Applications` | mechanism | `Screening Tool`
 
-Manage Hiring receives Запрос на найм
-Manage Hiring receives Candidate Applications
-Manage Hiring respects Hiring Policy
-Manage Hiring requires Recruitment Team
-Manage Hiring produces Hiring Decision
-Manage Hiring is composed of Publish Vacancy
-Manage Hiring is composed of Review Applications
-Manage Hiring is composed of Make Decision
+`Manage Hiring` receives `Запрос на найм`
+`Manage Hiring` receives `Candidate Applications`
+`Manage Hiring` respects `Hiring Policy`
+`Manage Hiring` requires `Recruitment Team`
+`Manage Hiring` produces `Hiring Decision`
+`Manage Hiring` is composed of `Publish Vacancy`
+`Manage Hiring` is composed of `Review Applications`
+`Manage Hiring` is composed of `Make Decision`
 
-Publish Vacancy receives Запрос на найм
-Publish Vacancy produces Вакансия
+`Publish Vacancy` receives `Запрос на найм`
+`Publish Vacancy` produces `Вакансия`
 
-Review Applications receives Вакансия
-Review Applications receives Candidate Applications
-Review Applications respects Hiring Policy
-Review Applications requires Recruitment Team
-Review Applications produces Shortlist
-Review Applications is composed of Screen Applications
-Review Applications is composed of Evaluate Candidates
-Review Applications is composed of Prepare Shortlist
+`Review Applications` receives `Вакансия`
+`Review Applications` receives `Candidate Applications`
+`Review Applications` respects `Hiring Policy`
+`Review Applications` requires `Recruitment Team`
+`Review Applications` produces `Shortlist`
+`Review Applications` is composed of `Screen Applications`
+`Review Applications` is composed of `Evaluate Candidates`
+`Review Applications` is composed of `Prepare Shortlist`
 
-Screen Applications receives Вакансия
-Screen Applications receives Candidate Applications
-Screen Applications requires Screening Tool
-Screen Applications produces Eligible Applications
-Evaluate Candidates receives Eligible Applications
-Evaluate Candidates produces Evaluations
-Prepare Shortlist receives Evaluations
-Prepare Shortlist requires Recruitment Team
-Prepare Shortlist produces Shortlist
+`Screen Applications` receives `Вакансия`
+`Screen Applications` receives `Candidate Applications`
+`Screen Applications` requires `Screening Tool`
+`Screen Applications` produces `Eligible Applications`
+`Evaluate Candidates` receives `Eligible Applications`
+`Evaluate Candidates` produces `Evaluations`
+`Prepare Shortlist` receives `Evaluations`
+`Prepare Shortlist` requires `Recruitment Team`
+`Prepare Shortlist` produces `Shortlist`
 
-Make Decision receives Shortlist
-Make Decision produces Hiring Decision
+`Make Decision` receives `Shortlist`
+`Make Decision` produces `Hiring Decision`
 ```
 ````
 
 Результат этого кода:
 ```idef0
-@view focus Manage Hiring
-@view decompose Manage Hiring
-@view decompose Review Applications
+@view focus `Manage Hiring`
+@view decompose `Manage Hiring`
+@view decompose `Review Applications`
 
 @defaults arrow=#43566D arrow_text=#26384B block_fill=#F3F7FB block_stroke=#27466A block_text=#172B41
-@block Make Decision | fill=#EAF6EE text=#14532D
-@arrow Hiring Decision | stroke=#15803D text=#14532D
+@block `Make Decision` | fill=#EAF6EE text=#14532D
+@arrow `Hiring Decision` | stroke=#15803D text=#14532D
 
-@tunnel parent | Review Applications | control | Hiring Policy
-@tunnel child | Review Applications | mechanism | Screening Tool
+@tunnel parent | `Review Applications` | control | `Hiring Policy`
+@tunnel child | `Review Applications` | mechanism | `Screening Tool`
 
-Manage Hiring receives Запрос на найм
-Manage Hiring receives Candidate Applications
-Manage Hiring respects Hiring Policy
-Manage Hiring requires Recruitment Team
-Manage Hiring produces Hiring Decision
-Manage Hiring is composed of Publish Vacancy
-Manage Hiring is composed of Review Applications
-Manage Hiring is composed of Make Decision
+`Manage Hiring` receives `Запрос на найм`
+`Manage Hiring` receives `Candidate Applications`
+`Manage Hiring` respects `Hiring Policy`
+`Manage Hiring` requires `Recruitment Team`
+`Manage Hiring` produces `Hiring Decision`
+`Manage Hiring` is composed of `Publish Vacancy`
+`Manage Hiring` is composed of `Review Applications`
+`Manage Hiring` is composed of `Make Decision`
 
-Publish Vacancy receives Запрос на найм
-Publish Vacancy produces Вакансия
+`Publish Vacancy` receives `Запрос на найм`
+`Publish Vacancy` produces `Вакансия`
 
-Review Applications receives Вакансия
-Review Applications receives Candidate Applications
-Review Applications respects Hiring Policy
-Review Applications requires Recruitment Team
-Review Applications produces Shortlist
-Review Applications is composed of Screen Applications
-Review Applications is composed of Evaluate Candidates
-Review Applications is composed of Prepare Shortlist
+`Review Applications` receives `Вакансия`
+`Review Applications` receives `Candidate Applications`
+`Review Applications` respects `Hiring Policy`
+`Review Applications` requires `Recruitment Team`
+`Review Applications` produces `Shortlist`
+`Review Applications` is composed of `Screen Applications`
+`Review Applications` is composed of `Evaluate Candidates`
+`Review Applications` is composed of `Prepare Shortlist`
 
-Screen Applications receives Вакансия
-Screen Applications receives Candidate Applications
-Screen Applications requires Screening Tool
-Screen Applications produces Eligible Applications
-Evaluate Candidates receives Eligible Applications
-Evaluate Candidates produces Evaluations
-Prepare Shortlist receives Evaluations
-Prepare Shortlist requires Recruitment Team
-Prepare Shortlist produces Shortlist
+`Screen Applications` receives `Вакансия`
+`Screen Applications` receives `Candidate Applications`
+`Screen Applications` requires `Screening Tool`
+`Screen Applications` produces `Eligible Applications`
+`Evaluate Candidates` receives `Eligible Applications`
+`Evaluate Candidates` produces `Evaluations`
+`Prepare Shortlist` receives `Evaluations`
+`Prepare Shortlist` requires `Recruitment Team`
+`Prepare Shortlist` produces `Shortlist`
 
-Make Decision receives Shortlist
-Make Decision produces Hiring Decision
+`Make Decision` receives `Shortlist`
+`Make Decision` produces `Hiring Decision`
 ```
 
-Строки `is composed of` задают дерево функций. Каждая строка `@view` выводит один уровень: `focus` — один блок с границей, `decompose` — его непосредственные дочерние блоки. Чтобы раскрыть ещё один уровень, добавьте функции в модель и строку `@view decompose Имя Функции`.
+Строки `is composed of` задают дерево функций. Каждая строка `@view` выводит один уровень: `focus` — один блок с границей, `decompose` — его непосредственные дочерние блоки. Чтобы раскрыть ещё один уровень, добавьте функции в модель и строку `` @view decompose `Имя функции` ``.
 
-`@defaults` задаёт общие цвета; `@block` меняет `fill`, `stroke` или `text` у блока по точному имени; `@arrow` меняет `stroke` и `text` стрелки. `@tunnel parent` отмечает стрелку на родительском блоке, опущенную на дочерней схеме; `@tunnel child` — стрелку только на дочерней схеме. Нельзя оставлять такие различия без `@tunnel`: проверка границ остановит сборку. Подробности цветов и ролей стрелок — ниже на этой странице.
+`@defaults` задаёт общие цвета; `@block` меняет `fill`, `stroke` или `text` у блока по точному имени; `@arrow` меняет `stroke` и `text` стрелки. `@tunnel parent` отмечает стрелку на родительском блоке, опущенную на дочерней схеме; `@tunnel child` — стрелку только на дочерней схеме. Нельзя оставлять такие различия без `@tunnel`: вместо схемы появится сообщение о несовпадении границ. Подробности цветов и ролей стрелок — ниже на этой странице.
 
-## Когда модель нужна в отдельном файле
+## Когда модель нужна в отдельном файле {#idef0-file}
 
 Выбирайте этот способ, если модель должна храниться отдельно от любой конкретной страницы и использоваться в нескольких местах. Для экспорта встроенной схемы достаточно `@export`.
 
@@ -178,14 +178,14 @@ Make Decision produces Hiring Decision
 **1. Создайте модель** `docs/idef0-svg/models/candidate-assessment.idef0`. Регистрация в `mkdocs.yml` или списке генератора не нужна: он ищет все файлы `*.idef0` в этом каталоге и его вложенных папках.
 
 ```text
-Assess Candidate receives Application
-Assess Candidate produces Assessment
-Assess Candidate is composed of Review Profile
-Assess Candidate is composed of Record Result
-Review Profile receives Application
-Review Profile produces Findings
-Record Result receives Findings
-Record Result produces Assessment
+`Assess Candidate` receives `Application`
+`Assess Candidate` produces `Assessment`
+`Assess Candidate` is composed of `Review Profile`
+`Assess Candidate` is composed of `Record Result`
+`Review Profile` receives `Application`
+`Review Profile` produces `Findings`
+`Record Result` receives `Findings`
+`Record Result` produces `Assessment`
 ```
 
 Здесь вход `Application` и выход `Assessment` совпадают на границах родительского блока и его декомпозиции. `Findings` связывает дочерние блоки внутри схемы.
@@ -224,41 +224,41 @@ make idef0-render
 
 ## Как записать функцию и ICOM-стрелки
 
-Строка DSL имеет вид `Функция предикат Понятие`. Функцию и понятие можно называть по-русски или по-английски; повторяющиеся имена должны совпадать точно. Каждая связь занимает отдельную строку; строка с `#` в начале — комментарий.
+Строка DSL имеет вид `` `Функция` receives `Понятие` ``. Ключевые слова пишите по-английски; названия функций и стрелок можно писать по-русски или по-английски в бэктиках или парных кавычках. Повторяющиеся имена должны совпадать точно. Каждая связь занимает отдельную строку; строка с `#` в начале — комментарий.
 
 | Предикат | Вид стрелки | Смысл | Сторона блока |
 | --- | --- | --- | --- |
-| `receives` / `получает` | Input | Что функция получает и преобразует. | Слева |
-| `respects` / `подчиняется` | Control | Правило или ограничение, которое определяет выполнение. | Сверху |
-| `produces` / `создаёт`, `создает`, `производит` | Output | Результат выполнения. | Справа |
-| `requires` / `использует`, `требует` | Mechanism | Кто или что выполняет работу. | Снизу |
-| `is composed of` / `состоит из` | Декомпозиция | Дочерняя функция следующего уровня. | Создаёт блок внутри выбранного вида |
+| `receives` | Input | Что функция получает и преобразует. | Слева |
+| `respects` | Control | Правило или ограничение, которое определяет выполнение. | Сверху |
+| `produces` | Output | Результат выполнения. | Справа |
+| `requires` | Mechanism | Кто или что выполняет работу. | Снизу |
+| `is composed of` | Декомпозиция | Дочерняя функция следующего уровня. | Создаёт блок внутри выбранного вида |
 
 ```text
-Manage Hiring receives Hiring Request
-Manage Hiring respects Hiring Policy
-Manage Hiring requires Recruitment Team
-Manage Hiring produces Hiring Decision
-Manage Hiring is composed of Review Applications
+`Manage Hiring` receives `Hiring Request`
+`Manage Hiring` respects `Hiring Policy`
+`Manage Hiring` requires `Recruitment Team`
+`Manage Hiring` produces `Hiring Decision`
+`Manage Hiring` is composed of `Review Applications`
 ```
 
-Повторяйте одно и то же имя понятия **точно**, если оно связывает блоки: например, `Screen Applications produces Eligible Applications` и `Evaluate Candidates receives Eligible Applications`. Разные названия образуют разные стрелки. Разным функциям давайте разные имена: одинаковые имена генератор объединяет.
+Повторяйте одно и то же имя понятия **точно**, если оно связывает блоки: например, строка `` `Screen Applications` produces `Eligible Applications` `` соединяется со строкой `` `Evaluate Candidates` receives `Eligible Applications` ``. Разные названия образуют разные стрелки. Разным функциям давайте разные имена: одинаковые имена генератор объединяет.
 
 ## Как устроена вложенность
 
-Для каждого блока следующего уровня добавьте отдельную строку `Parent is composed of Child`. Затем опишите ICOM-стрелки дочерних функций. Дочернюю функцию можно раскрыть ещё на один уровень тем же способом.
+Для каждого блока следующего уровня добавьте отдельную строку `` `Parent` is composed of `Child` ``. Затем опишите ICOM-стрелки дочерних функций. Дочернюю функцию можно раскрыть ещё на один уровень тем же способом.
 
 ```text
-Manage Hiring is composed of Review Applications
-Review Applications is composed of Screen Applications
-Review Applications is composed of Evaluate Candidates
-Review Applications is composed of Prepare Shortlist
-Screen Applications receives Candidate Applications
-Screen Applications produces Eligible Applications
-Evaluate Candidates receives Eligible Applications
-Evaluate Candidates produces Evaluations
-Prepare Shortlist receives Evaluations
-Prepare Shortlist produces Shortlist
+`Manage Hiring` is composed of `Review Applications`
+`Review Applications` is composed of `Screen Applications`
+`Review Applications` is composed of `Evaluate Candidates`
+`Review Applications` is composed of `Prepare Shortlist`
+`Screen Applications` receives `Candidate Applications`
+`Screen Applications` produces `Eligible Applications`
+`Evaluate Candidates` receives `Eligible Applications`
+`Evaluate Candidates` produces `Evaluations`
+`Prepare Shortlist` receives `Evaluations`
+`Prepare Shortlist` produces `Shortlist`
 ```
 
 В [модели найма](../../idef0-svg/models/hiring.idef0) это дерево выглядит так:
@@ -273,7 +273,7 @@ Manage Hiring
 └── Make Decision
 ```
 
-Не создавайте циклов вложенности. Локальный генератор сравнивает внешние стрелки дочерней диаграммы с интерфейсом раскрываемого блока по роли и точному имени понятия. Несовпадение останавливает сборку, пока вы не исправите модель или явно не объявите туннель. Примеры двух и трёх уровней есть в разделе [«Примеры IDEF0»](02-examples.md).
+Не создавайте циклов вложенности. Локальный генератор сравнивает внешние стрелки дочерней диаграммы с интерфейсом раскрываемого блока по роли и точному имени понятия. При несовпадении генератор выводит ошибку вместо схемы, пока вы не исправите модель или явно не объявите туннель. Примеры двух и трёх уровней есть в разделе [«Примеры IDEF0»](02-examples.md).
 
 ## Границы, ICOM-коды и туннели
 

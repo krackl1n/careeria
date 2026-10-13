@@ -149,23 +149,18 @@ class Idef0RenderTest(unittest.TestCase):
             source.write_text("Bad Process invents Input\n", encoding="utf-8")
             config = SimpleNamespace(extra={})
             page = SimpleNamespace(file=SimpleNamespace(src_uri="index.md"))
-            idef0_render.on_startup(command="serve", dirty=False)
-            idef0_inline.on_startup(command="serve", dirty=False)
-            try:
-                with patch.object(idef0_render, "MODELS", models):
-                    idef0_render.on_pre_build(config)
-                    output = idef0_inline.on_page_markdown("# Page\n", page=page,
-                                                            config=config, files=None)
-                    self.assertIn('class="idef0-error"', output)
-                    self.assertIn("bad.idef0", output)
-                    source.unlink()
-                    idef0_render.on_pre_build(config)
-                    output = idef0_inline.on_page_markdown("# Page\n", page=page,
-                                                            config=config, files=None)
-                    self.assertNotIn('class="idef0-error"', output)
-            finally:
-                idef0_render.on_startup(command="build", dirty=False)
-                idef0_inline.on_startup(command="build", dirty=False)
+            with patch.object(idef0_render, "MODELS", models):
+                idef0_render.on_pre_build(config)
+                self.assertIn("Ошибка IDEF0", (models / "bad.svg").read_text(encoding="utf-8"))
+                output = idef0_inline.on_page_markdown("# Page\n", page=page,
+                                                        config=config, files=None)
+                self.assertIn('class="idef0-error"', output)
+                self.assertIn("bad.idef0", output)
+                source.unlink()
+                idef0_render.on_pre_build(config)
+                output = idef0_inline.on_page_markdown("# Page\n", page=page,
+                                                        config=config, files=None)
+                self.assertNotIn('class="idef0-error"', output)
 
 
 if __name__ == "__main__":

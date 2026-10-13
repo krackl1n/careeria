@@ -2,29 +2,21 @@ require 'cgi'
 
 # Local language and text layout support around the vendored IDEF0-SVG engine.
 module CareeriaIdef0Language
-  VERBS = {
-    'получает' => 'receives',
-    'подчиняется' => 'respects',
-    'создаёт' => 'produces',
-    'создает' => 'produces',
-    'производит' => 'produces',
-    'использует' => 'requires',
-    'требует' => 'requires',
-    'состоит из' => 'is composed of'
-  }.freeze
-  VERB_PATTERN = /\s(#{VERBS.keys.sort_by { |word| -word.length }.map { |word| Regexp.escape(word) }.join('|')})\s/u
-
-  def self.translate(text)
-    text.each_line.map do |line|
-      line.sub(VERB_PATTERN) { " #{VERBS.fetch(Regexp.last_match(1))} " }
-    end.join
-  end
-
   module StatementParser
     def parse(text)
-      CareeriaIdef0Language.translate(text).each_line.with_index(1).flat_map do |line, number|
+      text.each_line.with_index(1).flat_map do |line, number|
         begin
-          statements = super(line)
+          stripped = line.strip
+          if stripped.start_with?('`', '"', "'", '«')
+            name = '(?:`[^`]+`|"[^"]+"|\'[^\']+\'|«[^»]+»)'
+            pattern = /\A(#{name})\s+(is composed of|receives|respects|produces|requires)\s+(#{name})\z/u
+            match = pattern.match(stripped)
+            raise 'expected `Function` receives `Arrow` (or another English predicate)' unless match
+            unwrap = lambda { |value| value[1...-1] }
+            statements = [IDEF0::Statement.assemble(unwrap.call(match[1]), match[2], unwrap.call(match[3]))]
+          else
+            statements = super(line)
+          end
           statements.each do |statement|
             unless %w[receives respects produces requires].include?(statement.predicate) || statement.predicate == 'is composed of'
               raise "unknown predicate #{statement.predicate.inspect}"

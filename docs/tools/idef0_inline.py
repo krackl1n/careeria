@@ -5,13 +5,16 @@ from __future__ import annotations
 import html
 import json
 import logging
+import posixpath
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Callable
+from urllib.parse import unquote, urlsplit
 
-from idef0_render import RENDERER, ROOT
+from idef0_render import RENDERER, ROOT, write_error_svg
 
 FENCE = re.compile(r"^ {0,3}(?P<mark>`{3,}|~{3,})(?P<info>[^`~]*)$")
 VIEW_MODES = {"auto", "focus", "decompose", "schematic"}
@@ -23,7 +26,7 @@ STYLE_KEYS = {
 }
 EXPORT_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\.svg\Z")
 LOG = logging.getLogger("mkdocs.idef0")
-_serve_mode = False
+IMAGE = re.compile(r"!\[[^\]]*\]\(([^)\s]+\.svg)\)")
 
 
 def _message(error: Exception, page_path: str, line: int) -> str:
@@ -51,8 +54,61 @@ def _insert_banner(markdown: str, errors: list[str]) -> str:
     return banner + "\n\n" + markdown
 
 
+def _replace_failed_images(markdown: str, page_path: str, diagnostics: dict) -> str:
+    failures = []
+    for item in diagnostics.get("models", []):
+        source = item["source"]
+        if source.endswith(".idef0"):
+            failures.append((source[:-6], "model", item["message"]))
+    for item in diagnostics.get("exports", []):
+        if item["target"]:
+            failures.append((item["target"][:-4], "export", item["message"]))
+    failures.sort(key=lambda entry: len(entry[0]), reverse=True)
+
+    def replace(match: re.Match[str]) -> str:
+        link = urlsplit(match[1])
+        if link.scheme or link.netloc:
+            return match[0]
+        target = posixpath.normpath(posixpath.join(posixpath.dirname(page_path), unquote(link.path)))
+        for base, kind, message in failures:
+            if target == base + ".svg":
+                return "\n" + _error_panel(message) + "\n"
+            if target.startswith(base + "-") and target.endswith(".svg"):
+                suffix = target[len(base) + 1:-4]
+                if kind == "model" or suffix.isdigit():
+                    return "\n" + _error_panel(message) + "\n"
+        return match[0]
+
+    output = []
+    fence = None
+    for line in markdown.splitlines(keepends=True):
+        marker = FENCE.fullmatch(line.rstrip("\r\n"))
+        if fence is None and marker:
+            fence = marker.group("mark")
+            output.append(line)
+        elif fence is not None:
+            output.append(line)
+            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*", line.rstrip("\r\n")):
+                fence = None
+        else:
+            output.append(IMAGE.sub(replace, line))
+    return "".join(output)
+
+
 def _error(page_path: str, line: int, message: str) -> ValueError:
     return ValueError(f"{page_path}:{line}: IDEF0: {message}")
+
+
+def _name(raw: str, page_path: str, line: int) -> str:
+    value = raw.strip()
+    pairs = {"`": "`", '"': '"', "'": "'", "«": "»"}
+    if value and value[0] in pairs:
+        if len(value) < 3 or not value.endswith(pairs[value[0]]):
+            raise _error(page_path, line, f"unclosed name {value!r}")
+        value = value[1:-1]
+    if not value.strip():
+        raise _error(page_path, line, "name cannot be empty")
+    return value
 
 
 def _style_values(raw: str, allowed: set[str], page_path: str, line: int) -> dict[str, str]:
@@ -83,7 +139,8 @@ def _parse_block(body: str, page_path: str, first_line: int):
             if len(fields) < 2 or fields[1] not in VIEW_MODES:
                 raise _error(page_path, line_number,
                              "use @view auto|focus|decompose|schematic [Process Name]")
-            views.append((fields[1], fields[2] if len(fields) > 2 else None))
+            views.append((fields[1], _name(fields[2], page_path, line_number)
+                          if len(fields) > 2 else None))
         elif line.startswith("@export"):
             name = line[len("@export"):].strip()
             if export is not None or not EXPORT_NAME.fullmatch(name):
@@ -96,6 +153,8 @@ def _parse_block(body: str, page_path: str, first_line: int):
                 raise _error(page_path, line_number,
                              "use @tunnel parent|child | Process Name | input|control|output|mechanism | Arrow Name")
             side, process, kind, name = fields
+            process = _name(process, page_path, line_number)
+            name = _name(name, page_path, line_number)
             entry = settings.setdefault("boundaries", {}).setdefault(process, {})
             names = entry.setdefault(f"{side}_tunnels", {}).setdefault(kind, [])
             if name in names:
@@ -113,7 +172,7 @@ def _parse_block(body: str, page_path: str, first_line: int):
                              f"use {directive} Name | color=value [color=value]")
             values = _style_values(raw_values.strip(), STYLE_KEYS[directive], page_path, line_number)
             group = "blocks" if directive == "@block" else "arrows"
-            settings.setdefault(group, {}).setdefault(name.strip(), {}).update(values)
+            settings.setdefault(group, {}).setdefault(_name(name, page_path, line_number), {}).update(values)
         elif line.startswith("@"):
             raise _error(page_path, line_number, f"unknown directive {line.split()[0]}")
         else:
@@ -200,7 +259,7 @@ def render_inline_diagrams(markdown: str, page_path: str, show_errors: bool = Fa
                 error = _error(page_path, index + 1, "unclosed idef0 code fence")
                 if not show_errors:
                     raise error
-                LOG.error("%s", error)
+                LOG.info("Ошибка IDEF0: %s", error)
                 output.append("\n" + _error_panel(str(error)) + "\n")
                 break
             output.extend(lines[index:])
@@ -213,7 +272,7 @@ def render_inline_diagrams(markdown: str, page_path: str, show_errors: bool = Fa
                 if not show_errors:
                     raise
                 message = _message(error, page_path, index + 1)
-                LOG.error("%s", message)
+                LOG.info("Ошибка IDEF0: %s", message)
                 rendered = _error_panel(message)
             output.append("\n" + rendered + "\n")
         else:
@@ -223,7 +282,7 @@ def render_inline_diagrams(markdown: str, page_path: str, show_errors: bool = Fa
 
 
 def export_markdown_diagrams(docs_dir: Path, check: bool = False,
-                             on_error: Callable[[Exception], None] | None = None) -> int:
+                             on_error: Callable[[Path, str | None, int, Exception], None] | None = None) -> int:
     count = 0
     registry: set[Path] = set()
     for page in sorted(docs_dir.rglob("*.md")):
@@ -246,7 +305,10 @@ def export_markdown_diagrams(docs_dir: Path, check: bool = False,
                                    "unclosed idef0 code fence")
                     if on_error is None:
                         raise error
-                    on_error(error)
+                    body = "".join(lines[index + 1:])
+                    exported = re.search(r"(?m)^\s*@export\s+([a-z0-9-]+\.svg)\s*$", body)
+                    view_count = max(1, len(re.findall(r"(?m)^\s*@view\s+", body)))
+                    on_error(page, exported.group(1) if exported else None, view_count, error)
                 break
             if opening.group("info").strip() == "idef0":
                 body = "".join(lines[index + 1:end])
@@ -258,36 +320,41 @@ def export_markdown_diagrams(docs_dir: Path, check: bool = False,
                     except Exception as error:
                         if on_error is None:
                             raise
-                        on_error(ValueError(_message(error, str(page.relative_to(docs_dir)), index + 1)))
+                        exported = re.search(r"(?m)^\s*@export\s+([a-z0-9-]+\.svg)\s*$", body)
+                        view_count = max(1, len(re.findall(r"(?m)^\s*@view\s+", body)))
+                        on_error(page, exported.group(1) if exported else None, view_count,
+                                 ValueError(_message(error, str(page.relative_to(docs_dir)), index + 1)))
             index = end + 1
     return count
 
 
-def on_startup(*, command, dirty):
-    global _serve_mode
-    _serve_mode = command == "serve"
-
-
 def on_pre_build(config):
-    if not _serve_mode:
-        export_markdown_diagrams(Path(config.docs_dir))
-        return
     errors = []
+    docs_dir = Path(config.docs_dir)
 
-    def record(error: Exception) -> None:
-        errors.append(str(error))
-        LOG.error("%s", error)
+    def record(page: Path, export: str | None, view_count: int, error: Exception) -> None:
+        target = (page.parent / export).relative_to(docs_dir).as_posix() if export else None
+        errors.append({"target": target, "message": str(error)})
+        LOG.info("Ошибка IDEF0: %s", error)
+        if export:
+            base = page.parent / export
+            targets = {base}
+            targets.update(page.parent.glob(f"{base.stem}-[0-9]*.svg"))
+            targets.update(page.parent / f"{base.stem}-{number}.svg"
+                           for number in range(2, view_count + 1))
+            for output in targets:
+                write_error_svg(output, str(error))
 
-    export_markdown_diagrams(Path(config.docs_dir), on_error=record)
+    export_markdown_diagrams(docs_dir, on_error=record)
     config.extra.setdefault("_idef0_errors", {})["exports"] = errors
 
 
 def on_page_markdown(markdown, *, page, config, files):
-    result = render_inline_diagrams(markdown, page.file.src_uri, show_errors=_serve_mode)
-    if _serve_mode:
-        diagnostics = config.extra.get("_idef0_errors", {})
-        global_errors = diagnostics.get("models", []) + diagnostics.get("exports", [])
-        result = _insert_banner(result, global_errors)
+    diagnostics = config.extra.get("_idef0_errors", {})
+    result = render_inline_diagrams(markdown, page.file.src_uri, show_errors=True)
+    result = _replace_failed_images(result, page.file.src_uri, diagnostics)
+    global_errors = [item["message"] for item in diagnostics.get("models", []) + diagnostics.get("exports", [])]
+    result = _insert_banner(result, global_errors)
     return result
 
 
@@ -297,4 +364,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="check exported SVGs without writing")
     args = parser.parse_args()
-    print(f"IDEF0 inline: {export_markdown_diagrams(ROOT / 'docs', args.check)} exported block(s)")
+    def report(page: Path, export: str | None, view_count: int, error: Exception) -> None:
+        print(error, file=sys.stderr)
+        if export and not args.check:
+            base = page.parent / export
+            for number in range(1, view_count + 1):
+                suffix = "" if number == 1 else f"-{number}"
+                write_error_svg(page.parent / f"{base.stem}{suffix}.svg", str(error))
+
+    print(f"IDEF0 inline: {export_markdown_diagrams(ROOT / 'docs', args.check, report)} exported block(s)")

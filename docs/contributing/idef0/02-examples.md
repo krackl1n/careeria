@@ -1,6 +1,6 @@
 # Примеры IDEF0: уровни, границы и туннели
 
-Ниже две работающие модели: публикация вакансии с тремя уровнями без туннелей и наём с туннелями на обеих сторонах границы. Все изображения получаются из `.idef0` и соседнего `.idef0.json`; их можно открыть отдельно в полном размере. Если хотите писать диаграмму прямо в Markdown, начните с [подробных примеров на русском](03-practical-examples.md): там есть готовый код, результат и разбор каждой границы.
+Ниже две работающие модели: публикация вакансии с тремя уровнями без туннелей и наём с туннелями на обеих сторонах границы. Все изображения получаются из `.idef0` и соседнего `.idef0.json`; их можно открыть отдельно в полном размере. Если хотите писать диаграмму прямо в Markdown, начните с [подробных примеров с русскими названиями](03-practical-examples.md): там есть готовый код, результат и разбор каждой границы.
 
 ## Пример 1. Публикация вакансии без туннелей
 
@@ -21,10 +21,10 @@ Publish Vacancy
 ### Контекст A-0: один блок и его граница
 
 ```text
-Publish Vacancy receives Vacancy Brief
-Publish Vacancy respects Publication Policy
-Publish Vacancy requires Recruiting Team
-Publish Vacancy produces Published Vacancy
+`Publish Vacancy` receives `Vacancy Brief`
+`Publish Vacancy` respects `Publication Policy`
+`Publish Vacancy` requires `Recruiting Team`
+`Publish Vacancy` produces `Published Vacancy`
 ```
 
 Слева входит задание на вакансию, сверху действует правило публикации, снизу участвует команда, справа получается опубликованная вакансия.
@@ -34,18 +34,18 @@ Publish Vacancy produces Published Vacancy
 ### Уровень A0: три дочерние функции
 
 ```text
-Publish Vacancy is composed of Prepare Vacancy
-Publish Vacancy is composed of Approve Vacancy
-Publish Vacancy is composed of Publish Listing
+`Publish Vacancy` is composed of `Prepare Vacancy`
+`Publish Vacancy` is composed of `Approve Vacancy`
+`Publish Vacancy` is composed of `Publish Listing`
 
-Prepare Vacancy receives Vacancy Brief
-Prepare Vacancy requires Recruiting Team
-Prepare Vacancy produces Vacancy Draft
-Approve Vacancy receives Vacancy Draft
-Approve Vacancy respects Publication Policy
-Approve Vacancy produces Approved Vacancy
-Publish Listing receives Approved Vacancy
-Publish Listing produces Published Vacancy
+`Prepare Vacancy` receives `Vacancy Brief`
+`Prepare Vacancy` requires `Recruiting Team`
+`Prepare Vacancy` produces `Vacancy Draft`
+`Approve Vacancy` receives `Vacancy Draft`
+`Approve Vacancy` respects `Publication Policy`
+`Approve Vacancy` produces `Approved Vacancy`
+`Publish Listing` receives `Approved Vacancy`
+`Publish Listing` produces `Published Vacancy`
 ```
 
 `Vacancy Draft` связывает подготовку с согласованием, а `Approved Vacancy` — согласование с публикацией. Они остаются **внутри** A0, поэтому на границе A0 нет стрелок с такими именами.
@@ -62,17 +62,17 @@ Publish Listing produces Published Vacancy
 ### Уровень A1: раскрываем `Prepare Vacancy`
 
 ```text
-Prepare Vacancy is composed of Analyze Requirements
-Prepare Vacancy is composed of Write Description
-Prepare Vacancy is composed of Assemble Draft
+`Prepare Vacancy` is composed of `Analyze Requirements`
+`Prepare Vacancy` is composed of `Write Description`
+`Prepare Vacancy` is composed of `Assemble Draft`
 
-Analyze Requirements receives Vacancy Brief
-Analyze Requirements produces Role Requirements
-Write Description receives Role Requirements
-Write Description requires Recruiting Team
-Write Description produces Vacancy Text
-Assemble Draft receives Vacancy Text
-Assemble Draft produces Vacancy Draft
+`Analyze Requirements` receives `Vacancy Brief`
+`Analyze Requirements` produces `Role Requirements`
+`Write Description` receives `Role Requirements`
+`Write Description` requires `Recruiting Team`
+`Write Description` produces `Vacancy Text`
+`Assemble Draft` receives `Vacancy Text`
+`Assemble Draft` produces `Vacancy Draft`
 ```
 
 ![Декомпозиция подготовки вакансии](../../idef0-svg/models/vacancy-publication-prepare-vacancy.svg)
@@ -106,25 +106,25 @@ Assemble Draft produces Vacancy Draft
 Дочерний блок `Review Applications` на A0 имеет `Vacancy`, `Candidate Applications`, `Hiring Policy`, `Recruitment Team` и `Shortlist`. Его декомпозиция содержит `Screen Applications`, `Evaluate Candidates` и `Prepare Shortlist`.
 
 ```text
-Review Applications receives Vacancy
-Review Applications receives Candidate Applications
-Review Applications respects Hiring Policy
-Review Applications requires Recruitment Team
-Review Applications produces Shortlist
+`Review Applications` receives `Vacancy`
+`Review Applications` receives `Candidate Applications`
+`Review Applications` respects `Hiring Policy`
+`Review Applications` requires `Recruitment Team`
+`Review Applications` produces `Shortlist`
 
-Review Applications is composed of Screen Applications
-Review Applications is composed of Evaluate Candidates
-Review Applications is composed of Prepare Shortlist
+`Review Applications` is composed of `Screen Applications`
+`Review Applications` is composed of `Evaluate Candidates`
+`Review Applications` is composed of `Prepare Shortlist`
 
-Screen Applications receives Vacancy
-Screen Applications receives Candidate Applications
-Screen Applications requires Screening Tool
-Screen Applications produces Eligible Applications
-Evaluate Candidates receives Eligible Applications
-Evaluate Candidates produces Evaluations
-Prepare Shortlist receives Evaluations
-Prepare Shortlist requires Recruitment Team
-Prepare Shortlist produces Shortlist
+`Screen Applications` receives `Vacancy`
+`Screen Applications` receives `Candidate Applications`
+`Screen Applications` requires `Screening Tool`
+`Screen Applications` produces `Eligible Applications`
+`Evaluate Candidates` receives `Eligible Applications`
+`Evaluate Candidates` produces `Evaluations`
+`Prepare Shortlist` receives `Evaluations`
+`Prepare Shortlist` requires `Recruitment Team`
+`Prepare Shortlist` produces `Shortlist`
 ```
 
 ![Декомпозиция проверки откликов с туннелем](../../idef0-svg/models/hiring-review-applications.svg)
@@ -151,7 +151,7 @@ Prepare Shortlist produces Shortlist
 }
 ```
 
-Если убрать объявление `Screening Tool` из `child_tunnels`, сборка остановится с сообщением `boundary mismatch` и назовёт лишнюю граничную стрелку `mechanism:Screening Tool`. Если добавить туннель в JSON, но оставить обычную совпадающую стрелку в модели, сборка тоже остановится: исключение должно соответствовать реальному различию уровней.
+Если убрать объявление `Screening Tool` из `child_tunnels`, вместо схемы появится сообщение `boundary mismatch`, которое назовёт лишнюю граничную стрелку `mechanism:Screening Tool`. Если добавить туннель в JSON, но оставить обычную совпадающую стрелку в модели, появится такое же сообщение: исключение должно соответствовать реальному различию уровней.
 
 ## Как сделать свой пример
 
