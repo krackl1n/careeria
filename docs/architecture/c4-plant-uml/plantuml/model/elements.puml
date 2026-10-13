@@ -42,7 +42,7 @@
 
 !unquoted procedure AuthenticationDependency()
     Container_Boundary(authenticationBoundary, "Общая аутентификация") {
-        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT", "Проверяет access token, управляет сессиями и интеграцией с Keycloak.", $tags="platform")
+        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT", "Проверяет access token, управляет сессиями и интеграцией с Keycloak.", $tags="platform", $link="/architecture/c4-plant-uml/plantuml/component/backend/identity-service/")
     }
 !endprocedure
 
@@ -108,7 +108,7 @@
 
 !unquoted procedure IdentityAccess($withDatabase, $withProjection, $withOpenFga)
     Container_Boundary(identityBoundary, "Идентификация и доступ") {
-        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT, Argon2id", "Регистрация, credentials, access/refresh tokens, ротация сессий и интеграция с Keycloak.", $tags="platform")
+        Container(identityService, "Identity Service", "Go, gRPC, OAuth 2.0/OIDC, JWT, Argon2id", "Регистрация, credentials, access/refresh tokens, ротация сессий и интеграция с Keycloak.", $tags="platform", $link="/architecture/c4-plant-uml/plantuml/component/backend/identity-service/")
         !if ($withDatabase == 1)
             ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Пользователи, credentials, refresh sessions и transactional outbox.", $tags="storage")
         !endif

@@ -1,0 +1,14 @@
+' Общие контейнеры L2/L3; внутренние компоненты объявлены только в Identity L3.
+!global $identityServiceName = "Identity Service"
+
+!unquoted procedure IdentityServiceContainer($tags)
+    Container(identityService, $identityServiceName, "Go, gRPC, OAuth 2.0/OIDC, JWT, Argon2id", "Регистрация, credentials, access/refresh tokens, ротация сессий и интеграция с Keycloak.", $tags=$tags, $link="/architecture/c4-plant-uml/plantuml/component/backend/identity-service/")
+!endprocedure
+
+!unquoted procedure IdentityDatabase($tags)
+    ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Пользователи, credentials, refresh token families, сессии и transactional outbox.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure IdentityRedis($tags)
+    ContainerDb(identityRedis, "Identity Redis", "Redis", "Краткоживущие транзакции авторизации, сессионные шаги и одноразовые authorization codes.", $tags=$tags)
+!endprocedure

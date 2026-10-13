@@ -8,6 +8,7 @@
 - [Vacancy Service](backend/vacancy-service.md)
 - [Candidate Service](backend/candidate-service.md)
 - [Integration Service](backend/integration-service.md)
+- [Identity Service](backend/identity-service.md)
 
 ## Содержание описаний
 
@@ -19,6 +20,7 @@
 | [Vacancy Service](backend/vacancy-service.md) | 6 | 8 сценариев; 6 RPC перечислены в исходной спецификации | Содержание вакансии, требования и компенсация, жизненный цикл доменного агрегата Vacancy, видимость и выборки, авторизация и outbox. |
 | [Candidate Service](backend/candidate-service.md) | 9 | 24 группы сценариев; предлагаемые контракты | Профиль и профессиональные данные, статус поиска и видимость, версии резюме в S3 через File Service, безопасное скачивание, cleanup и снимки для найма. |
 | [Integration Service](backend/integration-service.md) | 13 | 21 группа сценариев; предлагаемые контракты | Входящие и исходящие webhooks, подключения компаний, подписи и ключи, inbox/outbox, подписки, deliveries, leases, retry/redrive и SSRF-защита. |
+| [Identity Service](backend/identity-service.md) | 12 | 20 сценариев | Регистрация, credentials, access/refresh токены , ротация сессий, обнаружение reuse, Debezium CDC и адаптер для внешних интеграций. |
 
 На каждой странице есть таблицы внутренних компонентов и соседних контейнеров. Юзкейсы описаны через вход, инициатора, проверки, порядок выполнения, результат и ограничения; отдельно разобраны конкуренция, ошибки и границы транзакций.
 
