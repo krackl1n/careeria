@@ -19,10 +19,9 @@ Review Applications is composed of Evaluate Candidates
 Review Applications is composed of Prepare Shortlist
 Screen Applications receives Vacancy
 Screen Applications receives Candidate Applications
-Screen Applications respects Hiring Policy
+Screen Applications requires Screening Tool
 Screen Applications produces Eligible Applications
 Evaluate Candidates receives Eligible Applications
-Evaluate Candidates respects Hiring Policy
 Evaluate Candidates produces Evaluations
 Prepare Shortlist receives Evaluations
 Prepare Shortlist requires Recruitment Team

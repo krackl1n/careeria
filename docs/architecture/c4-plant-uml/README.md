@@ -266,7 +266,7 @@ make docs-test              # Проверка сайта
 
 Markdown-файлы рядом со схемами являются самостоятельными страницами, без промежуточного генератора. Текст, таблицы, код и ссылки оформляются обычным Markdown. Блок `plantuml` в нужном месте страницы подключает схему через нативный `!include`.
 
-Пример — [system-context.md](plantuml/context/system-context.md). Полные правила находятся в [руководстве по PlantUML](../../contributing/03-plantuml.md).
+Пример — [system-context.md](plantuml/context/system-context.md). Полные правила находятся в [руководстве по PlantUML](../../contributing/plantuml-guide/index.md).
 
 Для интеграционных файлов с несколькими диаграммами сохранены отдельные страницы L1/L2. Они подключают именованные секции `!startsub` / `!endsub` из исходного `.puml` через `!includesub`. Схемы не дублируются.
 

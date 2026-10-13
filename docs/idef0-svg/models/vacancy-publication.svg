@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='903pt' height='380pt'
+viewBox='0.0 0.0 903.0 380.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Prepare Vacancy'><rect x='177' y='60' width='152' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='253' y='94'><tspan x='253' dy='0'>Prepare Vacancy</tspan></text>
+</g>
+<g data-idef0-block='Approve Vacancy'><rect x='369' y='160' width='152' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='445' y='194'><tspan x='445' dy='0'>Approve Vacancy</tspan></text>
+</g>
+<g data-idef0-block='Publish Listing'><rect x='561' y='260' width='140' height='60' fill='#E8F6EE' stroke='#2F5377' />
+<text fill='#17603A' text-anchor='middle' x='631' y='294'><tspan x='631' dy='0'>Publish Listing</tspan></text>
+</g>
+  <g data-idef0-arrow='Vacancy Draft'><path stroke='#3B536E' fill='none' d='M 329 90 L 339 90 C 344 90 349 95 349 100 L 349 180 C 349 185 354 190 359 190 L 369 190' />
+<polygon fill='#3B536E' stroke='#3B536E' points='369,190 363,193 363,187 369,190' />
+<text fill='#21364D' text-anchor='start' x='334' y='85'>Vacancy Draft</text>
+</g>
+<g data-idef0-arrow='Approved Vacancy'><path stroke='#3B536E' fill='none' d='M 521 190 L 531 190 C 536 190 541 195 541 200 L 541 280 C 541 285 546 290 551 290 L 561 290' />
+<polygon fill='#3B536E' stroke='#3B536E' points='561,290 555,293 555,287 561,290' />
+<text fill='#21364D' text-anchor='start' x='526' y='185'>Approved Vacancy</text>
+</g>
+<g data-idef0-arrow='Vacancy Brief' data-idef0-icom='I1'><line x1='20' y1='90' x2='177' y2='90' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='177,90 171,93 171,87 177,90' />
+<text fill='#21364D' text-anchor='start' x='25' y='85'>Vacancy Brief</text>
+<text class='idef0-icom' x='16' y='94' text-anchor='end' fill='#3B536E' font-size='11' font-weight='700'>I1</text></g>
+<g data-idef0-arrow='Published Vacancy' data-idef0-icom='O1'><line x1='701' y1='290' x2='883' y2='290' stroke='#16804A' />
+<polygon fill='#16804A' stroke='#16804A' points='883,290 877,293 877,287 883,290' />
+<text fill='#17603A' text-anchor='end' x='878' y='285'>Published Vacancy</text>
+<text class='idef0-icom' x='887' y='294' text-anchor='start' fill='#16804A' font-size='11' font-weight='700'>O1</text></g>
+<g data-idef0-arrow='Publication Policy' data-idef0-icom='C1'><line x1='445' y1='40' x2='445' y2='160' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='445,160 442,154 448,154 445,160' />
+<text fill='#21364D' text-anchor='middle' x='445' y='35'>Publication Policy</text>
+<text class='idef0-icom' x='458' y='16' text-anchor='start' fill='#3B536E' font-size='11' font-weight='700'>C1</text></g>
+<g data-idef0-arrow='Recruiting Team' data-idef0-icom='M1'><line x1='253' y1='340' x2='253' y2='120' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='253,120 250,126 256,126 253,120' />
+<text fill='#21364D' text-anchor='middle' x='253' y='355'>Recruiting Team</text>
+<text class='idef0-icom' x='266' y='336' text-anchor='start' fill='#3B536E' font-size='11' font-weight='700'>M1</text></g>
+</g>
+</svg>

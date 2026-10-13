@@ -2,8 +2,15 @@
   "mode": "decompose",
   "process": "Manage Hiring",
   "views": [
+    { "name": "context", "mode": "focus", "process": "Manage Hiring" },
     { "name": "review-applications", "mode": "decompose", "process": "Review Applications" }
   ],
+  "boundaries": {
+    "Review Applications": {
+      "parent_tunnels": { "control": ["Hiring Policy"] },
+      "child_tunnels": { "mechanism": ["Screening Tool"] }
+    }
+  },
   "defaults": {
     "arrow": "#43566D",
     "arrow_text": "#26384B",

@@ -4,6 +4,8 @@ require 'cgi'
 require 'json'
 require 'optparse'
 require_relative 'upstream/lib/idef0/cli'
+require_relative 'language'
+require_relative 'boundary'
 
 module CareeriaIdef0Style
   COLOR = /\A(?:\#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?|[a-zA-Z]+)\z/
@@ -25,7 +27,7 @@ module CareeriaIdef0Style
     def load(path)
       data = path ? JSON.parse(File.read(path)) : {}
       raise 'style file must be an object' unless data.is_a?(Hash)
-      unknown = data.keys - %w[mode process views defaults blocks arrows]
+      unknown = data.keys - %w[mode process views defaults blocks arrows boundaries]
       raise "unknown style fields: #{unknown.join(', ')}" unless unknown.empty?
       validate_colors(data.fetch('defaults', {}), DEFAULT_KEYS, 'defaults')
       { 'blocks' => BLOCK_KEYS, 'arrows' => ARROW_KEYS }.each do |group, keys|
@@ -33,6 +35,7 @@ module CareeriaIdef0Style
         raise "#{group} must be an object" unless entries.is_a?(Hash)
         entries.each { |name, values| validate_colors(values, keys, "#{group}.#{name}") }
       end
+      CareeriaIdef0Boundary.load(data)
       self.settings = data
     end
 
@@ -57,7 +60,8 @@ module CareeriaIdef0Style
         .gsub("stroke='black'", "stroke='#{stroke}'")
         .gsub("fill='black'", "fill='#{stroke}'")
         .gsub('<text ', "<text fill='#{text}' ")
-      "<g data-idef0-arrow='#{CGI.escapeHTML(line.name)}'>#{markup}</g>"
+      attributes, extras = CareeriaIdef0Boundary.decorate(line, stroke)
+      "<g data-idef0-arrow='#{CGI.escapeHTML(line.name)}'#{attributes}>#{markup}#{extras}</g>"
     end
   end
 end
@@ -83,11 +87,19 @@ OptionParser.new do |parser|
 end.parse!
 
 abort 'missing --input' unless options[:input]
-abort 'mode must be decompose, schematic or focus' unless %w[decompose schematic focus].include?(options[:mode])
+abort 'mode must be auto, decompose, schematic or focus' unless %w[auto decompose schematic focus].include?(options[:mode])
 
-CareeriaIdef0Style.load(options[:style])
-statements = File.open(options[:input], 'r:utf-8') { |file| IDEF0::Statement.parse(file) }
-root = IDEF0::Process.parse(statements)
-process = options[:process] ? root.find(options[:process]) : root
-abort "process not found: #{options[:process]}" unless process
-puts process.public_send(options[:mode]).to_svg
+begin
+  CareeriaIdef0Style.load(options[:style])
+  statements = File.open(options[:input], 'r:utf-8') { |file| IDEF0::Statement.parse(file) }
+  root = IDEF0::Process.parse(statements)
+  CareeriaIdef0Boundary.validate(root)
+  process = options[:process] ? root.find(options[:process]) : root
+  abort "process not found: #{options[:process]}" unless process
+  mode = options[:mode] == 'auto' ? (process.decomposable? ? 'decompose' : 'focus') : options[:mode]
+  CareeriaIdef0Boundary.select_view(process, mode)
+  puts process.public_send(mode).to_svg
+rescue StandardError => error
+  warn "IDEF0-SVG: #{error.message}"
+  exit 1
+end

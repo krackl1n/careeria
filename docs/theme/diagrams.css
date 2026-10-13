@@ -10,3 +10,38 @@
   max-width: 100%;
   height: auto;
 }
+.md-typeset figure.idef0-inline {
+  margin: 1.5em 0;
+}
+.md-typeset figure.idef0-inline svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+.md-typeset .idef0-error {
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  border-left: 0.25rem solid #c62828;
+  border-radius: 0.2rem;
+  background: #fff1f0;
+  color: #7f1d1d;
+}
+.md-typeset .idef0-error strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.md-typeset .idef0-error pre,
+.md-typeset .idef0-error code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: transparent;
+  color: inherit;
+}
+.md-typeset .idef0-error pre {
+  margin: 0;
+  padding: 0;
+}
+.md-typeset .idef0-error p {
+  margin: 0.5rem 0 0;
+}

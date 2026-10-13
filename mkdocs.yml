@@ -6,6 +6,7 @@ dev_addr: localhost:18882
 hooks:
   - docs/tools/navigation.py
   - docs/tools/idef0_render.py
+  - docs/tools/idef0_inline.py
 theme:
   name: material
   language: ru

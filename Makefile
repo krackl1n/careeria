@@ -285,10 +285,10 @@ docs-stop: ## Stop the documentation container.
 	@$(DOCS_COMPOSE) down
 
 docs-test: $(DOCS_ENV) ## Build and verify documentation in a container.
-	@$(DOCS_COMPOSE) run --build --rm docs sh -c 'python -m unittest discover -s docs/tools -p "test_idef0_render.py" && python -m mkdocs build --config-file mkdocs.yml --strict && python docs/tools/idef0_render.py --check && python docs/tools/check.py'
+	@$(DOCS_COMPOSE) run --build --rm docs sh -c 'python -m unittest discover -s docs/tools -p "test_idef0*.py" && python -m mkdocs build --config-file mkdocs.yml --strict && python docs/tools/idef0_render.py --check && python docs/tools/idef0_inline.py --check && python docs/tools/check.py'
 
 idef0-render: $(DOCS_ENV) ## Render all IDEF0-SVG models in the documentation.
-	@$(DOCS_COMPOSE) run --build --rm docs python docs/tools/idef0_render.py
+	@$(DOCS_COMPOSE) run --build --rm docs sh -c 'python docs/tools/idef0_render.py && python docs/tools/idef0_inline.py'
 
 architecture-validate: plantuml-architecture-validate ## Validate the PlantUML architecture sources.
 

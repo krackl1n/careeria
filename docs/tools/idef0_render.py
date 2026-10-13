@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 ROOT = Path(__file__).resolve().parents[2]
 MODELS = ROOT / "docs" / "idef0-svg" / "models"
 RENDERER = ROOT / "docs" / "tools" / "idef0-svg" / "render.rb"
 VIEW_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+LOG = logging.getLogger("mkdocs.idef0")
+_serve_mode = False
 
 
 def render_view(source: Path, style: Path, mode: str, process: str | None, target: Path, check: bool) -> None:
@@ -32,36 +36,72 @@ def render_view(source: Path, style: Path, mode: str, process: str | None, targe
         target.write_text(result.stdout, encoding="utf-8")
 
 
-def render_models(check: bool = False) -> int:
-    count = 0
-    for source in sorted(MODELS.rglob("*.idef0")):
-        style = source.with_suffix(".idef0.json")
+def _render_model(source: Path, check: bool) -> int:
+    style = source.with_suffix(".idef0.json")
+    try:
         options = json.loads(style.read_text(encoding="utf-8")) if style.exists() else {}
-        if not isinstance(options, dict):
-            raise ValueError(f"{style}: expected an object")
-        render_view(source, style, options.get("mode", "decompose"),
-                    options.get("process"), source.with_suffix(".svg"), check)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"{style}:{error.lineno}:{error.colno}: invalid JSON: {error.msg}") from error
+    if not isinstance(options, dict):
+        raise ValueError(f"{style}: expected an object")
+    render_view(source, style, options.get("mode", "decompose"),
+                options.get("process"), source.with_suffix(".svg"), check)
+    count = 1
+    views = options.get("views", [])
+    if not isinstance(views, list):
+        raise ValueError(f"{style}: views must be a list")
+    names = set()
+    for view in views:
+        if not isinstance(view, dict) or set(view) - {"name", "mode", "process"}:
+            raise ValueError(f"{style}: each view needs name, mode and process fields only")
+        name = view.get("name")
+        if not isinstance(name, str) or not VIEW_NAME.fullmatch(name) or name in names:
+            raise ValueError(f"{style}: view name must be unique lowercase words separated by hyphens")
+        names.add(name)
+        target = source.with_name(f"{source.stem}-{name}.svg")
+        render_view(source, style, view.get("mode", "decompose"),
+                    view.get("process"), target, check)
         count += 1
-        views = options.get("views", [])
-        if not isinstance(views, list):
-            raise ValueError(f"{style}: views must be a list")
-        names = set()
-        for view in views:
-            if not isinstance(view, dict) or set(view) - {"name", "mode", "process"}:
-                raise ValueError(f"{style}: each view needs name, mode and process fields only")
-            name = view.get("name")
-            if not isinstance(name, str) or not VIEW_NAME.fullmatch(name) or name in names:
-                raise ValueError(f"{style}: view name must be unique lowercase words separated by hyphens")
-            names.add(name)
-            target = source.with_name(f"{source.stem}-{name}.svg")
-            render_view(source, style, view.get("mode", "decompose"),
-                        view.get("process"), target, check)
-            count += 1
     return count
 
 
+def render_models(check: bool = False,
+                  on_error: Callable[[Path, Exception], None] | None = None) -> int:
+    count = 0
+    for source in sorted(MODELS.rglob("*.idef0")):
+        try:
+            count += _render_model(source, check)
+        except Exception as error:
+            if on_error is None:
+                raise
+            on_error(source, error)
+    return count
+
+
+def on_startup(*, command, dirty):
+    global _serve_mode
+    _serve_mode = command == "serve"
+
+
 def on_pre_build(config):
-    render_models()
+    if not _serve_mode:
+        render_models()
+        return
+    errors = []
+
+    def record(source: Path, error: Exception) -> None:
+        message = str(error).replace(f"{ROOT}/", "")
+        try:
+            relative_source = str(source.relative_to(ROOT))
+        except ValueError:
+            relative_source = str(source)
+        if not message.startswith(relative_source) and not message.startswith("docs/"):
+            message = f"{relative_source}: {message}"
+        errors.append(message)
+        LOG.error("IDEF0: %s", message)
+
+    render_models(on_error=record)
+    config.extra.setdefault("_idef0_errors", {})["models"] = errors
 
 
 if __name__ == "__main__":
