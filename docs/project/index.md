@@ -9,8 +9,6 @@
 - [1.2. Формулировка задач](01-general/02-formulation-of-tasks.md)
 - [1.3. SWOT-анализ](01-general/03-swot-analysis.md)
 - [1.5. Анализ аналогов ПО](01-general/05-analogs-analysis.md)
-- [1.6. Задачи и функциональные возможности](01-general/06-capabilities.md)
-- [1.7. Пользователи и роли](01-general/07-roles.md)
 
 ### [2. Бизнес-сервисы и доменная модель](02-business-services/index.md)
 - [2.1. Выбор методологии и технологии концептуального моделирования ИС](02-business-services/01-choice-methodology-technology.md)
