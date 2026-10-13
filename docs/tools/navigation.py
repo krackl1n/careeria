@@ -13,6 +13,7 @@ from mkdocs.structure.pages import Page
 
 _rendered: dict[str, dict] = {}
 _render_config: str | None = None
+_diagnostics_signature: str | None = None
 _FIELDS = ("content", "toc", "_title_from_render", "present_anchor_ids", "links_to_anchors")
 
 
@@ -58,6 +59,11 @@ def on_config(config):
 
 
 def on_nav(nav, *, config, files):
+    global _diagnostics_signature
+    signature = repr((config.get("extra") or {}).get("_idef0_errors", {}))
+    if signature != _diagnostics_signature:
+        _rendered.clear()
+        _diagnostics_signature = signature
     for file in files.documentation_pages():
         page = file.page
         if page is None:

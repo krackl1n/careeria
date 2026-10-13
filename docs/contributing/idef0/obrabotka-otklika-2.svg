@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='992pt' height='304pt'
+viewBox='0.0 0.0 992.0 304.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Проверить отклик кандидата по требованиям вакансии'><rect x='214' y='80' width='268' height='64' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='348' y='107'><tspan x='348' dy='0'>Проверить отклик кандидата по</tspan><tspan x='348' dy='18'>требованиям вакансии</tspan></text>
+</g>
+<g data-idef0-block='Принять решение по отклику'><rect x='522' y='184' width='244' height='60' fill='#EAF6EE' stroke='#15803D' />
+<text fill='#14532D' text-anchor='middle' x='644' y='218'><tspan x='644' dy='0'>Принять решение по отклику</tspan></text>
+</g>
+  <g data-idef0-arrow='Результат проверки'><path stroke='#43566D' fill='none' d='M 482 112 L 492 112 C 497 112 502 117 502 122 L 502 204 C 502 209 507 214 512 214 L 522 214' />
+<polygon fill='#43566D' stroke='#43566D' points='522,214 516,217 516,211 522,214' />
+<text fill='#26384B' text-anchor='start' x='487' y='107'>Результат проверки</text>
+</g>
+<g data-idef0-arrow='Отклик кандидата' data-idef0-icom='I1'><line x1='20' y1='112' x2='214' y2='112' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='214,112 208,115 208,109 214,112' />
+<text fill='#26384B' text-anchor='start' x='25' y='107'>Отклик кандидата</text>
+<text class='idef0-icom' x='16' y='116' text-anchor='end' fill='#43566D' font-size='11' font-weight='700'>I1</text></g>
+<g data-idef0-arrow='Решение по отклику' data-idef0-icom='O1'><line x1='766' y1='214' x2='972' y2='214' stroke='#15803D' />
+<polygon fill='#15803D' stroke='#15803D' points='972,214 966,217 966,211 972,214' />
+<text fill='#14532D' text-anchor='end' x='967' y='209'>Решение по отклику</text>
+<text class='idef0-icom' x='976' y='218' text-anchor='start' fill='#15803D' font-size='11' font-weight='700'>O1</text></g>
+<g data-idef0-arrow='Правила отбора' data-idef0-icom='C1'><line x1='348' y1='40' x2='348' y2='80' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='348,80 345,74 351,74 348,80' />
+<text fill='#26384B' text-anchor='middle' x='348' y='35'>Правила отбора</text>
+<text class='idef0-icom' x='361' y='16' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>C1</text></g>
+<g data-idef0-arrow='Команда подбора' data-idef0-icom='M1'><line x1='348' y1='264' x2='348' y2='144' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='348,144 345,150 351,150 348,144' />
+<text fill='#26384B' text-anchor='middle' x='348' y='279'>Команда подбора</text>
+<text class='idef0-icom' x='361' y='260' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
+</g>
+</svg>

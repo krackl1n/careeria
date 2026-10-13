@@ -11,6 +11,7 @@ RUN apt-get update \
         fonts-dejavu-core \
         libharfbuzz0b \
         openjdk-21-jre-headless \
+        ruby \
     && rm -rf /var/lib/apt/lists/* \
     && curl --fail --location --retry 2 --silent --show-error \
       "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" \
