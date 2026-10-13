@@ -12,7 +12,6 @@ theme:
   language: ru
   font: false
   features:
-    - navigation.instant
     - navigation.expand
     - navigation.sections
     - navigation.indexes
