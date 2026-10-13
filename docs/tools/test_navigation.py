@@ -33,9 +33,12 @@ class NavigationTests(unittest.TestCase):
                 rendered.append(page.file.src_uri)
                 return original_render(page, config, files)
 
-            def rebuild():
+            def rebuild(diagnostics=None):
                 rendered.clear()
-                build(load_config(config_file=str(config_file)), dirty=True)
+                config = load_config(config_file=str(config_file))
+                if diagnostics is not None:
+                    config.extra["_idef0_errors"] = diagnostics
+                build(config, dirty=True)
 
             def assert_menus(expected, absent=()):
                 for name in expected:
@@ -64,6 +67,11 @@ class NavigationTests(unittest.TestCase):
                 rebuild()
                 self.assertEqual(rendered, [])
                 assert_menus({"alpha": "Alpha Service", "beta": "Renamed Service"}, ["Gamma Service"])
+
+                rebuild({"models": ["broken.idef0: invalid model"]})
+                self.assertEqual(set(rendered), {"backend/alpha.md", "backend/beta.md"})
+                rebuild()
+                self.assertEqual(set(rendered), {"backend/alpha.md", "backend/beta.md"})
 
     def test_section_titles_and_top_level_order(self):
         hook = Path(__file__).with_name("navigation.py").resolve()

@@ -12,4 +12,4 @@ Candidate DB хранит структурированный профиль, с�
 @enduml
 ```
 
-[Контекст области](member1-l1-context.md) · [Компоненты Candidate Service · L3](../../../component/backend/candidate-service.md) · [Компоненты Vacancy Service · L3](../../../component/backend/vacancy-service.md) · [Командная интеграция](../../../integration/team.md)
+[Контекст области](member1-l1-context.md) · [Компоненты Candidate Service · L3](../../../component/backend/candidate-service.md) · [Компоненты Vacancy Service · L3](../../../component/backend/vacancy-service.md) · [Полная система](../../../container/full-system.md)

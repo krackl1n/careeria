@@ -10,4 +10,4 @@
 @enduml
 ```
 
-[Контекст области](member3-l1-context.md) · [Командная интеграция](../../../integration/team.md)
+[Контекст области](member3-l1-context.md) · [Полная система](../../../container/full-system.md)

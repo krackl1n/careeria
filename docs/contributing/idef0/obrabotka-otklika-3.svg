@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='888pt' height='320pt'
+viewBox='0.0 0.0 888.0 320.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Проверить опыт'><rect x='214' y='80' width='156' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='292' y='114'><tspan x='292' dy='0'>Проверить опыт</tspan></text>
+</g>
+<g data-idef0-block='Сопоставить с требованиями'><rect x='410' y='180' width='248' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='534' y='214'><tspan x='534' dy='0'>Сопоставить с требованиями</tspan></text>
+</g>
+  <g data-idef0-arrow='Оценка опыта'><path stroke='#43566D' fill='none' d='M 370 110 L 380 110 C 385 110 390 115 390 120 L 390 200 C 390 205 395 210 400 210 L 410 210' />
+<polygon fill='#43566D' stroke='#43566D' points='410,210 404,213 404,207 410,210' />
+<text fill='#26384B' text-anchor='start' x='375' y='105'>Оценка опыта</text>
+</g>
+<g data-idef0-arrow='Отклик кандидата' data-idef0-icom='I1'><line x1='20' y1='110' x2='214' y2='110' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='214,110 208,113 208,107 214,110' />
+<text fill='#26384B' text-anchor='start' x='25' y='105'>Отклик кандидата</text>
+<text class='idef0-icom' x='16' y='114' text-anchor='end' fill='#43566D' font-size='11' font-weight='700'>I1</text></g>
+<g data-idef0-arrow='Результат проверки' data-idef0-icom='O1'><line x1='658' y1='210' x2='868' y2='210' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='868,210 862,213 862,207 868,210' />
+<text fill='#26384B' text-anchor='end' x='863' y='205'>Результат проверки</text>
+<text class='idef0-icom' x='872' y='214' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>O1</text></g>
+<g data-idef0-arrow='Правила отбора' data-idef0-icom='C1'><line x1='292' y1='40' x2='292' y2='80' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='292,80 289,74 295,74 292,80' />
+<text fill='#26384B' text-anchor='middle' x='292' y='35'>Правила отбора</text>
+<text class='idef0-icom' x='305' y='16' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>C1</text></g>
+<g data-idef0-arrow='Команда подбора' data-idef0-icom='M1'><line x1='534' y1='280' x2='534' y2='240' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='534,240 531,246 537,246 534,240' />
+<text fill='#26384B' text-anchor='middle' x='534' y='295'>Команда подбора</text>
+<text class='idef0-icom' x='547' y='276' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
+</g>
+</svg>
