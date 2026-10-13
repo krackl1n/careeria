@@ -33,7 +33,8 @@ make docs
 ```
 
 - [Обзор документации](docs/index.md).
-- [Как писать страницы и подключать диаграммы](docs/contributing.md).
+- [Как писать документацию](docs/contributing/index.md) — структура страниц, IDEF0 и PlantUML.
+- [IDEF0-диаграммы кодом](docs/contributing/02-idef0.md) — вложенность, SVG и настройки цветов.
 - Конфигурация сайта: `mkdocs.yml`; зависимости: `docs/requirements.txt`.
 - Локальные настройки контейнера: `docs/.env` (шаблон — `docs/.env.example`).
 - Схемы C4-PlantUML: `docs/architecture/c4-plant-uml/plantuml/`.

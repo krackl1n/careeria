@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='896pt' height='420pt'
+viewBox='0.0 0.0 896.0 420.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Screen Applications'><rect x='222' y='80' width='154' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='299' y='110'>Screen Applications</text>
+</g>
+<g data-idef0-block='Evaluate Candidates'><rect x='416' y='180' width='154' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='493' y='210'>Evaluate Candidates</text>
+</g>
+<g data-idef0-block='Prepare Shortlist'><rect x='610' y='280' width='142' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='681' y='310'>Prepare Shortlist</text>
+</g>
+  <g data-idef0-arrow='Eligible Applications'><path stroke='#43566D' fill='none' d='M 376 110 L 386 110 C 391 110 396 115 396 120 L 396 200 C 396 205 401 210 406 210 L 416 210' />
+<polygon fill='#43566D' stroke='#43566D' points='416,210 410,213 410,207 416,210' />
+<text fill='#26384B' text-anchor='start' x='381' y='105'>Eligible Applications</text>
+</g>
+<g data-idef0-arrow='Evaluations'><path stroke='#43566D' fill='none' d='M 570 210 L 580 210 C 585 210 590 215 590 220 L 590 300 C 590 305 595 310 600 310 L 610 310' />
+<polygon fill='#43566D' stroke='#43566D' points='610,310 604,313 604,307 610,310' />
+<text fill='#26384B' text-anchor='start' x='575' y='205'>Evaluations</text>
+</g>
+<g data-idef0-arrow='Vacancy'><line x1='20' y1='120' x2='222' y2='120' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='222,120 216,123 216,117 222,120' />
+<text fill='#26384B' text-anchor='start' x='25' y='115'>Vacancy</text>
+</g>
+<g data-idef0-arrow='Candidate Applications'><line x1='20' y1='100' x2='222' y2='100' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='222,100 216,103 216,97 222,100' />
+<text fill='#26384B' text-anchor='start' x='25' y='95'>Candidate Applications</text>
+</g>
+<g data-idef0-arrow='Shortlist'><line x1='752' y1='310' x2='876' y2='310' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='876,310 870,313 870,307 876,310' />
+<text fill='#26384B' text-anchor='end' x='871' y='305'>Shortlist</text>
+</g>
+<g data-idef0-arrow='Hiring Policy'><line x1='299' y1='40' x2='299' y2='80' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='299,80 296,74 302,74 299,80' />
+<text fill='#26384B' text-anchor='middle' x='299' y='35'>Hiring Policy</text>
+</g>
+<g data-idef0-arrow='Hiring Policy'><line x1='493' y1='40' x2='493' y2='180' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='493,180 490,174 496,174 493,180' />
+<text fill='#26384B' text-anchor='middle' x='493' y='35'>Hiring Policy</text>
+</g>
+<g data-idef0-arrow='Recruitment Team'><line x1='681' y1='380' x2='681' y2='340' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='681,340 678,346 684,346 681,340' />
+<text fill='#26384B' text-anchor='middle' x='681' y='395'>Recruitment Team</text>
+</g>
+</g>
+</svg>

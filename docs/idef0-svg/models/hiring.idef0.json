@@ -1,0 +1,20 @@
+{
+  "mode": "decompose",
+  "process": "Manage Hiring",
+  "views": [
+    { "name": "review-applications", "mode": "decompose", "process": "Review Applications" }
+  ],
+  "defaults": {
+    "arrow": "#43566D",
+    "arrow_text": "#26384B",
+    "block_fill": "#F3F7FB",
+    "block_stroke": "#27466A",
+    "block_text": "#172B41"
+  },
+  "blocks": {
+    "Make Decision": { "fill": "#EAF6EE", "text": "#14532D" }
+  },
+  "arrows": {
+    "Hiring Decision": { "stroke": "#15803D", "text": "#14532D" }
+  }
+}

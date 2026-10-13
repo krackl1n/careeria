@@ -5,6 +5,7 @@ docs_dir: docs
 dev_addr: localhost:18882
 hooks:
   - docs/tools/navigation.py
+  - docs/tools/idef0_render.py
 theme:
   name: material
   language: ru
@@ -22,6 +23,7 @@ plugins:
       lang: [ru, en]
 markdown_extensions:
   - admonition
+  - attr_list
   - tables
   - toc:
       permalink: true
@@ -40,11 +42,11 @@ extra:
     order:
       - index.md
       - getting-started
+      - contributing
       - project
       - architecture
       - deployment
       - security
-      - contributing.md
       - readme.md
     titles:
       architecture: Архитектура
@@ -52,10 +54,12 @@ extra:
       plantuml: Диаграммы и модели
       backend: Backend-сервисы
       project: Описание проекта
+      contributing: Как писать документацию
       getting-started: Начало работы
       deployment: Развёртывание
       security: Безопасность и доступ
 exclude_docs: |
+  tools/idef0-svg/
   architecture/c4-plant-uml/node_modules/
   architecture/c4-plant-uml/.c4builder/
   architecture/c4-plant-uml/.cache/
