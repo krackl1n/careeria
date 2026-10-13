@@ -12,4 +12,4 @@ Integration Service принимает подписанные вебхуки ч�
 @enduml
 ```
 
-[Контекст области](member4-l1-context.md) · [Integration Service · L3](../../../component/backend/integration-service.md) · [Приём HR-webhook](../../../dynamic/hr-integration.md) · [Командная интеграция](../../../integration/team.md)
+[Контекст области](member4-l1-context.md) · [Identity Service · L3](../../../component/backend/identity-service.md) · [Integration Service · L3](../../../component/backend/integration-service.md) · [Приём HR-webhook](../../../dynamic/hr-integration.md) · [Командная интеграция](../../../integration/team.md)

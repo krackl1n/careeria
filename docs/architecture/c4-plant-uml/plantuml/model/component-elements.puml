@@ -4,7 +4,20 @@
 !include vacancy-elements.puml
 !include candidate-elements.puml
 !include integration-elements.puml
+!include identity-elements.puml
 !include infrastructure-elements.puml
+
+!unquoted procedure ComponentIdentityDatabase()
+    IdentityDatabase("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentIdentityRedis()
+    IdentityRedis("managedInfrastructure")
+!endprocedure
+
+!unquoted procedure ComponentIdentityProvider()
+    System_Ext(identityProvider, "Identity Provider", "Keycloak, OIDC", "OIDC-провайдер на базе Keycloak; федерация и внешняя аутентификация пользователей.")
+!endprocedure
 
 !unquoted procedure ComponentIntegrationDatabase()
     IntegrationDatabase("managedInfrastructure")
