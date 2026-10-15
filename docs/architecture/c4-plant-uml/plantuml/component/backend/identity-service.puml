@@ -1,0 +1,98 @@
+@startuml identity-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(identity_container, $identityServiceName) {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Входные контракты: Registration, Authentication, OAuth 2.0, Sessions, Metadata и Admin API")
+
+        together {
+            Component(auth_svc, "Authentication & Registration Service", "Go Application Service", "Регистрация, проверка паролей (Argon2id), валидация email/phone OTP, MFA и управление consent")
+            Component(oauth_svc, "OAuth & Token Service", "Go Application Service", "OAuth 2.0/OIDC: Authorize, Continue, Token Exchange, ротация refresh токенов, отзыв и UserInfo")
+        }
+
+        together {
+            Component(credential_service, "Credential Security Service", "Go / Argon2id, Crypto", "Хеширование паролей Argon2id (PHC string), защита от brute-force, генерация/хеширование токенов")
+            Component(token_service, "Token Minting & Key Service", "Go / JWT, Ed25519", "Выпуск Access Tokens (RFC 9068, EdDSA), ID Tokens, управление и ротация signing keys (JWKS)")
+        }
+
+        together {
+            Component(external_adapter, "External Integration Adapter", "Go / HTTP, OIDC", "Адаптер для внешних интеграций: OIDC-федерация, валидация внешних токенов и связывание аккаунтов")
+            Component(identity_repo, "Identity Repo", "Go / pgx, sqlc", "Агрегаты Identity, IdentityProfile, Email, Phone и связки external accounts")
+            Component(credential_repo, "Credential & Auth State Repo", "Go / pgx, sqlc", "Хеши паролей (Argon2id), счётчики неудачных попыток и статус блокировки")
+            Component(session_repo, "Session & Token Family Repo", "Go / pgx, sqlc", "Сессии, session scopes, refresh token families и история ротаций токенов")
+            Component(oauth_client_repo, "OAuth Client & Keys Repo", "Go / pgx, sqlc", "OAuth-клиенты, redirect URIs, разрешённые scopes, grants и ротируемые signing keys")
+            Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарная запись доменных и аудиторных событий в PostgreSQL для Debezium CDC")
+            Component(auth_tx_repo, "Authorization Transaction Repo", "Go / Redis", "Краткоживущие транзакции авторизации и одноразовые authorization codes")
+        }
+    }
+
+    together {
+        ComponentIdentityDatabase()
+        ComponentIdentityRedis()
+    }
+}
+
+ComponentIdentityProvider()
+
+apiGateway -[hidden]down- grpc_handler
+grpc_handler -[hidden]down- auth_svc
+
+auth_svc -[hidden]right- oauth_svc
+auth_svc -[hidden]down- credential_service
+oauth_svc -[hidden]down- token_service
+credential_service -[hidden]right- token_service
+
+credential_service -[hidden]down- identity_repo
+token_service -[hidden]down- session_repo
+
+external_adapter -[hidden]right- identity_repo
+identity_repo -[hidden]right- credential_repo
+credential_repo -[hidden]right- session_repo
+session_repo -[hidden]right- oauth_client_repo
+oauth_client_repo -[hidden]right- outbox
+outbox -[hidden]right- auth_tx_repo
+
+identityDb -[hidden]right- identityRedis
+identity_repo -[hidden]down- identityDb
+auth_tx_repo -[hidden]down- identityRedis
+
+identityDb -[hidden]down- identityProvider
+
+Rel_(apiGateway, grpc_handler, "Запросы авторизации и токенов", "gRPC", "-down->>")
+
+Rel_(grpc_handler, auth_svc, "Регистрация и вход", "In-process", "-down->>")
+Rel_(grpc_handler, oauth_svc, "OAuth 2.0 / OIDC", "In-process", "-down->>")
+
+Rel(auth_svc, external_adapter, "Внешняя аутентификация", "In-process")
+Rel(auth_svc, credential_service, "Проверка пароля (Argon2id)", "In-process")
+Rel(oauth_svc, credential_service, "Генерация / хеширование токенов", "In-process")
+Rel(oauth_svc, token_service, "Подпись Access и ID токенов", "In-process")
+
+Rel(token_service, oauth_client_repo, "Signing keys", "In-process")
+
+Rel_(auth_svc, identity_repo, "Identity и контакты", "In-process", "-down->>")
+Rel_(auth_svc, credential_repo, "Credentials и lockout", "In-process", "-down->>")
+Rel_(auth_svc, auth_tx_repo, "Шаги авторизации", "In-process", "-down->>")
+Rel_(auth_svc, outbox, "События профиля", "In-process", "-down->>")
+
+Rel_(oauth_svc, session_repo, "Сессии и ротация семейств", "In-process", "-down->>")
+Rel_(oauth_svc, oauth_client_repo, "Клиенты и гранты", "In-process", "-down->>")
+Rel_(oauth_svc, auth_tx_repo, "Коды и транзакции", "In-process", "-down->>")
+Rel_(oauth_svc, outbox, "События сессий и reuse", "In-process", "-down->>")
+
+Rel_(identity_repo, identityDb, "identities, accounts", "SQL / TCP", "-down->>")
+Rel_(credential_repo, identityDb, "passwords, auth_state", "SQL / TCP", "-down->>")
+Rel_(session_repo, identityDb, "sessions, token families", "SQL / TCP", "-down->>")
+Rel_(oauth_client_repo, identityDb, "clients, keys", "SQL / TCP", "-down->>")
+Rel_(outbox, identityDb, "Transactional outbox (CDC)", "SQL / TCP", "-down->>")
+
+Rel_(auth_tx_repo, identityRedis, "transactions, codes (TTL)", "Redis Protocol / TCP", "-down->>")
+
+Rel_(external_adapter, identityProvider, "OIDC Discovery, Tokens / UserInfo", "HTTPS / OIDC", "-down->>")
+
+SHOW_FLOATING_LEGEND()
+@enduml

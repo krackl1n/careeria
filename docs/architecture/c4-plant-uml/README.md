@@ -95,6 +95,8 @@ Candidate Service и Candidate DB аналогично определены в `
 
 Integration Service и Integration DB определены в `model/integration-elements.puml`; внутренние компоненты — только в `component/backend/integration-service.puml`. Приём HTTP webhook и gRPC-управление разделены. Входящий inbox и нормализованный outbox сохраняются одной SQL-транзакцией; публикация идёт через существующий CDC. Исходящие deliveries создаются из Kafka и исполняются worker с lease, устойчивым delivery ID и повторными попытками. L2 платформы и HR-сценарий используют ту же модель; каталог L3 содержит 21 группу предлагаемых сценариев.
 
+Identity Service, Identity DB и Identity Redis определены в `model/identity-elements.puml`; внутренние компоненты — в `component/backend/identity-service.puml`. Входной gRPC-трафик координируют службы регистрации/аутентификации и OAuth 2.0 / OIDC. Выпуск токенов Access и ID токенов изолирован в Token Minting Service, пароли защищены алгоритмом Argon2id в Credential Security Service. Сессии и одноразовые refresh-токены объединены в Token Families с обнаружением повторного использования (reuse detection). Краткоживущие транзакции авторизации и одноразовые authorization codes хранятся в Redis с жестким TTL, а долговременные данные пользователей, сессий и transactional outbox (для Debezium CDC) — в PostgreSQL. Внешняя OIDC-федерация изолирована в адаптере для внешних интеграций. Каталог L3 содержит 20 сценариев.
+
 Общий L3-стиль включает `horizontalLineBetweenDifferentPackageAllowed`, чтобы разрешить горизонтальные связи между компонентом внутри контейнера и соседней инфраструктурой вне него ([объяснение PlantUML](https://forum.plantuml.net/1132)). Для Hiring это позволяет разместить Schema Registry непосредственно слева от Events Consumer. Визуальную проверку выполняем тем же движком, что использует документация: Graphviz. Результат другого движка, например локального fallback без установленного Graphviz, не подтверждает раскладку сайта.
 
 ## Назначение системы
@@ -266,7 +268,7 @@ make docs-test              # Проверка сайта
 
 Markdown-файлы рядом со схемами являются самостоятельными страницами, без промежуточного генератора. Текст, таблицы, код и ссылки оформляются обычным Markdown. Блок `plantuml` в нужном месте страницы подключает схему через нативный `!include`.
 
-Пример — [system-context.md](plantuml/context/system-context.md). Полные правила находятся в [руководстве по документации](../../contributing.md).
+Пример — [system-context.md](plantuml/context/system-context.md). Полные правила находятся в [руководстве по PlantUML](../../contributing/plantuml-guide/index.md).
 
 Для интеграционных файлов с несколькими диаграммами сохранены отдельные страницы L1/L2. Они подключают именованные секции `!startsub` / `!endsub` из исходного `.puml` через `!includesub`. Схемы не дублируются.
 
