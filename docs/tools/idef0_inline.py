@@ -174,6 +174,16 @@ def _parse_block(body: str, page_path: str, first_line: int):
             if val not in {"auto", "true", "false", "none", "mechanisms", "all"}:
                 raise _error(page_path, line_number, "use @branching auto|true|false|none|mechanisms|all")
             settings["branching"] = val
+        elif line.startswith("@corners"):
+            val = line[len("@corners"):].strip()
+            if val not in {"rounded", "sharp"}:
+                raise _error(page_path, line_number, "use @corners rounded|sharp")
+            settings["corners"] = val
+        elif line.startswith("@crossings"):
+            val = line[len("@crossings"):].strip()
+            if val not in {"arc", "bridge", "gap", "break", "none", "plain"}:
+                raise _error(page_path, line_number, "use @crossings arc|gap|none")
+            settings["crossings"] = "arc" if val == "bridge" else ("gap" if val == "break" else ("none" if val == "plain" else val))
         elif line.startswith("@block ") or line.startswith("@arrow "):
             directive, rest = line.split(maxsplit=1)
             name, separator, raw_values = rest.partition("|")

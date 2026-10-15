@@ -137,9 +137,17 @@ Assess Candidate receives Application
         self.assertEqual(render_inline_diagrams(markdown, "guide.md"), markdown)
 
     def test_boundary_error_identifies_page(self):
-        model = (MODELS / "hiring.idef0").read_text(encoding="utf-8")
+        model = """Manage Hiring receives Hiring Request
+Manage Hiring produces Hiring Decision
+Manage Hiring is composed of Screen Applications
+Manage Hiring is composed of Prepare Shortlist
+Screen Applications receives Hiring Request
+Screen Applications requires Screening Tool
+Screen Applications produces Shortlist
+Prepare Shortlist receives Shortlist
+Prepare Shortlist produces Hiring Decision"""
         with self.assertRaisesRegex(ValueError, "hiring.md:1: IDEF0: .*boundary mismatch"):
-            render_inline_diagrams("```idef0\n" + model + "```\n", "hiring.md")
+            render_inline_diagrams("```idef0\n" + model + "\n```\n", "hiring.md")
 
     def test_preview_shows_error_in_place_and_renders_next_diagram(self):
         markdown = """# Example
@@ -278,6 +286,96 @@ Process invents Result
 """
         result_unbranched = render_inline_diagrams(markdown_unbranched, "branch_unbranched.md")
         self.assertEqual(result_unbranched.count("data-idef0-arrow='Team'"), 2)
+
+    def test_corners_sharp_and_rounded(self):
+        markdown_sharp = """```idef0
+@corners sharp
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_sharp = render_inline_diagrams(markdown_sharp, "corners_sharp.md")
+        self.assertNotIn(" C ", result_sharp)
+
+        markdown_rounded = """```idef0
+@corners rounded
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_rounded = render_inline_diagrams(markdown_rounded, "corners_rounded.md")
+        self.assertIn(" C ", result_rounded)
+
+    def test_crossings_arc_gap_none(self):
+        # A model with a feedback loop crossing an external input or control
+        markdown_base = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` respects `Rule`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` receives `Feedback`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` respects `Rule`
+`B` produces `Out`
+`B` produces `Feedback`
+```
+"""
+        result_arc = render_inline_diagrams(markdown_base.replace("@view", "@crossings arc\n@view"), "crossing_arc.md")
+        self.assertIn("<path", result_arc)
+        self.assertIn("<svg", result_arc)
+
+        result_gap = render_inline_diagrams(markdown_base.replace("@view", "@crossings gap\n@view"), "crossing_gap.md")
+        self.assertIn("<path", result_gap)
+
+        result_none = render_inline_diagrams(markdown_base.replace("@view", "@crossings none\n@view"), "crossing_none.md")
+        self.assertIn("<svg", result_none)
+
+    def test_branching_corners_match_project_standard_and_preserve_curves_through_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+@branching all
+@crossings arc
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `Team`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `Team`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "branching_corners.md")
+        self.assertIn("<svg", result)
+        # Verify that cubic Bézier curves (C ...) are used for branching turns
+        self.assertIn(" C ", result)
+        # Verify that no broken diagonal lines occur (last target and turn points have proper curve)
+        self.assertNotIn(" Q ", result)
 
 
 if __name__ == "__main__":
