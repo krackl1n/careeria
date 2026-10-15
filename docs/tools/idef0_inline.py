@@ -164,6 +164,16 @@ def _parse_block(body: str, page_path: str, first_line: int):
             values = _style_values(line[len("@defaults"):].strip(), STYLE_KEYS["@defaults"],
                                    page_path, line_number)
             settings.setdefault("defaults", {}).update(values)
+        elif line.startswith("@order"):
+            val = line[len("@order"):].strip()
+            if val not in {"auto", "source", "fixed", "heuristic"}:
+                raise _error(page_path, line_number, "use @order auto|source|fixed|heuristic")
+            settings["order"] = val
+        elif line.startswith("@branching"):
+            val = line[len("@branching"):].strip()
+            if val not in {"auto", "true", "false", "none", "mechanisms", "all"}:
+                raise _error(page_path, line_number, "use @branching auto|true|false|none|mechanisms|all")
+            settings["branching"] = val
         elif line.startswith("@block ") or line.startswith("@arrow "):
             directive, rest = line.split(maxsplit=1)
             name, separator, raw_values = rest.partition("|")

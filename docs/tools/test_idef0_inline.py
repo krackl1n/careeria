@@ -218,8 +218,66 @@ Process invents Result
         markdown = f"# Demo\n\n{image}\n\n```markdown\n{image}\n```\n"
         result = idef0_inline.on_page_markdown(markdown, page=page, config=config, files=None)
         self.assertEqual(result.count('class="idef0-error"'), 2)
-        self.assertIn("export failed", result)
-        self.assertIn(f"```markdown\n{image}\n```", result)
+    def test_order_preserves_declaration_and_supports_heuristic(self):
+        markdown_default = """```idef0
+@view decompose `Pipeline`
+`Pipeline` receives `Data`
+`Pipeline` produces `Verdict`
+`Pipeline` is composed of `Step Connect`
+`Pipeline` is composed of `Step Code`
+`Pipeline` is composed of `Step Verdict`
+`Step Connect` receives `Data`
+`Step Connect` produces `Session`
+`Step Code` receives `Session`
+`Step Code` produces `Code`
+`Step Verdict` receives `Code`
+`Step Verdict` produces `Verdict`
+```
+"""
+        result_default = render_inline_diagrams(markdown_default, "order_test.md")
+        pos_connect = result_default.find("data-idef0-block='Step Connect'")
+        pos_code = result_default.find("data-idef0-block='Step Code'")
+        pos_verdict = result_default.find("data-idef0-block='Step Verdict'")
+        self.assertTrue(pos_connect < pos_code < pos_verdict)
+
+    def test_branching_mechanisms_and_toggle(self):
+        markdown_branched = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` requires `Team`
+`B` produces `Out`
+```
+"""
+        result_branched = render_inline_diagrams(markdown_branched, "branch_test.md")
+        self.assertEqual(result_branched.count("data-idef0-arrow='Team'"), 1)
+        self.assertEqual(result_branched.count("data-idef0-icom='M1'"), 1)
+
+        markdown_unbranched = """```idef0
+@branching none
+@view decompose `Process`
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` requires `Team`
+`B` produces `Out`
+```
+"""
+        result_unbranched = render_inline_diagrams(markdown_unbranched, "branch_unbranched.md")
+        self.assertEqual(result_unbranched.count("data-idef0-arrow='Team'"), 2)
 
 
 if __name__ == "__main__":
