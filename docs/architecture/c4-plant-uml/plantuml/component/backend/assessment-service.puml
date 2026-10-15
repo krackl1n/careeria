@@ -1,0 +1,86 @@
+@startuml assessment-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(assessment_container, "Assessment Service") {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Валидация запросов, распаковка контекста, маппинг ошибок FSM в gRPC-статусы")
+
+        together {
+            Component(template_svc, "Assessment Template Service", "Go Application Service", "Управление библиотекой заданий, тестами, лимитами времени и стратегиями")
+            Component(session_svc, "Session Execution Service", "Go Application Service", "Жизненный цикл сессий, прием решений, автопроверка, Live Coding, ревью")
+        }
+
+        together {
+            Component(scoring_strategies, "Scoring Context & Strategies", "Go Domain Model / Strategy", "Алгоритмы расчета итогового балла (Weighted, Strict Auto, Live Coding)")
+            Component(lifecycle_policy, "Session Lifecycle Policy", "Go Domain Policy", "Межагрегатная валидация дедлайнов и допустимости переходов FSM")
+        }
+
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Проверка прав рекрутеров на шаблоны и интервьюеров на ревью")
+        Component(template_repo, "Template Repo", "Go / pgx, sqlc", "Чтение и запись шаблонов, задач и связанных правил проверки")
+        Component(session_repo, "Session Repo", "Go / pgx, sqlc", "Чтение и запись сессий, решений, результатов тестов и рецензий")
+        Component(sandbox_client, "Sandbox Client", "Go / gRPC", "Взаимодействие с изолированным раннером исполнения кода")
+        Component(livekit_mgr, "LiveKit Manager", "Go / LiveKit Go SDK", "Инициализация WebRTC-комнат и выпуск ограниченных токенов")
+        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарное сохранение доменных событий в транзакции")
+        Component(expiry_worker, "Session Expiry Worker", "Go Background Worker", "Фоновый процесс выявления просроченных сессий (EXPIRED)")
+    }
+
+    together {
+        ComponentOpenFga()
+        ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL 16", "Шаблоны, сессии, решения, рецензии, outbox и ключи идемпотентности.", $tags="managedInfrastructure")
+        ComponentLiveKit()
+        Container(sandboxRunner, "Code Execution Runner", "gRPC, Docker/gVisor", "Изолированная песочница для сборки и прогона тестов на коде соискателей.", $tags="managedInfrastructure")
+        ComponentFileService()
+    }
+    ComponentObjectStorage()
+}
+
+' Layout hints
+template_svc -[hidden]right- session_svc
+session_svc -[hidden]right- expiry_worker
+template_repo -[hidden]right- session_repo
+session_repo -[hidden]right- outbox
+authorization_client -[hidden]right- sandbox_client
+sandbox_client -[hidden]right- livekit_mgr
+grpc_handler -[hidden]down- template_svc
+
+openFga -[hidden]right- assessmentDb
+assessmentDb -[hidden]right- livekit
+livekit -[hidden]right- sandboxRunner
+sandboxRunner -[hidden]right- fileService
+fileService -[hidden]down- objectStorage
+
+' Взаимодействия
+Rel_(apiGateway, grpc_handler, "Оценивание и сессии", "gRPC", "-down->>")
+Rel_(grpc_handler, template_svc, "Шаблоны и задания", "In-process", "-down->>")
+Rel_(grpc_handler, session_svc, "Сессии и решения", "In-process", "-down->>")
+
+Rel(template_svc, authorization_client, "Проверяет права", "In-process")
+Rel(template_svc, template_repo, "Шаблоны и задачи", "In-process")
+Rel(template_svc, outbox, "События шаблонов", "In-process")
+
+Rel(session_svc, lifecycle_policy, "Дедлайны и FSM", "In-process")
+Rel(session_svc, scoring_strategies, "Расчет баллов", "In-process")
+Rel(session_svc, authorization_client, "Проверяет права", "In-process")
+Rel(session_svc, session_repo, "Сессии и попытки", "In-process")
+Rel(session_svc, sandbox_client, "Код на проверку", "In-process")
+Rel(session_svc, livekit_mgr, "Управление Live Coding", "In-process")
+Rel(session_svc, outbox, "События сессий", "In-process")
+
+Rel_(expiry_worker, session_repo, "Поиск просроченных", "In-process", "-down->>")
+Rel_(expiry_worker, outbox, "События экспирации", "In-process", "-down->>")
+
+Rel_(authorization_client, openFga, "Проверяет доступ", "OpenFGA API", "-down->>")
+Rel_(template_repo, assessmentDb, "Шаблоны и задачи", "SQL / TCP", "-down->>")
+Rel_(session_repo, assessmentDb, "Сессии и результаты", "SQL / TCP", "-down->>")
+Rel_(outbox, assessmentDb, "Запись событий", "SQL / TCP", "-down->>")
+
+Rel_(sandbox_client, sandboxRunner, "Исполнение кода", "gRPC", "-down->>")
+Rel_(livekit_mgr, livekit, "Комнаты и токены", "LiveKit API / JWT", "-down->>")
+Rel_(fileService, objectStorage, "Файлы тестов и решений", "S3 API", "-down->>")
+
+SHOW_FLOATING_LEGEND()
+@enduml

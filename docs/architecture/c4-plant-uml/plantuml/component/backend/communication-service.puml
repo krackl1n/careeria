@@ -1,0 +1,75 @@
+@startuml communication-service-l3
+!include ../../common/component-styles.puml
+!include ../../common/component-wide-layout.puml
+!include ../../model/component-elements.puml
+
+System_Boundary(careeria, "Careeria") {
+    ComponentApiGateway()
+
+    Container_Boundary(communication_container, "Communication Service") {
+        Component(grpc_handler, "gRPC Server", "Go / gRPC", "Валидация запросов, извлечение identity context, маппинг ошибок в gRPC-коды")
+
+        together {
+            Component(conversation_svc, "Conversation Service", "Go Application Service", "Контексты диалогов, состав участников, роли и жизненный цикл бесед")
+            Component(messaging_svc, "Messaging Service", "Go Application Service", "Отправка сообщений, треды, редактирование, удаление, реакции, watermark")
+        }
+
+        Component(messaging_policy, "Messaging Policy", "Go Domain Policy", "Валидация активности диалога, членства отправителя и лимитов вложений")
+        Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "ReBAC-проверки прав доступа к диалогам и контекстным ресурсам")
+        Component(conversation_repo, "Conversation Repo", "Go / pgx, sqlc", "Загрузка и сохранение диалогов и списков участников")
+        Component(message_repo, "Message Repo", "Go / pgx, sqlc", "Сохранение сообщений, вложений, отметок прочтения и реакций")
+        Component(file_client, "File Service Client", "Go / gRPC", "Проверка статуса файлов, binding вложений, presigned URLs")
+        Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарная запись доменных событий в транзакции")
+        Component(cleanup_worker, "Attachment Cleanup Worker", "Go Background Worker", "Отслеживание отвязанных файлов и освобождение bindings в File Service")
+    }
+
+    together {
+        ComponentOpenFga()
+        ContainerDb(communicationDb, "Communication DB", "PostgreSQL 16", "Диалоги, сообщения, участники, реакции, watermarks, outbox и ключи идемпотентности.", $tags="managedInfrastructure")
+        ComponentFileService()
+    }
+    ComponentObjectStorage()
+}
+
+' Layout hints
+conversation_svc -[hidden]right- messaging_svc
+messaging_svc -[hidden]right- cleanup_worker
+conversation_repo -[hidden]right- message_repo
+message_repo -[hidden]right- outbox
+messaging_policy -[hidden]right- authorization_client
+authorization_client -[hidden]right- file_client
+grpc_handler -[hidden]down- conversation_svc
+
+openFga -[hidden]right- communicationDb
+communicationDb -[hidden]right- fileService
+fileService -[hidden]down- objectStorage
+
+' Взаимодействия
+Rel_(apiGateway, grpc_handler, "Диалоги и сообщения", "gRPC", "-down->>")
+Rel_(grpc_handler, conversation_svc, "Диалоги и участники", "In-process", "-down->>")
+Rel_(grpc_handler, messaging_svc, "Сообщения и реакции", "In-process", "-down->>")
+
+Rel(conversation_svc, authorization_client, "Полномочия", "In-process")
+Rel(conversation_svc, conversation_repo, "Сохраняет диалог", "In-process")
+Rel(conversation_svc, outbox, "События диалогов", "In-process")
+
+Rel(messaging_svc, messaging_policy, "Правила и лимиты", "In-process")
+Rel(messaging_svc, authorization_client, "Полномочия", "In-process")
+Rel(messaging_svc, conversation_repo, "Статус диалога", "In-process")
+Rel(messaging_svc, message_repo, "Сообщения и реакции", "In-process")
+Rel(messaging_svc, file_client, "Проверка и binding", "In-process")
+Rel(messaging_svc, outbox, "События сообщений", "In-process")
+
+Rel_(cleanup_worker, message_repo, "Отвязанные вложения", "In-process", "-down->>")
+Rel_(cleanup_worker, file_client, "Освобождает файлы", "In-process", "-down->>")
+
+Rel_(authorization_client, openFga, "Проверяет доступ", "OpenFGA API", "-down->>")
+Rel_(conversation_repo, communicationDb, "Диалоги и участники", "SQL / TCP", "-down->>")
+Rel_(message_repo, communicationDb, "Сообщения, реакции, watermarks", "SQL / TCP", "-down->>")
+Rel_(outbox, communicationDb, "Запись событий", "SQL / TCP", "-down->>")
+
+Rel_(file_client, fileService, "Метаданные, binding, presigned URLs", "gRPC", "-down->>")
+Rel_(fileService, objectStorage, "Файлы вложений", "S3 API", "-down->>")
+
+SHOW_FLOATING_LEGEND()
+@enduml
