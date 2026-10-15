@@ -25,7 +25,6 @@ System_Boundary(careeria, "Careeria") {
         Component(sandbox_client, "Sandbox Client", "Go / gRPC", "Взаимодействие с изолированным раннером исполнения кода")
         Component(livekit_mgr, "LiveKit Manager", "Go / LiveKit Go SDK", "Инициализация WebRTC-комнат и выпуск ограниченных токенов")
         Component(outbox, "Transactional Outbox", "Go / pgx, sqlc", "Атомарное сохранение доменных событий в транзакции")
-        Component(expiry_worker, "Session Expiry Worker", "Go Background Worker", "Фоновый процесс выявления просроченных сессий (EXPIRED)")
     }
 
     together {
@@ -33,14 +32,11 @@ System_Boundary(careeria, "Careeria") {
         ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL 16", "Шаблоны, сессии, решения, рецензии, outbox и ключи идемпотентности.", $tags="managedInfrastructure")
         ComponentLiveKit()
         Container(sandboxRunner, "Code Execution Runner", "gRPC, Docker/gVisor", "Изолированная песочница для сборки и прогона тестов на коде соискателей.", $tags="managedInfrastructure")
-        ComponentFileService()
     }
-    ComponentObjectStorage()
 }
 
 ' Layout hints
 template_svc -[hidden]right- session_svc
-session_svc -[hidden]right- expiry_worker
 template_repo -[hidden]right- session_repo
 session_repo -[hidden]right- outbox
 authorization_client -[hidden]right- sandbox_client
@@ -50,8 +46,6 @@ grpc_handler -[hidden]down- template_svc
 openFga -[hidden]right- assessmentDb
 assessmentDb -[hidden]right- livekit
 livekit -[hidden]right- sandboxRunner
-sandboxRunner -[hidden]right- fileService
-fileService -[hidden]down- objectStorage
 
 ' Взаимодействия
 Rel_(apiGateway, grpc_handler, "Оценивание и сессии", "gRPC", "-down->>")
@@ -70,9 +64,6 @@ Rel(session_svc, sandbox_client, "Код на проверку", "In-process")
 Rel(session_svc, livekit_mgr, "Управление Live Coding", "In-process")
 Rel(session_svc, outbox, "События сессий", "In-process")
 
-Rel_(expiry_worker, session_repo, "Поиск просроченных", "In-process", "-down->>")
-Rel_(expiry_worker, outbox, "События экспирации", "In-process", "-down->>")
-
 Rel_(authorization_client, openFga, "Проверяет доступ", "OpenFGA API", "-down->>")
 Rel_(template_repo, assessmentDb, "Шаблоны и задачи", "SQL / TCP", "-down->>")
 Rel_(session_repo, assessmentDb, "Сессии и результаты", "SQL / TCP", "-down->>")
@@ -80,7 +71,6 @@ Rel_(outbox, assessmentDb, "Запись событий", "SQL / TCP", "-down->>
 
 Rel_(sandbox_client, sandboxRunner, "Исполнение кода", "gRPC", "-down->>")
 Rel_(livekit_mgr, livekit, "Комнаты и токены", "LiveKit API / JWT", "-down->>")
-Rel_(fileService, objectStorage, "Файлы тестов и решений", "S3 API", "-down->>")
 
 SHOW_FLOATING_LEGEND()
 @enduml
