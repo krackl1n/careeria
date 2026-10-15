@@ -26,4 +26,3 @@
 - [4.1. Технологический стек](04-technology-infrastructure/01-tech-stack.md)
 - [4.2. Контракты API, события и CDC](04-technology-infrastructure/02-contracts-events-cdc.md)
 - [4.3. Хранилища данных и процесс CI/CD](04-technology-infrastructure/03-storage-cicd.md)
-

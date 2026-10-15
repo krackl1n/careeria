@@ -223,3 +223,4 @@ graph TD
 - [2.3. Оценка кандидатов и коммуникации](03-assessment-communication.md)
 - [Системный контекст архитектуры C4 (L1)](../../architecture/c4-plant-uml/plantuml/context/system-context.md)
 - [Контейнерная архитектура полной системы C4 (L2)](../../architecture/c4-plant-uml/plantuml/container/full-system.md)
+

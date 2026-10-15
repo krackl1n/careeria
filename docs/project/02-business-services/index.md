@@ -12,5 +12,5 @@
 ## Содержание главы
 
 - [2.1. Выбор методологии и технологии концептуального моделирования ИС](01-choice-methodology-technology.md)
-- [2.2. As-is](01-candidate-company.md)
-- [2.3. To-be](02-vacancy-hiring.md)
+- [2.2. As-is](02-as-is.md)
+- [2.3. To-be](03-to-be.md)
