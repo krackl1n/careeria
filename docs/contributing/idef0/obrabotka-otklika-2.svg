@@ -24,7 +24,7 @@ viewBox='0.0 0.0 992.0 304.0'
 <g data-idef0-block='Принять решение по отклику'><rect x='522' y='184' width='244' height='60' fill='#EAF6EE' stroke='#15803D' />
 <text fill='#14532D' text-anchor='middle' x='644' y='218'><tspan x='644' dy='0'>Принять решение по отклику</tspan></text>
 </g>
-  <g data-idef0-arrow='Результат проверки'><path stroke='#43566D' fill='none' d='M 482 112 L 492 112 C 497 112 502 117 502 122 L 502 204 C 502 209 507 214 512 214 L 522 214' />
+  <g data-idef0-arrow='Результат проверки'><path stroke='#43566D' fill='none' d='M 482 112 L 494.0 112.0 C 498.0 112.0 502.0 116.0 502.0 120.0 L 502.0 206.0 C 502.0 210.0 506.0 214.0 510.0 214.0 L 522 214' />
 <polygon fill='#43566D' stroke='#43566D' points='522,214 516,217 516,211 522,214' />
 <text fill='#26384B' text-anchor='start' x='487' y='107'>Результат проверки</text>
 </g>
@@ -39,10 +39,10 @@ viewBox='0.0 0.0 992.0 304.0'
 <g data-idef0-arrow='Правила отбора' data-idef0-icom='C1'><line x1='348' y1='40' x2='348' y2='80' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='348,80 345,74 351,74 348,80' />
 <text fill='#26384B' text-anchor='middle' x='348' y='35'>Правила отбора</text>
-<text class='idef0-icom' x='361' y='16' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>C1</text></g>
+<text class='idef0-icom' x='352' y='16' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>C1</text></g>
 <g data-idef0-arrow='Команда подбора' data-idef0-icom='M1'><line x1='348' y1='264' x2='348' y2='144' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='348,144 345,150 351,150 348,144' />
 <text fill='#26384B' text-anchor='middle' x='348' y='279'>Команда подбора</text>
-<text class='idef0-icom' x='361' y='260' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
+<text class='idef0-icom' x='352' y='272' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
 </g>
 </svg>
