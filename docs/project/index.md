@@ -13,9 +13,8 @@
 
 ### [2. Бизнес-сервисы и доменная модель](02-business-services/index.md)
 - [2.1. Выбор методологии и технологии концептуального моделирования ИС](02-business-services/01-choice-methodology-technology.md)
-- [2.2. Профили кандидатов и компании](02-business-services/01-candidate-company.md)
-- [2.3. Вакансии и процесс найма](02-business-services/02-vacancy-hiring.md)
-- [2.4. Оценка кандидатов и коммуникации](02-business-services/03-assessment-communication.md)
+- [2.2. Функциональное моделирование процессов AS-IS и анализ текущего состояния](02-business-services/02-as-is.md)
+- [2.3. Функциональное моделирование целевых процессов TO-BE на базе платформы Careeria](02-business-services/03-to-be.md)
 
 ### [3. Платформенные сервисы и среда взаимодействия](03-platform-services/index.md)
 - [3.1. Аутентификация и авторизация](03-platform-services/01-identity-authz.md)

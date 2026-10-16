@@ -218,9 +218,8 @@ graph TD
 ## Куда перейти дальше
 
 - [Глава 2. Бизнес-сервисы и доменная модель](index.md)
-- [2.1. Профили кандидатов и компании](01-candidate-company.md)
-- [2.2. Вакансии и процесс найма](02-vacancy-hiring.md)
-- [2.3. Оценка кандидатов и коммуникации](03-assessment-communication.md)
+- [2.2. Функциональное моделирование процессов AS-IS и анализ текущего состояния](02-as-is.md)
+- [2.3. Функциональное моделирование целевых процессов TO-BE на базе платформы Careeria](03-to-be.md)
 - [Системный контекст архитектуры C4 (L1)](../../architecture/c4-plant-uml/plantuml/context/system-context.md)
 - [Контейнерная архитектура полной системы C4 (L2)](../../architecture/c4-plant-uml/plantuml/container/full-system.md)
 

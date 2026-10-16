@@ -145,9 +145,9 @@ module CareeriaIdef0Boundary
     end
 
     def icom_enabled?
-      raw = @settings&.fetch('icom', true)
-      return false if raw == false || raw == 'false' || raw == 'off' || raw == 'none' || raw == 'hide' || raw == 'no'
-      true
+      raw = @settings&.fetch('icom', false)
+      return true if raw == true || raw == 'true' || raw == 'on' || raw == 'show' || raw == 'yes'
+      false
     end
 
     def icom_label(line, code, color)

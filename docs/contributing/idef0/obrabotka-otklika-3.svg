@@ -26,23 +26,23 @@ viewBox='0.0 0.0 888.0 320.0'
 </g>
   <g data-idef0-arrow='Оценка опыта'><path stroke='#43566D' fill='none' d='M 370 110 L 382.0 110.0 C 386.0 110.0 390.0 114.0 390.0 118.0 L 390.0 202.0 C 390.0 206.0 394.0 210.0 398.0 210.0 L 410 210' />
 <polygon fill='#43566D' stroke='#43566D' points='410,210 404,213 404,207 410,210' />
-<text fill='#26384B' text-anchor='start' x='375' y='105'>Оценка опыта</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='375' y='105'>Оценка опыта</text>
 </g>
 <g data-idef0-arrow='Отклик кандидата' data-idef0-icom='I1'><line x1='20' y1='110' x2='214' y2='110' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='214,110 208,113 208,107 214,110' />
-<text fill='#26384B' text-anchor='start' x='25' y='105'>Отклик кандидата</text>
-<text class='idef0-icom' x='16' y='114' text-anchor='end' fill='#43566D' font-size='11' font-weight='700'>I1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='105'>Отклик кандидата</text>
+</g>
 <g data-idef0-arrow='Результат проверки' data-idef0-icom='O1'><line x1='658' y1='210' x2='868' y2='210' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='868,210 862,213 862,207 868,210' />
-<text fill='#26384B' text-anchor='end' x='863' y='205'>Результат проверки</text>
-<text class='idef0-icom' x='872' y='214' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>O1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='end' x='863' y='205'>Результат проверки</text>
+</g>
 <g data-idef0-arrow='Правила отбора' data-idef0-icom='C1'><line x1='292' y1='40' x2='292' y2='80' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='292,80 289,74 295,74 292,80' />
-<text fill='#26384B' text-anchor='middle' x='292' y='35'>Правила отбора</text>
-<text class='idef0-icom' x='296' y='16' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>C1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='292' y='35'>Правила отбора</text>
+</g>
 <g data-idef0-arrow='Команда подбора' data-idef0-icom='M1'><line x1='534' y1='280' x2='534' y2='240' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='534,240 531,246 537,246 534,240' />
-<text fill='#26384B' text-anchor='middle' x='534' y='295'>Команда подбора</text>
-<text class='idef0-icom' x='538' y='288' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='534' y='295'>Команда подбора</text>
+</g>
 </g>
 </svg>

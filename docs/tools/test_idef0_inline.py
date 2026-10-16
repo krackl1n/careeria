@@ -378,6 +378,19 @@ Process invents Result
         self.assertNotIn(" Q ", result)
 
     def test_icom_toggle_and_snug_alignment(self):
+        markdown_default = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_default = render_inline_diagrams(markdown_default, "icom_default.md")
+        self.assertNotIn("class='idef0-icom'", result_default)
+        self.assertIn("data-idef0-icom=", result_default)
+
         markdown_on = """```idef0
 @view decompose `Process`
 @icom on
@@ -503,6 +516,171 @@ Process invents Result
         self.assertLess(b_end_y, b_bus_y)
         self.assertLessEqual(b_target_y, b_end_y)
 
+    def test_smart_anchor_sequencing_minimizes_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` requires `M_Global`
+`Process` requires `M_Local`
+`Process` requires `M_Free`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `M_Global`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `M_Global`
+`B` requires `M_Local`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `M_Global`
+`C` requires `M_Local`
+`C` requires `M_Free`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "heuristic_test.md")
+        self.assertIn("<svg", result)
+
+        # In Box C:
+        # M_Local is an inner bus (starts at B, span 1) -> must have smaller x than M_Global (starts at A, span 2)
+        # M_Free is a free end (unbranched, only on C) -> must be placed last (largest x)
+        def get_arrow_endpoints_in_box(arrow_name, x_min, x_max):
+            m = re.search(r"<g data-idef0-arrow=['\"]" + re.escape(arrow_name) + r"['\"].*?</g>", result, re.DOTALL)
+            self.assertIsNotNone(m, f"Arrow {arrow_name} not found")
+            pts = re.findall(r"([-\d.]+),([-\d.]+)", m.group(0))
+            pts_in_box = [float(p[0]) for p in pts if x_min <= float(p[0]) <= x_max]
+            return sorted(set(pts_in_box))
+
+        box_c = re.search(r"<g data-idef0-block=['\"]C['\"].*?<rect x=['\"]([\d.]+)['\"].*?y=['\"]([\d.]+)['\"].*?width=['\"]([\d.]+)['\"].*?height=['\"]([\d.]+)['\"]", result)
+        self.assertIsNotNone(box_c)
+        c_x = float(box_c.group(1))
+        c_y = float(box_c.group(2))
+        c_w = float(box_c.group(3))
+        c_h = float(box_c.group(4))
+        c_bottom = c_y + c_h
+
+        def get_arrow_anchor_x_at_box(arrow_name, target_y):
+            m = re.search(r"<g data-idef0-arrow=['\"]" + re.escape(arrow_name) + r"['\"].*?</g>", result, re.DOTALL)
+            self.assertIsNotNone(m, f"Arrow {arrow_name} not found")
+            match = re.search(r"points=['\"]([-\d.]+)," + re.escape(str(int(target_y))) + r"\b", m.group(0))
+            self.assertIsNotNone(match, f"Anchor at y={target_y} for {arrow_name} not found")
+            return float(match.group(1))
+
+        local_x = get_arrow_anchor_x_at_box("M_Local", c_bottom)
+        global_x = get_arrow_anchor_x_at_box("M_Global", c_bottom)
+        free_x = get_arrow_anchor_x_at_box("M_Free", c_bottom)
+
+        # Inner bus (M_Local) < Outer bus (M_Global) < Free end (M_Free)
+        self.assertLess(local_x, global_x)
+        self.assertLess(global_x, free_x)
+
+        # Centering and 20px spacing check:
+        self.assertAlmostEqual(global_x - local_x, 20.0, places=1)
+        self.assertAlmostEqual(free_x - global_x, 20.0, places=1)
+        center_anchors = (local_x + free_x) / 2.0
+        center_box = c_x + c_w / 2.0
+        self.assertAlmostEqual(center_anchors, center_box, places=1)
+
+    def test_forward_inputs_sequencing_eliminates_entrance_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` produces `Input_From_A`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` produces `Input_From_B`
+`C` receives `Input_From_A`
+`C` receives `Input_From_B`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "input_order_test.md")
+        self.assertIn("<svg", result)
+
+        # In Box C:
+        # Input_From_B is from Box B (nearer source) -> must enter at upper anchor (smaller y)
+        # Input_From_A is from Box A (further source) -> must enter at lower anchor (larger y)
+        # Result: Input_From_B turns down into the upper anchor without crossing Input_From_A!
+        # Input_From_A must NOT contain any bridge arc before entering C.
+        m_a = re.search(r"<g data-idef0-arrow=['\"]Input_From_A['\"].*?</g>", result, re.DOTALL)
+        m_b = re.search(r"<g data-idef0-arrow=['\"]Input_From_B['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_a)
+        self.assertIsNotNone(m_b)
+
+        # Extract target y on left side of Box C
+        box_c = re.search(r"<g data-idef0-block=['\"]C['\"].*?<rect x=['\"]([\d.]+)['\"].*?y=['\"]([\d.]+)['\"].*?width=['\"]([\d.]+)['\"].*?height=['\"]([\d.]+)['\"]", result)
+        self.assertIsNotNone(box_c)
+        c_x = float(box_c.group(1))
+
+        # Check endpoints targeting x = c_x
+        pts_a = re.findall(r"([-\d.]+),([-\d.]+)", m_a.group(0))
+        y_a = [float(p[1]) for p in pts_a if float(p[0]) == c_x][0]
+
+        pts_b = re.findall(r"([-\d.]+),([-\d.]+)", m_b.group(0))
+        y_b = [float(p[1]) for p in pts_b if float(p[0]) == c_x][0]
+
+        # Nearer source (B) is above further source (A)
+        self.assertLess(y_b, y_a)
+
+        # Input_From_A has zero bridge arcs right before Box C
+        self.assertNotIn(" A 5 5 ", m_a.group(0))
+
+    def test_directional_mechanisms_sequencing_eliminates_bus_crossing(self):
+        """
+        Verify that on a box with both an unbranched mechanism and an outgoing branched bus,
+        the unbranched mechanism is placed to the left (smaller x) and the outgoing bus trunk
+        is placed to the right (larger x). This ensures the bus heading right never crosses
+        the unbranched mechanism.
+        Also verifies text halo paint-order is applied.
+        """
+        markdown = """
+```idef0
+@view decompose `Process`
+@branching all
+@corners rounded
+@crossings arc
+`Process` requires `Local_Admin`
+`Process` requires `Shared_Platform`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` requires `Local_Admin`
+`A` requires `Shared_Platform`
+`A` produces `Out`
+`B` requires `Shared_Platform`
+`B` receives `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "mech_order_test.md")
+        self.assertIn("<svg", result)
+
+        m_local = re.search(r"<g data-idef0-arrow=['\"]Local_Admin['\"].*?</g>", result, re.DOTALL)
+        m_shared = re.search(r"<g data-idef0-arrow=['\"]Shared_Platform['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_local)
+        self.assertIsNotNone(m_shared)
+
+        # Local admin is to the left of shared platform on Box A
+        x_local = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_local.group(0)).group(1))
+        x_shared = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_shared.group(0)).group(1))
+        self.assertLess(x_local, x_shared)
+
+        # Shared platform does NOT cross Local_Admin
+        self.assertNotIn(" A 5 5 ", m_shared.group(0))
+
+        # Check text halo
+        self.assertIn("paint-order='stroke fill'", result)
+        self.assertIn("stroke='#FFFFFF'", result)
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
