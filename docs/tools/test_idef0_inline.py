@@ -584,7 +584,103 @@ Process invents Result
         center_box = c_x + c_w / 2.0
         self.assertAlmostEqual(center_anchors, center_box, places=1)
 
+    def test_forward_inputs_sequencing_eliminates_entrance_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` produces `Input_From_A`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` produces `Input_From_B`
+`C` receives `Input_From_A`
+`C` receives `Input_From_B`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "input_order_test.md")
+        self.assertIn("<svg", result)
+
+        # In Box C:
+        # Input_From_B is from Box B (nearer source) -> must enter at upper anchor (smaller y)
+        # Input_From_A is from Box A (further source) -> must enter at lower anchor (larger y)
+        # Result: Input_From_B turns down into the upper anchor without crossing Input_From_A!
+        # Input_From_A must NOT contain any bridge arc before entering C.
+        m_a = re.search(r"<g data-idef0-arrow=['\"]Input_From_A['\"].*?</g>", result, re.DOTALL)
+        m_b = re.search(r"<g data-idef0-arrow=['\"]Input_From_B['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_a)
+        self.assertIsNotNone(m_b)
+
+        # Extract target y on left side of Box C
+        box_c = re.search(r"<g data-idef0-block=['\"]C['\"].*?<rect x=['\"]([\d.]+)['\"].*?y=['\"]([\d.]+)['\"].*?width=['\"]([\d.]+)['\"].*?height=['\"]([\d.]+)['\"]", result)
+        self.assertIsNotNone(box_c)
+        c_x = float(box_c.group(1))
+
+        # Check endpoints targeting x = c_x
+        pts_a = re.findall(r"([-\d.]+),([-\d.]+)", m_a.group(0))
+        y_a = [float(p[1]) for p in pts_a if float(p[0]) == c_x][0]
+
+        pts_b = re.findall(r"([-\d.]+),([-\d.]+)", m_b.group(0))
+        y_b = [float(p[1]) for p in pts_b if float(p[0]) == c_x][0]
+
+        # Nearer source (B) is above further source (A)
+        self.assertLess(y_b, y_a)
+
+        # Input_From_A has zero bridge arcs right before Box C
+        self.assertNotIn(" A 5 5 ", m_a.group(0))
+
+    def test_directional_mechanisms_sequencing_eliminates_bus_crossing(self):
+        """
+        Verify that on a box with both an unbranched mechanism and an outgoing branched bus,
+        the unbranched mechanism is placed to the left (smaller x) and the outgoing bus trunk
+        is placed to the right (larger x). This ensures the bus heading right never crosses
+        the unbranched mechanism.
+        Also verifies text halo paint-order is applied.
+        """
+        markdown = """
+```idef0
+@view decompose `Process`
+@branching all
+@corners rounded
+@crossings arc
+`Process` requires `Local_Admin`
+`Process` requires `Shared_Platform`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` requires `Local_Admin`
+`A` requires `Shared_Platform`
+`A` produces `Out`
+`B` requires `Shared_Platform`
+`B` receives `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "mech_order_test.md")
+        self.assertIn("<svg", result)
+
+        m_local = re.search(r"<g data-idef0-arrow=['\"]Local_Admin['\"].*?</g>", result, re.DOTALL)
+        m_shared = re.search(r"<g data-idef0-arrow=['\"]Shared_Platform['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_local)
+        self.assertIsNotNone(m_shared)
+
+        # Local admin is to the left of shared platform on Box A
+        x_local = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_local.group(0)).group(1))
+        x_shared = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_shared.group(0)).group(1))
+        self.assertLess(x_local, x_shared)
+
+        # Shared platform does NOT cross Local_Admin
+        self.assertNotIn(" A 5 5 ", m_shared.group(0))
+
+        # Check text halo
+        self.assertIn("paint-order='stroke fill'", result)
+        self.assertIn("stroke='#FFFFFF'", result)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

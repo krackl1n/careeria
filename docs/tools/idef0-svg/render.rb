@@ -270,7 +270,7 @@ module CareeriaIdef0Style
       markup = line.to_svg
         .gsub("stroke='black'", "stroke='#{stroke}'")
         .gsub("fill='black'", "fill='#{stroke}'")
-        .gsub('<text ', "<text fill='#{text}' ")
+        .gsub('<text ', "<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#{text}' ")
 
       attributes, extras = CareeriaIdef0Boundary.decorate(line, stroke)
       "<g data-idef0-arrow='#{CGI.escapeHTML(line.name)}'#{attributes}>#{markup}#{extras}</g>"
@@ -334,7 +334,7 @@ module CareeriaIdef0Style
         callout_svg = %(<line x1='#{x_min}' y1='#{y_bottom - 20}' x2='#{x_min}' y2='#{label_y - 12}' stroke='#{stroke}' stroke-dasharray='3,3' stroke-width='1' />\n)
       end
 
-      label_svg = %(#{callout_svg}<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
+      label_svg = %(#{callout_svg}<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
       attributes, extras = CareeriaIdef0Boundary.decorate(primary, stroke)
 
       sorted[1..-1].each do |other_line|
@@ -406,7 +406,7 @@ module CareeriaIdef0Style
         callout_svg = %(<line x1='#{x_min}' y1='#{y_top + 20}' x2='#{x_min}' y2='#{label_y + 4}' stroke='#{stroke}' stroke-dasharray='3,3' stroke-width='1' />\n)
       end
 
-      label_svg = %(#{callout_svg}<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
+      label_svg = %(#{callout_svg}<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
       attributes, extras = CareeriaIdef0Boundary.decorate(primary, stroke)
 
       sorted[1..-1].each do |other_line|
@@ -521,7 +521,14 @@ module CareeriaIdef0Diagram
     when :bottom
       if line.is_a?(IDEF0::ExternalMechanismLine)
         if mech_bus_indices.key?(line.name)
-          [0, mech_bus_indices[line.name], anchor.name]
+          same = @lines.select { |l| l.is_a?(IDEF0::ExternalMechanismLine) && l.name == line.name }
+          min_seq = same.map { |l| l.target ? l.target.sequence : 0 }.min || 0
+          curr_seq = box ? box.sequence : 0
+          if curr_seq == min_seq
+            [2, mech_bus_indices[line.name], anchor.name]
+          else
+            [0, mech_bus_indices[line.name], anchor.name]
+          end
         else
           [1, 0, anchor.name]
         end
@@ -530,7 +537,7 @@ module CareeriaIdef0Diagram
         [0, 100 - src_seq, anchor.name]
       elsif line.is_a?(IDEF0::BackwardMechanismLine)
         src_seq = line.source ? line.source.sequence : 0
-        [2, src_seq, anchor.name]
+        [3, src_seq, anchor.name]
       else
         [1, 1, anchor.name]
       end
@@ -538,7 +545,14 @@ module CareeriaIdef0Diagram
     when :top
       if line.is_a?(IDEF0::ExternalGuidanceLine)
         if guidance_bus_indices.key?(line.name)
-          [0, guidance_bus_indices[line.name], anchor.name]
+          same = @lines.select { |l| l.is_a?(IDEF0::ExternalGuidanceLine) && l.name == line.name }
+          min_seq = same.map { |l| l.target ? l.target.sequence : 0 }.min || 0
+          curr_seq = box ? box.sequence : 0
+          if curr_seq == min_seq
+            [2, guidance_bus_indices[line.name], anchor.name]
+          else
+            [0, guidance_bus_indices[line.name], anchor.name]
+          end
         else
           [1, 0, anchor.name]
         end
@@ -547,7 +561,7 @@ module CareeriaIdef0Diagram
         [0, 100 - src_seq, anchor.name]
       elsif line.is_a?(IDEF0::BackwardGuidanceLine)
         src_seq = line.source ? line.source.sequence : 0
-        [2, src_seq, anchor.name]
+        [3, src_seq, anchor.name]
       else
         [1, 1, anchor.name]
       end
@@ -555,7 +569,7 @@ module CareeriaIdef0Diagram
     when :left
       if line.is_a?(IDEF0::ForwardInputLine)
         src_seq = line.source ? line.source.sequence : 0
-        [0, src_seq, anchor.name]
+        [0, 100 - src_seq, anchor.name]
       elsif line.is_a?(IDEF0::ExternalInputLine)
         [1, 0, anchor.name]
       elsif line.is_a?(IDEF0::BackwardInputLine)
