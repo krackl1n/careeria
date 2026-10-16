@@ -780,8 +780,5 @@
 
 - [1.1. Идентификация и декомпозиция](../01-general/01-identification-decomposition.md) — сведения о предприятии, проблемы предметной области и ролевая модель.
 - [1.5. Анализ аналогов ПО](../01-general/05-analogs-analysis.md) — сравнительное исследование существующих систем на основе модели FURPS+.
-- [1.7. Пользователи и роли](../01-general/07-roles.md) — целевые категории пользователей платформы Careeria.
-- [2.1. Выбор методологии и технологии концептуального моделирования ИС](01-choice-methodology-technology.md) — обоснование применения UML Use-Case.
-- [2.3. Профили кандидатов и компании](01-candidate-company.md) — реализация Candidate Service и Company Service.
-- [2.4. Вакансии и процесс найма](02-vacancy-hiring.md) — реализация Vacancy Service и Hiring Service.
-- [2.5. Оценка кандидатов и коммуникации](03-assessment-communication.md) — реализация Assessment Service и Communication Service.
+- [2.1. Выбор методологии и технологии концептуального моделирования ИС](01-choice-methodology-technology.md) — обоснование применения IDEF0.
+- [2.3. Функциональное моделирование целевых процессов TO-BE на базе платформы Careeria](03-to-be.md) — реализация Candidate Service и Company Service.
