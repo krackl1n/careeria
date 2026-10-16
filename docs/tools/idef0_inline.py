@@ -176,9 +176,38 @@ def _parse_block(body: str, page_path: str, first_line: int):
             settings["branching"] = val
         elif line.startswith("@corners"):
             val = line[len("@corners"):].strip()
-            if val not in {"rounded", "sharp"}:
-                raise _error(page_path, line_number, "use @corners rounded|sharp")
-            settings["corners"] = val
+            parts = val.split()
+            mode = parts[0] if parts else ""
+            if mode not in {"rounded", "sharp"}:
+                raise _error(page_path, line_number, "use @corners rounded [radius]|sharp")
+            settings["corners"] = mode
+            if len(parts) > 1:
+                try:
+                    settings["radius"] = float(parts[1])
+                except ValueError:
+                    raise _error(page_path, line_number, "radius must be a number")
+        elif line.startswith("@radius"):
+            val = line[len("@radius"):].strip()
+            try:
+                settings["radius"] = float(val)
+            except ValueError:
+                raise _error(page_path, line_number, "use @radius <number>")
+        elif line.startswith("@icom"):
+            val = line[len("@icom"):].strip().lower()
+            if val in {"false", "off", "none", "hide", "no"}:
+                settings["icom"] = False
+            elif val in {"true", "on", "show", "yes"}:
+                settings["icom"] = True
+            else:
+                raise _error(page_path, line_number, "use @icom on|off")
+        elif line.startswith("@callouts"):
+            val = line[len("@callouts"):].strip().lower()
+            if val in {"false", "off", "none", "no"}:
+                settings["callouts"] = False
+            elif val in {"true", "on", "yes"}:
+                settings["callouts"] = True
+            else:
+                raise _error(page_path, line_number, "use @callouts on|off")
         elif line.startswith("@crossings"):
             val = line[len("@crossings"):].strip()
             if val not in {"arc", "bridge", "gap", "break", "none", "plain"}:

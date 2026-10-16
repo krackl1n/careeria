@@ -377,6 +377,132 @@ Process invents Result
         # Verify that no broken diagonal lines occur (last target and turn points have proper curve)
         self.assertNotIn(" Q ", result)
 
+    def test_icom_toggle_and_snug_alignment(self):
+        markdown_on = """```idef0
+@view decompose `Process`
+@icom on
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_on = render_inline_diagrams(markdown_on, "icom_on.md")
+        self.assertIn("class='idef0-icom'", result_on)
+
+        markdown_off = """```idef0
+@view decompose `Process`
+@icom off
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_off = render_inline_diagrams(markdown_off, "icom_off.md")
+        self.assertNotIn("class='idef0-icom'", result_off)
+        # Verify metadata data-idef0-icom is still present on <g>
+        self.assertIn("data-idef0-icom=", result_off)
+
+    def test_label_collision_staggering_and_callouts(self):
+        markdown_callout = """```idef0
+@view decompose `Process`
+@callouts on
+`Process` receives `In`
+`Process` requires `M1`
+`Process` requires `M2`
+`Process` requires `M3`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `M1`
+`A` requires `M2`
+`A` requires `M3`
+`B` requires `M1`
+`B` requires `M2`
+`B` requires `M3`
+`B` produces `Out`
+```
+"""
+        result_callout = render_inline_diagrams(markdown_callout, "callout_on.md")
+        self.assertIn("<svg", result_callout)
+        # When 3 branched mechanisms heavily overlap, the 3rd is pushed down to row 2 and receives a dashed callout line
+        self.assertIn("stroke-dasharray='3,3'", result_callout)
+
+        markdown_no_callout = markdown_callout.replace("@callouts on", "@callouts off")
+        result_no_callout = render_inline_diagrams(markdown_no_callout, "callout_off.md")
+        self.assertNotIn("stroke-dasharray='3,3'", result_no_callout)
+
+    def test_custom_radius_directive(self):
+        markdown_r6 = """```idef0
+@view decompose `Process`
+@radius 6
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_r6 = render_inline_diagrams(markdown_r6, "radius_6.md")
+        self.assertIn("<svg", result_r6)
+        self.assertIn(" C ", result_r6)
+
+    def test_curve_rounding_direction_and_branch_turns(self):
+        # Verify vertical-to-horizontal curve direction has no loop/hook
+        markdown = """```idef0
+@view decompose `Process`
+@radius 8
+`Process` receives `In`
+`Process` requires `M`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `M`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `M`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `M`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "curve_test.md")
+        self.assertIn("<svg", result)
+
+        # 1. Forward input curve (A -> B turn) must end smoothly at xc + r, without looping back
+        # d contains: L <xc> <yc-r> C <xc> <yc-cp> <xc+cp> <yc> <xc+r> <yc> L ...
+        curve_match = re.search(r"L\s+([-\d.]+)\s+([-\d.]+)\s+C\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+L\s+([-\d.]+)", result)
+        self.assertIsNotNone(curve_match)
+        xc, y_start = float(curve_match.group(1)), float(curve_match.group(2))
+        cp1x, cp1y = float(curve_match.group(3)), float(curve_match.group(4))
+        cp2x, cp2y = float(curve_match.group(5)), float(curve_match.group(6))
+        end_x, end_y = float(curve_match.group(7)), float(curve_match.group(8))
+        next_x = float(curve_match.group(9))
+
+        # End x must be between xc and next_x (strictly advancing towards target)
+        self.assertGreater(end_x, xc)
+        self.assertLessEqual(end_x, next_x)
+
+        # 2. In branched mechanism (M branches to B), branch curve must turn UPWARD (y decreases towards target)
+        branch_match = re.search(r"M\s+([-\d.]+)\s+([-\d.]+)\s+C\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+L\s+([-\d.]+)\s+([-\d.]+)", result)
+        self.assertIsNotNone(branch_match)
+        b_bus_y = float(branch_match.group(2))
+        b_end_y = float(branch_match.group(8))
+        b_target_y = float(branch_match.group(10))
+        # Turning UP means y decreases: bus_y > end_y >= target_y
+        self.assertLess(b_end_y, b_bus_y)
+        self.assertLessEqual(b_target_y, b_end_y)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -27,7 +27,7 @@ module CareeriaIdef0Style
     def load(path)
       data = path ? JSON.parse(File.read(path)) : {}
       raise 'style file must be an object' unless data.is_a?(Hash)
-      unknown = data.keys - %w[mode process views defaults blocks arrows boundaries order branching corners crossings]
+      unknown = data.keys - %w[mode process views defaults blocks arrows boundaries order branching corners crossings radius icom callouts]
       raise "unknown style fields: #{unknown.join(', ')}" unless unknown.empty?
       if data.key?('order')
         order = data['order']
@@ -57,6 +57,8 @@ module CareeriaIdef0Style
       self.settings = data
     end
 
+    attr_accessor :current_mech_layout, :current_guidance_layout
+
     def order_mode
       settings&.fetch('order', 'auto') || 'auto'
     end
@@ -79,6 +81,124 @@ module CareeriaIdef0Style
 
     def corners_mode
       settings&.fetch('corners', 'rounded') || 'rounded'
+    end
+
+    def corner_radius
+      return 0.0 if corners_mode == 'sharp'
+      raw = settings&.fetch('radius', nil)
+      raw ? raw.to_f : 8.0
+    end
+
+    def icom_enabled?
+      raw = settings&.fetch('icom', true)
+      return false if raw == false || raw == 'false' || raw == 'off' || raw == 'none' || raw == 'hide' || raw == 'no'
+      true
+    end
+
+    def callouts_enabled?
+      raw = settings&.fetch('callouts', true)
+      return false if raw == false || raw == 'false' || raw == 'off' || raw == 'none' || raw == 'no'
+      true
+    end
+
+    def compute_mechanism_labels_layout(lines)
+      mech_lines = lines.to_a.select { |l| l.is_a?(IDEF0::ExternalMechanismLine) }
+      return {} if mech_lines.empty?
+
+      groups = mech_lines.group_by(&:name)
+      branched_groups = groups.select { |_, ls| ls.count > 1 }
+      return {} if branched_groups.empty? && !branching_mechanisms?
+
+      placed = []
+      groups.each do |name, ls|
+        next if ls.count > 1 && branching_mechanisms?
+        line = ls.first
+        x = line.x1.to_f
+        y = line.y1 - 5.0
+        w = [name.length * 7.5, 36.0].max
+        placed << { name: name, x_min: x - w / 2.0 - 6.0, x_max: x + w / 2.0 + 6.0, y_min: y - 14.0, y_max: y + 2.0 }
+      end
+
+      layout = {}
+      branched_groups.keys.sort.each do |name|
+        ls = groups[name]
+        sorted_ls = ls.sort_by(&:x1)
+        primary = sorted_ls.first
+        x = primary.x1.to_f
+        base_y = primary.y1 - 5.0
+        w = [name.length * 7.5, 36.0].max
+        x_min = x - w / 2.0 - 6.0
+        x_max = x + w / 2.0 + 6.0
+
+        row = 0
+        curr_y = base_y
+        loop do
+          y_min = curr_y - 14.0
+          y_max = curr_y + 2.0
+          collision = placed.any? do |p|
+            x_min < p[:x_max] && x_max > p[:x_min] && y_min < p[:y_max] && y_max > p[:y_min]
+          end
+          if collision
+            row += 1
+            curr_y = base_y + row * 18.0
+          else
+            placed << { name: name, x_min: x_min, x_max: x_max, y_min: y_min, y_max: y_max }
+            layout[name] = { name: name, x: x, y: curr_y, row: row }
+            break
+          end
+        end
+      end
+      layout
+    end
+
+    def compute_guidance_labels_layout(lines)
+      guidance_lines = lines.to_a.select { |l| l.is_a?(IDEF0::ExternalGuidanceLine) }
+      return {} if guidance_lines.empty?
+
+      groups = guidance_lines.group_by(&:name)
+      branched_groups = groups.select { |_, ls| ls.count > 1 }
+      return {} if branched_groups.empty? && !branching_controls?
+
+      placed = []
+      groups.each do |name, ls|
+        next if ls.count > 1 && branching_controls?
+        line = ls.first
+        x = line.x1.to_f
+        y = line.y1 + 15.0
+        w = [name.length * 7.5, 36.0].max
+        placed << { name: name, x_min: x - w / 2.0 - 6.0, x_max: x + w / 2.0 + 6.0, y_min: y - 14.0, y_max: y + 2.0 }
+      end
+
+      layout = {}
+      branched_groups.keys.sort.each do |name|
+        ls = groups[name]
+        sorted_ls = ls.sort_by(&:x1)
+        primary = sorted_ls.first
+        x = primary.x1.to_f
+        base_y = primary.y1 + 15.0
+        w = [name.length * 7.5, 36.0].max
+        x_min = x - w / 2.0 - 6.0
+        x_max = x + w / 2.0 + 6.0
+
+        row = 0
+        curr_y = base_y
+        loop do
+          y_min = curr_y - 14.0
+          y_max = curr_y + 2.0
+          collision = placed.any? do |p|
+            x_min < p[:x_max] && x_max > p[:x_min] && y_min < p[:y_max] && y_max > p[:y_min]
+          end
+          if collision
+            row += 1
+            curr_y = base_y - row * 18.0
+          else
+            placed << { name: name, x_min: x_min, x_max: x_max, y_min: y_min, y_max: y_max }
+            layout[name] = { name: name, x: x, y: curr_y, row: row }
+            break
+          end
+        end
+      end
+      layout
     end
 
     def crossings_mode
@@ -113,6 +233,7 @@ module CareeriaIdef0Style
         .gsub("stroke='black'", "stroke='#{stroke}'")
         .gsub("fill='black'", "fill='#{stroke}'")
         .gsub('<text ', "<text fill='#{text}' ")
+
       attributes, extras = CareeriaIdef0Boundary.decorate(line, stroke)
       "<g data-idef0-arrow='#{CGI.escapeHTML(line.name)}'#{attributes}>#{markup}#{extras}</g>"
     end
@@ -127,19 +248,25 @@ module CareeriaIdef0Style
       primary = sorted.first
       x_min = sorted.first.x1
       x_max = sorted.last.x1
-      y_bottom = sorted.map(&:y1).max
+      y_bottom = primary.y1
       boxes_bottom = sorted.map(&:y2).max
 
       bus_y = boxes_bottom + 15 + bus_index * 20
       rounded = corners_mode == 'rounded'
-      r = 10
-      cp = 5
+      r = CareeriaIdef0Style.corner_radius
+      cp = (r * 0.5).round(1)
+
+      layout_info = CareeriaIdef0Style.current_mech_layout&.fetch(name, nil) || { row: 0 }
+      row = layout_info[:row] || 0
+      base_label_y = y_bottom - 5
+      label_y = layout_info[:y] || (base_label_y + row * 18)
 
       first_target_y = sorted.first.y2
-      trunk = %(<line x1='#{x_min}' y1='#{y_bottom - 20}' x2='#{x_min}' y2='#{first_target_y}' stroke='#{stroke}' />\n) \
+      trunk_start_y = (row == 1) ? (label_y - 15) : (y_bottom - 20)
+      trunk = %(<line x1='#{x_min}' y1='#{trunk_start_y}' x2='#{x_min}' y2='#{first_target_y}' stroke='#{stroke}' />\n) \
         + %(<polygon fill='#{stroke}' stroke='#{stroke}' points='#{x_min},#{first_target_y} #{x_min - 3},#{first_target_y + 6} #{x_min + 3},#{first_target_y + 6} #{x_min},#{first_target_y}' />)
 
-      if rounded && (x_max - x_min) >= r * 2
+      if rounded && r > 0 && (x_max - x_min) >= r * 2
         last_line = sorted.last
         last_target_y = last_line.y2
         bus_and_last = %(<path fill='none' stroke='#{stroke}' d='M #{x_min} #{bus_y + r} C #{x_min} #{bus_y + cp} #{x_min + cp} #{bus_y} #{x_min + r} #{bus_y} L #{x_max - r} #{bus_y} C #{x_max - cp} #{bus_y} #{x_max} #{bus_y - cp} #{x_max} #{bus_y - r} L #{x_max} #{last_target_y}' />\n) \
@@ -164,7 +291,12 @@ module CareeriaIdef0Style
         branches_markup = "#{bus}\n#{other_branches}"
       end
 
-      label_svg = %(<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{y_bottom - 5}'>#{CGI.escapeHTML(name)}</text>)
+      callout_svg = ''
+      if row >= 2 && CareeriaIdef0Style.callouts_enabled?
+        callout_svg = %(<line x1='#{x_min}' y1='#{y_bottom - 20}' x2='#{x_min}' y2='#{label_y - 12}' stroke='#{stroke}' stroke-dasharray='3,3' stroke-width='1' />\n)
+      end
+
+      label_svg = %(#{callout_svg}<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
       attributes, extras = CareeriaIdef0Boundary.decorate(primary, stroke)
 
       sorted[1..-1].each do |other_line|
@@ -188,19 +320,25 @@ module CareeriaIdef0Style
       primary = sorted.first
       x_min = sorted.first.x1
       x_max = sorted.last.x1
-      y_top = sorted.map(&:y1).min
+      y_top = primary.y1
       boxes_top = sorted.map(&:y2).min
 
       bus_y = boxes_top - 15 - bus_index * 20
       rounded = corners_mode == 'rounded'
-      r = 10
-      cp = 5
+      r = CareeriaIdef0Style.corner_radius
+      cp = (r * 0.5).round(1)
+
+      layout_info = CareeriaIdef0Style.current_guidance_layout&.fetch(name, nil) || { row: 0 }
+      row = layout_info[:row] || 0
+      base_label_y = y_top + 15
+      label_y = layout_info[:y] || (base_label_y - row * 18)
 
       first_target_y = sorted.first.y2
-      trunk = %(<line x1='#{x_min}' y1='#{y_top + 20}' x2='#{x_min}' y2='#{first_target_y}' stroke='#{stroke}' />\n) \
+      trunk_start_y = (row == 1) ? (label_y + 15) : (y_top + 20)
+      trunk = %(<line x1='#{x_min}' y1='#{trunk_start_y}' x2='#{x_min}' y2='#{first_target_y}' stroke='#{stroke}' />\n) \
         + %(<polygon fill='#{stroke}' stroke='#{stroke}' points='#{x_min},#{first_target_y} #{x_min - 3},#{first_target_y - 6} #{x_min + 3},#{first_target_y - 6} #{x_min},#{first_target_y}' />)
 
-      if rounded && (x_max - x_min) >= r * 2
+      if rounded && r > 0 && (x_max - x_min) >= r * 2
         last_line = sorted.last
         last_target_y = last_line.y2
         bus_and_last = %(<path fill='none' stroke='#{stroke}' d='M #{x_min} #{bus_y - r} C #{x_min} #{bus_y - cp} #{x_min + cp} #{bus_y} #{x_min + r} #{bus_y} L #{x_max - r} #{bus_y} C #{x_max - cp} #{bus_y} #{x_max} #{bus_y + cp} #{x_max} #{bus_y + r} L #{x_max} #{last_target_y}' />\n) \
@@ -225,7 +363,12 @@ module CareeriaIdef0Style
         branches_markup = "#{bus}\n#{other_branches}"
       end
 
-      label_svg = %(<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{y_top + 14}'>#{CGI.escapeHTML(name)}</text>)
+      callout_svg = ''
+      if row >= 2 && CareeriaIdef0Style.callouts_enabled?
+        callout_svg = %(<line x1='#{x_min}' y1='#{y_top + 20}' x2='#{x_min}' y2='#{label_y + 4}' stroke='#{stroke}' stroke-dasharray='3,3' stroke-width='1' />\n)
+      end
+
+      label_svg = %(#{callout_svg}<text fill='#{text_color}' text-anchor='middle' x='#{x_min}' y='#{label_y}'>#{CGI.escapeHTML(name)}</text>)
       attributes, extras = CareeriaIdef0Boundary.decorate(primary, stroke)
 
       sorted[1..-1].each do |other_line|
@@ -294,6 +437,13 @@ module CareeriaIdef0Diagram
         resize(right_edge + 20, bottom_edge + 20 + extra_clearance)
       end
     end
+
+    mech_layout = CareeriaIdef0Style.compute_mechanism_labels_layout(@lines)
+    max_mech_row = mech_layout.values.map { |l| l[:row] }.max || 0
+    if max_mech_row > 0
+      extra_h = max_mech_row * 18 + 10
+      resize(right_edge + 20, bottom_edge + 20 + extra_h)
+    end
   end
 
   def generate_boxes
@@ -301,6 +451,9 @@ module CareeriaIdef0Diagram
   end
 
   def generate_lines
+    CareeriaIdef0Style.current_mech_layout = CareeriaIdef0Style.compute_mechanism_labels_layout(@lines)
+    CareeriaIdef0Style.current_guidance_layout = CareeriaIdef0Style.compute_guidance_labels_layout(@lines)
+
     result = []
     mech_lines = @lines.select { |l| l.is_a?(IDEF0::ExternalMechanismLine) }
     guidance_lines = @lines.select { |l| l.is_a?(IDEF0::ExternalGuidanceLine) }
@@ -339,8 +492,48 @@ module CareeriaIdef0Diagram
     end
 
     markup = result.join("\n")
-    markup = apply_sharp_corners(markup) if CareeriaIdef0Style.corners_mode == 'sharp'
+    if CareeriaIdef0Style.corners_mode == 'sharp'
+      markup = apply_sharp_corners(markup)
+    elsif (CareeriaIdef0Style.corner_radius - 10.0).abs > 0.05
+      markup = apply_corner_radius(markup, CareeriaIdef0Style.corner_radius)
+    end
     apply_crossings(markup, CareeriaIdef0Style.crossings_mode)
+  end
+
+  def apply_corner_radius(markup, r)
+    return markup if (r - 10.0).abs < 0.05 || r <= 0.0
+
+    cp = (r * 0.5).round(1)
+    markup.gsub(/L\s+([-\d.]+)\s+([-\d.]+)\s+C\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)/) do
+      xa, ya, cp1x, cp1y, _cp2x, _cp2y, xb, yb = [$1, $2, $3, $4, $5, $6, $7, $8].map(&:to_f)
+      if (ya - cp1y).abs < 0.5
+        xc, yc = xb, ya
+        dir_x = (xa < xc) ? -1 : 1
+        dir_y = (yb > yc) ? 1 : -1
+        new_xa = xc + dir_x * r
+        new_ya = yc
+        new_cp1x = xc + dir_x * cp
+        new_cp1y = yc
+        new_cp2x = xc
+        new_cp2y = yc + dir_y * cp
+        new_xb = xc
+        new_yb = yc + dir_y * r
+        %(L #{new_xa.round(1)} #{new_ya.round(1)} C #{new_cp1x.round(1)} #{new_cp1y.round(1)} #{new_cp2x.round(1)} #{new_cp2y.round(1)} #{new_xb.round(1)} #{new_yb.round(1)})
+      else
+        xc, yc = xa, yb
+        dir_y = (ya < yc) ? -1 : 1
+        dir_x = (xb > xc) ? 1 : -1
+        new_xa = xc
+        new_ya = yc + dir_y * r
+        new_cp1x = xc
+        new_cp1y = yc + dir_y * cp
+        new_cp2x = xc + dir_x * cp
+        new_cp2y = yc
+        new_xb = xc + dir_x * r
+        new_yb = yc
+        %(L #{new_xa.round(1)} #{new_ya.round(1)} C #{new_cp1x.round(1)} #{new_cp1y.round(1)} #{new_cp2x.round(1)} #{new_cp2y.round(1)} #{new_xb.round(1)} #{new_yb.round(1)})
+      end
+    end
   end
 
   def apply_sharp_corners(markup)
@@ -431,7 +624,7 @@ module CareeriaIdef0Diagram
         else
           parts << "L #{(cx + r).round(1)} #{y.round(1)}"
           if mode == 'arc'
-            parts << "A #{r} #{r} 0 0 1 #{(cx - r).round(1)} #{y.round(1)}"
+            parts << "A #{r} #{r} 0 0 0 #{(cx - r).round(1)} #{y.round(1)}"
           else
             parts << "M #{(cx - r).round(1)} #{y.round(1)}"
           end
@@ -521,7 +714,10 @@ if __FILE__ == $PROGRAM_NAME
     parser.on('--order ORDER') { |value| options[:order] = value }
     parser.on('--branching BRANCHING') { |value| options[:branching] = value }
     parser.on('--corners CORNERS') { |value| options[:corners] = value }
+    parser.on('--radius RADIUS') { |value| options[:radius] = value }
     parser.on('--crossings CROSSINGS') { |value| options[:crossings] = value }
+    parser.on('--icom ICOM') { |value| options[:icom] = value }
+    parser.on('--callouts CALLOUTS') { |value| options[:callouts] = value }
   end.parse!
 
   abort 'missing --input' unless options[:input]
@@ -532,7 +728,10 @@ if __FILE__ == $PROGRAM_NAME
     CareeriaIdef0Style.settings['order'] = options[:order] if options[:order]
     CareeriaIdef0Style.settings['branching'] = options[:branching] if options[:branching]
     CareeriaIdef0Style.settings['corners'] = options[:corners] if options[:corners]
+    CareeriaIdef0Style.settings['radius'] = options[:radius] if options[:radius]
     CareeriaIdef0Style.settings['crossings'] = options[:crossings] if options[:crossings]
+    CareeriaIdef0Style.settings['icom'] = options[:icom] if options[:icom]
+    CareeriaIdef0Style.settings['callouts'] = options[:callouts] if options[:callouts]
     statements = File.open(options[:input], 'r:utf-8') { |file| IDEF0::Statement.parse(file) }
     root = IDEF0::Process.parse(statements)
     CareeriaIdef0Boundary.validate(root)
