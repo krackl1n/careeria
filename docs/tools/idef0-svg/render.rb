@@ -90,9 +90,9 @@ module CareeriaIdef0Style
     end
 
     def icom_enabled?
-      raw = settings&.fetch('icom', true)
-      return false if raw == false || raw == 'false' || raw == 'off' || raw == 'none' || raw == 'hide' || raw == 'no'
-      true
+      raw = settings&.fetch('icom', false)
+      return true if raw == true || raw == 'true' || raw == 'on' || raw == 'show' || raw == 'yes'
+      false
     end
 
     def callouts_enabled?
@@ -199,6 +199,44 @@ module CareeriaIdef0Style
         end
       end
       layout
+    end
+
+    def compute_mechanism_bus_indices(lines)
+      return {} unless branching_mechanisms?
+      mech_lines = lines.to_a.select { |l| l.is_a?(IDEF0::ExternalMechanismLine) }
+      groups = mech_lines.group_by(&:name).select { |_, ls| ls.count > 1 }
+      return {} if groups.empty?
+
+      sorted_names = groups.keys.sort_by do |name|
+        ls = groups[name]
+        seqs = ls.map { |l| l.target ? l.target.sequence : 0 }
+        min_seq = seqs.min || 0
+        max_seq = seqs.max || 0
+        [-min_seq, -(max_seq - min_seq), name]
+      end
+
+      indices = {}
+      sorted_names.each_with_index { |name, idx| indices[name] = idx }
+      indices
+    end
+
+    def compute_guidance_bus_indices(lines)
+      return {} unless branching_controls?
+      guidance_lines = lines.to_a.select { |l| l.is_a?(IDEF0::ExternalGuidanceLine) }
+      groups = guidance_lines.group_by(&:name).select { |_, ls| ls.count > 1 }
+      return {} if groups.empty?
+
+      sorted_names = groups.keys.sort_by do |name|
+        ls = groups[name]
+        seqs = ls.map { |l| l.target ? l.target.sequence : 0 }
+        min_seq = seqs.min || 0
+        max_seq = seqs.max || 0
+        [-min_seq, -(max_seq - min_seq), name]
+      end
+
+      indices = {}
+      sorted_names.each_with_index { |name, idx| indices[name] = idx }
+      indices
     end
 
     def crossings_mode
@@ -446,6 +484,104 @@ module CareeriaIdef0Diagram
     end
   end
 
+  def sequence_anchors
+    mech_bus_indices = CareeriaIdef0Style.compute_mechanism_bus_indices(@lines)
+    guidance_bus_indices = CareeriaIdef0Style.compute_guidance_bus_indices(@lines)
+
+    @boxes.each do |box|
+      sequence_side_anchors(box.bottom_side, :bottom, mech_bus_indices, guidance_bus_indices)
+      sequence_side_anchors(box.top_side, :top, mech_bus_indices, guidance_bus_indices)
+      sequence_side_anchors(box.left_side, :left, mech_bus_indices, guidance_bus_indices)
+      sequence_side_anchors(box.right_side, :right, mech_bus_indices, guidance_bus_indices)
+    end
+  end
+
+  def sequence_side_anchors(side, side_type, mech_bus_indices, guidance_bus_indices)
+    anchors = side.instance_variable_get(:@anchors)
+    return side.sequence_anchors if anchors.nil?
+
+    sorted = anchors.to_a.sort_by do |anchor|
+      anchor_precedence_for(anchor, side, side_type, mech_bus_indices, guidance_bus_indices)
+    end
+    side.instance_variable_set(:@anchors, IDEF0::ArraySet.new(sorted).sequence!)
+  end
+
+  def anchor_precedence_for(anchor, side, side_type, mech_bus_indices, guidance_bus_indices)
+    lines = anchor.lines
+    return [99, 99, anchor.name] if lines.nil? || lines.empty?
+
+    lines.map do |line|
+      line_precedence_for(line, anchor, side, side_type, mech_bus_indices, guidance_bus_indices)
+    end.min
+  end
+
+  def line_precedence_for(line, anchor, side, side_type, mech_bus_indices, guidance_bus_indices)
+    box = side.instance_variable_get(:@box)
+    case side_type
+    when :bottom
+      if line.is_a?(IDEF0::ExternalMechanismLine)
+        if mech_bus_indices.key?(line.name)
+          [0, mech_bus_indices[line.name], anchor.name]
+        else
+          [1, 0, anchor.name]
+        end
+      elsif line.is_a?(IDEF0::ForwardMechanismLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [0, 100 - src_seq, anchor.name]
+      elsif line.is_a?(IDEF0::BackwardMechanismLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [2, src_seq, anchor.name]
+      else
+        [1, 1, anchor.name]
+      end
+
+    when :top
+      if line.is_a?(IDEF0::ExternalGuidanceLine)
+        if guidance_bus_indices.key?(line.name)
+          [0, guidance_bus_indices[line.name], anchor.name]
+        else
+          [1, 0, anchor.name]
+        end
+      elsif line.is_a?(IDEF0::ForwardGuidanceLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [0, 100 - src_seq, anchor.name]
+      elsif line.is_a?(IDEF0::BackwardGuidanceLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [2, src_seq, anchor.name]
+      else
+        [1, 1, anchor.name]
+      end
+
+    when :left
+      if line.is_a?(IDEF0::ForwardInputLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [0, src_seq, anchor.name]
+      elsif line.is_a?(IDEF0::ExternalInputLine)
+        [1, 0, anchor.name]
+      elsif line.is_a?(IDEF0::BackwardInputLine)
+        src_seq = line.source ? line.source.sequence : 0
+        [2, src_seq, anchor.name]
+      else
+        [1, 1, anchor.name]
+      end
+
+    when :right
+      if line.is_a?(IDEF0::BackwardGuidanceLine)
+        tgt_seq = line.target ? line.target.sequence : 0
+        [0, tgt_seq, anchor.name]
+      elsif line.is_a?(IDEF0::ExternalOutputLine)
+        [1, 0, anchor.name]
+      elsif line.is_a?(IDEF0::ForwardInputLine) || line.is_a?(IDEF0::ForwardGuidanceLine) ||
+            line.is_a?(IDEF0::ForwardMechanismLine) || line.is_a?(IDEF0::BackwardInputLine) ||
+            line.is_a?(IDEF0::BackwardMechanismLine)
+        tgt_seq = line.target ? line.target.sequence : 0
+        [2, -tgt_seq, anchor.name]
+      else
+        [1, 1, anchor.name]
+      end
+    end
+  end
+
   def generate_boxes
     @boxes.map { |box| CareeriaIdef0Style.box_svg(box) }.join("\n")
   end
@@ -463,11 +599,12 @@ module CareeriaIdef0Diagram
 
     if CareeriaIdef0Style.branching_controls?
       guidance_groups = guidance_lines.group_by(&:name)
-      bus_idx = 0
-      guidance_groups.each do |name, lines|
+      guidance_bus_indices = CareeriaIdef0Style.compute_guidance_bus_indices(@lines)
+      guidance_groups.keys.sort.each do |name|
+        lines = guidance_groups[name]
         if lines.count > 1
+          bus_idx = guidance_bus_indices[name] || 0
           result << CareeriaIdef0Style.branched_guidance_svg(name, lines, bus_idx)
-          bus_idx += 1
         else
           result << CareeriaIdef0Style.arrow_svg(lines.first)
         end
@@ -478,11 +615,12 @@ module CareeriaIdef0Diagram
 
     if CareeriaIdef0Style.branching_mechanisms?
       mech_groups = mech_lines.group_by(&:name)
-      bus_idx = 0
-      mech_groups.each do |name, lines|
+      mech_bus_indices = CareeriaIdef0Style.compute_mechanism_bus_indices(@lines)
+      mech_groups.keys.sort.each do |name|
+        lines = mech_groups[name]
         if lines.count > 1
+          bus_idx = mech_bus_indices[name] || 0
           result << CareeriaIdef0Style.branched_mechanism_svg(name, lines, bus_idx)
-          bus_idx += 1
         else
           result << CareeriaIdef0Style.arrow_svg(lines.first)
         end
@@ -700,6 +838,10 @@ module CareeriaIdef0Diagram
       end
     end
   end
+end
+
+IDEF0::Anchor.class_eval do
+  attr_reader :lines, :side
 end
 
 IDEF0::Diagram.prepend(CareeriaIdef0Diagram)

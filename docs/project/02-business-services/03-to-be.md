@@ -48,6 +48,7 @@
 @defaults arrow=#43566D arrow_text=#26384B block_fill=#F3F7FB block_stroke=#27466A block_text=#172B41
 
 @arrow `Веб-платформа Careeria` | stroke=#15803D text=#14532D
+@arrow `Эталонный чек-лист оценки` | stroke=#15803D text=#14532D
 @block `Отобрать кандидатов и согласовать интервью через встроенный чат` | fill=#EAF6EE stroke=#15803D text=#14532D
 @block `Оценить компетенции в объединенном экране собеседования` | fill=#EAF6EE stroke=#15803D text=#14532D
 @block `Сформировать цифровой оффер и оформить сотрудника` | fill=#EAF6EE stroke=#15803D text=#14532D
@@ -127,6 +128,8 @@
 @view decompose `Зарегистрировать профиль компании и настроить вакансию`
 
 @defaults arrow=#43566D arrow_text=#26384B block_fill=#F3F7FB block_stroke=#27466A block_text=#172B41
+@arrow `Веб-платформа Careeria` | stroke=#15803D text=#14532D
+@arrow `Эталонный чек-лист оценки` | stroke=#15803D text=#14532D
 
 # Туннелирование: регламент описания и критерии грейдов вакансии
 @tunnel child | `Зарегистрировать профиль компании и настроить вакансию` | control | `Стандарты описания вакансий`
@@ -242,6 +245,8 @@
 
 @defaults arrow=#43566D arrow_text=#26384B block_fill=#F3F7FB block_stroke=#27466A block_text=#172B41
 
+@arrow `Веб-платформа Careeria` | stroke=#15803D text=#14532D
+@arrow `Эталонный чек-лист оценки` | stroke=#15803D text=#14532D
 @block `Автоматически инициализировать комнату собеседования` | fill=#EAF6EE stroke=#15803D text=#14532D
 @block `Провести комплексное интервью в объединенном экране` | fill=#EAF6EE stroke=#15803D text=#14532D
 @block `Заполнить чек-лист и сформировать протокол оценки` | fill=#EAF6EE stroke=#15803D text=#14532D
