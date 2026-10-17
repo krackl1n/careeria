@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='942pt' height='380pt'
+viewBox='0.0 0.0 942.0 380.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Publish Vacancy'><rect x='231' y='60' width='146' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='304' y='94'><tspan x='304' dy='0'>Publish Vacancy</tspan></text>
+</g>
+<g data-idef0-block='Review Applications'><rect x='417' y='160' width='168' height='60' fill='#F3F7FB' stroke='#27466A' />
+<text fill='#172B41' text-anchor='middle' x='501' y='194'><tspan x='501' dy='0'>Review Applications</tspan></text>
+</g>
+<g data-idef0-block='Make Decision'><rect x='625' y='260' width='135' height='60' fill='#EAF6EE' stroke='#27466A' />
+<text fill='#14532D' text-anchor='middle' x='692' y='294'><tspan x='692' dy='0'>Make Decision</tspan></text>
+</g>
+  <g data-idef0-arrow='Vacancy'><path stroke='#43566D' fill='none' d='M 377 90 L 389.0 90.0 C 393.0 90.0 397.0 94.0 397.0 98.0 L 397.0 172.0 C 397.0 176.0 401.0 180.0 405.0 180.0 L 417 180' />
+<polygon fill='#43566D' stroke='#43566D' points='417,180 411,183 411,177 417,180' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='382' y='85'>Vacancy</text>
+</g>
+<g data-idef0-arrow='Shortlist'><path stroke='#43566D' fill='none' d='M 585 190 L 597.0 190.0 C 601.0 190.0 605.0 194.0 605.0 198.0 L 605.0 282.0 C 605.0 286.0 609.0 290.0 613.0 290.0 L 625 290' />
+<polygon fill='#43566D' stroke='#43566D' points='625,290 619,293 619,287 625,290' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='590' y='185'>Shortlist</text>
+</g>
+<g data-idef0-arrow='Hiring Request' data-idef0-icom='I2'><line x1='20' y1='90' x2='231' y2='90' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='231,90 225,93 225,87 231,90' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='85'>Hiring Request</text>
+</g>
+<g data-idef0-arrow='Candidate Applications' data-idef0-icom='I1'><line x1='20' y1='200' x2='417' y2='200' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='417,200 411,203 411,197 417,200' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='195'>Candidate Applications</text>
+</g>
+<g data-idef0-arrow='Hiring Decision' data-idef0-icom='O1'><line x1='760' y1='290' x2='922' y2='290' stroke='#15803D' />
+<polygon fill='#15803D' stroke='#15803D' points='922,290 916,293 916,287 922,290' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#14532D' text-anchor='end' x='917' y='285'>Hiring Decision</text>
+</g>
+<g data-idef0-arrow='Hiring Policy' data-idef0-icom='C1' data-idef0-tunnel-parent='Review Applications'><line x1='501' y1='40' x2='501' y2='160' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='501,160 498,154 504,154 501,160' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='501' y='35'>Hiring Policy</text>
+<g data-idef0-tunnel-marker='parent' transform='translate(501 146) rotate(90)'><path d='M -5 -8 Q -11 0 -5 8 M 5 -8 Q 11 0 5 8' fill='none' stroke='#43566D' stroke-width='1.8' /></g></g>
+<g data-idef0-arrow='Recruitment Team' data-idef0-icom='M1'><line x1='501' y1='340' x2='501' y2='220' stroke='#43566D' />
+<polygon fill='#43566D' stroke='#43566D' points='501,220 498,226 504,226 501,220' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='501' y='355'>Recruitment Team</text>
+</g>
+</g>
+</svg>

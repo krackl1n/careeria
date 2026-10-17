@@ -1,6 +1,6 @@
 # Careeria — архитектура C4 в PlantUML
 
-Этот каталог содержит архитектурную модель рекрутинговой платформы Careeria в нотации C4-PlantUML. Модель описывает системный контекст L1, контейнеры L2, доменные представления, динамические сценарии и общую интеграционную схему.
+Этот каталог содержит архитектурную модель рекрутинговой платформы Careeria в нотации C4-PlantUML. Модель описывает системный контекст L1, контейнеры L2, тематические представления и динамические сценарии, в том числе обмен с кадровой системой.
 
 Технологии ниже являются целевым стеком проекта. Они фиксируют архитектурные решения для реализации и защиты лабораторных работ.
 
@@ -29,19 +29,13 @@ c4-plant-uml/
 │   │   └── backend/company-service.puml
 │   ├── projections/             # Срезы модели по теме и ответственности
 │   │   ├── high-level.puml
-│   │   ├── big-picture.puml
 │   │   ├── event-driven.puml
-│   │   ├── candidate-domain.puml
-│   │   ├── hiring-domain.puml
 │   │   ├── communication.puml
 │   │   └── members/
 │   │       ├── member1/          # member1-l1-context.puml, member1-l2-containers.puml
 │   │       ├── member2/          # member2-l1-context.puml, member2-l2-containers.puml
 │   │       ├── member3/          # member3-l1-context.puml, member3-l2-containers.puml
 │   │       └── member4/          # member4-l1-context.puml, member4-l2-containers.puml
-│   ├── integration/             # Сведение областей команды
-│   │   ├── team.puml             # C4 L1 и L2 с общими include
-│   │   └── standalone.puml       # Автономная версия без include
 │   └── dynamic/                 # Сценарии взаимодействия
 │       ├── hr-integration.puml
 │       └── domain-event.puml
@@ -53,7 +47,7 @@ c4-plant-uml/
 
 - **Уровень C4** определяет глубину описания: `context/` — системы и пользователи, `container/` — приложения, сервисы и хранилища.
 - **Проекция** выбирает часть той же архитектуры: домен, область участника команды, верхнеуровневый обзор или событийное взаимодействие. Проекции member сохраняют свои L1/L2 и технические имена файлов.
-- **Командная интеграция** в `integration/team.puml` объединяет области всех участников. Внешние HR-интеграции описаны в общей модели и сценарии `dynamic/hr-integration.puml`.
+- **Полная система** в `container/full-system.puml` показывает контейнеры в одной модели. Обмен с внешней кадровой системой раскрыт в `dynamic/hr-integration.puml`.
 - **Динамический сценарий** показывает порядок взаимодействий для конкретного процесса.
 
 Верхнеуровневая и event-driven диаграммы — тематические проекции L2. Слово «проекция» здесь обозначает архитектурное представление; сервис `AuthZ Synchronization Service` выполняет отдельную задачу обновления отношений доступа из событий.
@@ -76,7 +70,7 @@ c4-plant-uml/
 2. L1/L2-диаграммы подключают `common/styles.puml`; L3-диаграммы подключают `common/component-styles.puml`. В нём централизованы C4 Component, скруглённый стиль, шрифт, размеры, маршрутизация `polyline` и общие теги инфраструктуры. Для широких use case L3 дополнительно подключается `common/component-wide-layout.puml`.
 3. Использовать относительные `!include`. Файлы `common/` и `model/` — фрагменты без `@startuml`; остальные `.puml` — самостоятельные точки входа для генерации.
 4. При переносе диаграмм сохранять идентификаторы `@startuml`: они задают имена SVG. Файл `container/full-system.puml` ранее назывался `views/previous.puml` и сохраняет имя результата `C4-L2-Previous.svg`.
-5. `integration/standalone.puml` — отдельная автономная копия для обмена. При изменении модели обновлять её вместе с `integration/team.puml`; автоматически она не синхронизируется.
+5. При изменении общих элементов и связей сверять `container/full-system.puml` с тематическими проекциями и областями участников.
 6. Не редактировать SVG вручную. После изменения исходников запускать проверку и генерацию из корня репозитория.
 
 ### Раскладка и стрелки L3
@@ -247,8 +241,7 @@ Go service → PostgreSQL transaction + outbox
 | [Верхнеуровневая проекция](plantuml/projections/high-level.puml) | Обзор без БД и событийной инфраструктуры |
 | [Event-driven](plantuml/projections/event-driven.puml) | Kafka, Debezium, Avro и transactional outbox |
 | [Коммуникации](plantuml/projections/communication.puml) | Коммуникации, realtime, файлы и уведомления |
-| [Командная интеграция](plantuml/integration/team.puml) | Интегрированные L1 и L2 для всей команды |
-| [Автономная интеграция](plantuml/integration/standalone.puml) | Два представления без зависимостей от других файлов и C4-библиотеки |
+| [Полная система](plantuml/container/full-system.puml) | Общее контейнерное представление для всей команды |
 | [HR webhook](plantuml/dynamic/hr-integration.puml) | Последовательность обработки входящего webhook |
 | [Доменное событие](plantuml/dynamic/domain-event.puml) | Доставка события от outbox до уведомления |
 

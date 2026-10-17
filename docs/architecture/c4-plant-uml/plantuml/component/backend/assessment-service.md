@@ -83,9 +83,9 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 - **StrictAutoScoringStrategy:** 100% оценка по результатам автотестов; сессия считается пройденной только при прохождении всех обязательных тестов (Screening-задачи).
 - **LiveCodingRubricStrategy:** оценка на основе матрицы компетенций (Problem Solving, Communication, Code Quality, Edge Cases), заполняемой нанимающим инженером в реальном времени.
 
-Предлагаемые таблицы: ssessment_templates, ssessment_tasks, ssessment_sessions, 	ask_submissions, ssessment_manual_reviews, idempotency_keys, ssessment_outbox.
+Предлагаемые таблицы: assessment_templates, assessment_tasks, assessment_sessions, task_submissions, assessment_manual_reviews, idempotency_keys, assessment_outbox.
 
-Межсервисные связи опираются на внешние UUID (candidate_id, pplication_id, company_id) без cross-database foreign keys.
+Межсервисные связи опираются на внешние UUID (candidate_id, application_id, company_id) без cross-database foreign keys.
 
 ## Статусы и жизненный цикл
 
@@ -97,11 +97,11 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ### Диаграмма состояний сессии кандидата
 
-`	ext
+```text
 [SCHEDULED] ──(StartSession)──► [IN_PROGRESS] ──(FinalizeSession)──► [SUBMITTED] ──(CalculateScore)──► [EVALUATED]
      │                                │
      └───(validUntil timeout)─────────┴──(expiresAt timeout)──────► [EXPIRED]
-`
+```
 
 ## Каталог сценариев
 
@@ -124,9 +124,9 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ### 3. AssignAssessment — назначить испытание кандидату
 
-**Инициатор и вход:** рекрутер или система найма (Hiring Service), 	emplate_id, candidate_id, pplication_id, alid_until, idempotency key.
+**Инициатор и вход:** рекрутер или система найма (Hiring Service), template_id, candidate_id, application_id, valid_until, idempotency key.
 
-**Проверки и выполнение:** проверяются права рекрутера через OpenFGA, валидность шаблона и дата доступности (alid_until в будущем). В БД создается AssessmentSession в статусе SCHEDULED. Записывается событие AssessmentAssigned в outbox.
+**Проверки и выполнение:** проверяются права рекрутера через OpenFGA, валидность шаблона и дата доступности (valid_until в будущем). В БД создается AssessmentSession в статусе SCHEDULED. Записывается событие AssessmentAssigned в outbox.
 
 **Результат:** возвращается session_id.
 
@@ -134,17 +134,17 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 **Инициатор и вход:** кандидат, session_id.
 
-**Проверки:** сессия принадлежит кандидату (candidate_id == identity.user_id), текущий статус строго SCHEDULED, текущее время меньше alid_until.
+**Проверки:** сессия принадлежит кандидату (candidate_id == identity.user_id), текущий статус строго SCHEDULED, текущее время меньше valid_until.
 
-**Выполнение:** SessionExecutionService фиксирует started_at = NOW(), вычисляет expires_at = NOW() + template.time_limit_minutes, переводит статус в IN_PROGRESS и инкрементирует ersion. Событие AssessmentStarted сохраняется в outbox. Возвращаются дедлайн и тексты заданий (без скрытых тест-кейсов).
+**Выполнение:** SessionExecutionService фиксирует started_at = NOW(), вычисляет expires_at = NOW() + template.time_limit_minutes, переводит статус в IN_PROGRESS и инкрементирует version. Событие AssessmentStarted сохраняется в outbox. Возвращаются дедлайн и тексты заданий (без скрытых тест-кейсов).
 
 ### 7. SubmitTaskSolution — отправить код на проверку
 
-**Инициатор и вход:** кандидат, session_id, 	ask_id, language, source_code.
+**Инициатор и вход:** кандидат, session_id, task_id, language, source_code.
 
 **Проверки:** сессия находится в статусе IN_PROGRESS, дедлайн expires_at не наступил (SessionLifecyclePolicy), язык входит в список разрешенных.
 
-**Выполнение:** создается запись 	ask_submissions со статусом PENDING. Сервис отправляет асинхронную команду в Sandbox Client. Раннер запускает контейнер в изоляции, выполняет сборку и прогоняет тесты. При получении ответа запись обновляется статусом (PASSED или FAILED), метриками (время, память) и детализацией упавших assert-тестов.
+**Выполнение:** создается запись task_submissions со статусом PENDING. Сервис отправляет асинхронную команду в Sandbox Client. Раннер запускает контейнер в изоляции, выполняет сборку и прогоняет тесты. При получении ответа запись обновляется статусом (PASSED или FAILED), метриками (время, память) и детализацией упавших assert-тестов.
 
 ### 9. InitializeLiveCoding — инициализировать сессию интервью
 
@@ -160,7 +160,7 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 **Выполнение:** при переходе в SUBMITTED кандидат больше не может отправлять код. После получения необходимых ручных рецензий (или сразу при 100% автопроверке) вызывается ScoringContext. В соответствии с настройкой шаблона загружается нужная реализация ScoringStrategy.
 
-Стратегия вычисляет итоговый процент успешности и булев флаг is_passed. Сессия обновляется полями inal_score, is_passed, статус переходит в EVALUATED. В outbox пишется событие AssessmentCompleted.
+Стратегия вычисляет итоговый процент успешности и булев флаг is_passed. Сессия обновляется полями final_score, is_passed, статус переходит в EVALUATED. В outbox пишется событие AssessmentCompleted.
 
 ## Транзакции, безопасность и интеграция
 

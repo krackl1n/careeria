@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='533pt' height='160pt'
+viewBox='0.0 0.0 533.0 160.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <g data-idef0-block='Approve Vacancy'><rect x='180' y='80' width='152' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='256' y='114'><tspan x='256' dy='0'>Approve Vacancy</tspan></text>
+</g>
+  <g data-idef0-arrow='Vacancy Draft'><line x1='20' y1='110' x2='180' y2='110' stroke='#3B536E' stroke-dasharray='5,5' />
+<polygon fill='#3B536E' stroke='#3B536E' points='180,110 174,113 174,107 180,110' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='start' x='25' y='105'>Vacancy Draft</text>
+</g>
+<g data-idef0-arrow='Approved Vacancy'><line x1='332' y1='110' x2='513' y2='110' stroke='#3B536E' stroke-dasharray='5,5' />
+<polygon fill='#3B536E' stroke='#3B536E' points='513,110 507,113 507,107 513,110' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='end' x='508' y='105'>Approved Vacancy</text>
+</g>
+<g data-idef0-arrow='Publication Policy'><line x1='256' y1='40' x2='256' y2='80' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='256,80 253,74 259,74 256,80' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='middle' x='256' y='35'>Publication Policy</text>
+</g>
+</g>
+</svg>
