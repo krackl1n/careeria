@@ -27,33 +27,33 @@ viewBox='0.0 0.0 964.0 380.0'
 <g data-idef0-block='Prepare Shortlist'><rect x='656' y='240' width='160' height='60' fill='#F3F7FB' stroke='#27466A' />
 <text fill='#172B41' text-anchor='middle' x='736' y='274'><tspan x='736' dy='0'>Prepare Shortlist</tspan></text>
 </g>
-  <g data-idef0-arrow='Eligible Applications'><path stroke='#43566D' fill='none' d='M 402 70 L 412 70 C 417 70 422 75 422 80 L 422 160 C 422 165 427 170 432 170 L 442 170' />
+  <g data-idef0-arrow='Eligible Applications'><path stroke='#43566D' fill='none' d='M 402 70 L 414.0 70.0 C 418.0 70.0 422.0 74.0 422.0 78.0 L 422.0 162.0 C 422.0 166.0 426.0 170.0 430.0 170.0 L 442 170' />
 <polygon fill='#43566D' stroke='#43566D' points='442,170 436,173 436,167 442,170' />
-<text fill='#26384B' text-anchor='start' x='407' y='65'>Eligible Applications</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='407' y='65'>Eligible Applications</text>
 </g>
-<g data-idef0-arrow='Evaluations'><path stroke='#43566D' fill='none' d='M 616 170 L 626 170 C 631 170 636 175 636 180 L 636 260 C 636 265 641 270 646 270 L 656 270' />
+<g data-idef0-arrow='Evaluations'><path stroke='#43566D' fill='none' d='M 616 170 L 628.0 170.0 C 632.0 170.0 636.0 174.0 636.0 178.0 L 636.0 262.0 C 636.0 266.0 640.0 270.0 644.0 270.0 L 656 270' />
 <polygon fill='#43566D' stroke='#43566D' points='656,270 650,273 650,267 656,270' />
-<text fill='#26384B' text-anchor='start' x='621' y='165'>Evaluations</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='621' y='165'>Evaluations</text>
 </g>
 <g data-idef0-arrow='Vacancy' data-idef0-icom='I1'><line x1='20' y1='80' x2='231' y2='80' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='231,80 225,83 225,77 231,80' />
-<text fill='#26384B' text-anchor='start' x='25' y='75'>Vacancy</text>
-<text class='idef0-icom' x='16' y='84' text-anchor='end' fill='#43566D' font-size='11' font-weight='700'>I1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='75'>Vacancy</text>
+</g>
 <g data-idef0-arrow='Candidate Applications' data-idef0-icom='I2'><line x1='20' y1='60' x2='231' y2='60' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='231,60 225,63 225,57 231,60' />
-<text fill='#26384B' text-anchor='start' x='25' y='55'>Candidate Applications</text>
-<text class='idef0-icom' x='16' y='64' text-anchor='end' fill='#43566D' font-size='11' font-weight='700'>I2</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='55'>Candidate Applications</text>
+</g>
 <g data-idef0-arrow='Shortlist' data-idef0-icom='O1'><line x1='816' y1='270' x2='944' y2='270' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='944,270 938,273 938,267 944,270' />
-<text fill='#26384B' text-anchor='end' x='939' y='265'>Shortlist</text>
-<text class='idef0-icom' x='948' y='274' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>O1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='end' x='939' y='265'>Shortlist</text>
+</g>
 <g data-idef0-arrow='Recruitment Team' data-idef0-icom='M1'><line x1='736' y1='340' x2='736' y2='300' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='736,300 733,306 739,306 736,300' />
-<text fill='#26384B' text-anchor='middle' x='736' y='355'>Recruitment Team</text>
-<text class='idef0-icom' x='749' y='336' text-anchor='start' fill='#43566D' font-size='11' font-weight='700'>M1</text></g>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='736' y='355'>Recruitment Team</text>
+</g>
 <g data-idef0-arrow='Screening Tool' data-idef0-tunnel='child'><line x1='316' y1='340' x2='316' y2='100' stroke='#43566D' stroke-dasharray='5,5' />
 <polygon fill='#43566D' stroke='#43566D' points='316,100 313,106 319,106 316,100' />
-<text fill='#26384B' text-anchor='middle' x='316' y='355'>Screening Tool</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='316' y='355'>Screening Tool</text>
 <g data-idef0-tunnel-marker='child' transform='translate(316 326) rotate(90)'><path d='M -5 -8 Q -11 0 -5 8 M 5 -8 Q 11 0 5 8' fill='none' stroke='#43566D' stroke-width='1.8' /></g></g>
 </g>
 </svg>

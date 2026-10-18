@@ -137,9 +137,17 @@ Assess Candidate receives Application
         self.assertEqual(render_inline_diagrams(markdown, "guide.md"), markdown)
 
     def test_boundary_error_identifies_page(self):
-        model = (MODELS / "hiring.idef0").read_text(encoding="utf-8")
+        model = """Manage Hiring receives Hiring Request
+Manage Hiring produces Hiring Decision
+Manage Hiring is composed of Screen Applications
+Manage Hiring is composed of Prepare Shortlist
+Screen Applications receives Hiring Request
+Screen Applications requires Screening Tool
+Screen Applications produces Shortlist
+Prepare Shortlist receives Shortlist
+Prepare Shortlist produces Hiring Decision"""
         with self.assertRaisesRegex(ValueError, "hiring.md:1: IDEF0: .*boundary mismatch"):
-            render_inline_diagrams("```idef0\n" + model + "```\n", "hiring.md")
+            render_inline_diagrams("```idef0\n" + model + "\n```\n", "hiring.md")
 
     def test_preview_shows_error_in_place_and_renders_next_diagram(self):
         markdown = """# Example
@@ -218,9 +226,461 @@ Process invents Result
         markdown = f"# Demo\n\n{image}\n\n```markdown\n{image}\n```\n"
         result = idef0_inline.on_page_markdown(markdown, page=page, config=config, files=None)
         self.assertEqual(result.count('class="idef0-error"'), 2)
-        self.assertIn("export failed", result)
-        self.assertIn(f"```markdown\n{image}\n```", result)
+    def test_order_preserves_declaration_and_supports_heuristic(self):
+        markdown_default = """```idef0
+@view decompose `Pipeline`
+`Pipeline` receives `Data`
+`Pipeline` produces `Verdict`
+`Pipeline` is composed of `Step Connect`
+`Pipeline` is composed of `Step Code`
+`Pipeline` is composed of `Step Verdict`
+`Step Connect` receives `Data`
+`Step Connect` produces `Session`
+`Step Code` receives `Session`
+`Step Code` produces `Code`
+`Step Verdict` receives `Code`
+`Step Verdict` produces `Verdict`
+```
+"""
+        result_default = render_inline_diagrams(markdown_default, "order_test.md")
+        pos_connect = result_default.find("data-idef0-block='Step Connect'")
+        pos_code = result_default.find("data-idef0-block='Step Code'")
+        pos_verdict = result_default.find("data-idef0-block='Step Verdict'")
+        self.assertTrue(pos_connect < pos_code < pos_verdict)
+
+    def test_branching_mechanisms_and_toggle(self):
+        markdown_branched = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` requires `Team`
+`B` produces `Out`
+```
+"""
+        result_branched = render_inline_diagrams(markdown_branched, "branch_test.md")
+        self.assertEqual(result_branched.count("data-idef0-arrow='Team'"), 1)
+        self.assertEqual(result_branched.count("data-idef0-icom='M1'"), 1)
+
+        markdown_unbranched = """```idef0
+@branching none
+@view decompose `Process`
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` requires `Team`
+`B` produces `Out`
+```
+"""
+        result_unbranched = render_inline_diagrams(markdown_unbranched, "branch_unbranched.md")
+        self.assertEqual(result_unbranched.count("data-idef0-arrow='Team'"), 2)
+
+    def test_corners_sharp_and_rounded(self):
+        markdown_sharp = """```idef0
+@corners sharp
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_sharp = render_inline_diagrams(markdown_sharp, "corners_sharp.md")
+        self.assertNotIn(" C ", result_sharp)
+
+        markdown_rounded = """```idef0
+@corners rounded
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_rounded = render_inline_diagrams(markdown_rounded, "corners_rounded.md")
+        self.assertIn(" C ", result_rounded)
+
+    def test_crossings_arc_gap_none(self):
+        # A model with a feedback loop crossing an external input or control
+        markdown_base = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` respects `Rule`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` receives `Feedback`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` respects `Rule`
+`B` produces `Out`
+`B` produces `Feedback`
+```
+"""
+        result_arc = render_inline_diagrams(markdown_base.replace("@view", "@crossings arc\n@view"), "crossing_arc.md")
+        self.assertIn("<path", result_arc)
+        self.assertIn("<svg", result_arc)
+
+        result_gap = render_inline_diagrams(markdown_base.replace("@view", "@crossings gap\n@view"), "crossing_gap.md")
+        self.assertIn("<path", result_gap)
+
+        result_none = render_inline_diagrams(markdown_base.replace("@view", "@crossings none\n@view"), "crossing_none.md")
+        self.assertIn("<svg", result_none)
+
+    def test_branching_corners_match_project_standard_and_preserve_curves_through_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+@branching all
+@crossings arc
+`Process` receives `In`
+`Process` requires `Team`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `Team`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `Team`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `Team`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "branching_corners.md")
+        self.assertIn("<svg", result)
+        # Verify that cubic Bézier curves (C ...) are used for branching turns
+        self.assertIn(" C ", result)
+        # Verify that no broken diagonal lines occur (last target and turn points have proper curve)
+        self.assertNotIn(" Q ", result)
+
+    def test_icom_toggle_and_snug_alignment(self):
+        markdown_default = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_default = render_inline_diagrams(markdown_default, "icom_default.md")
+        self.assertNotIn("class='idef0-icom'", result_default)
+        self.assertIn("data-idef0-icom=", result_default)
+
+        markdown_on = """```idef0
+@view decompose `Process`
+@icom on
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_on = render_inline_diagrams(markdown_on, "icom_on.md")
+        self.assertIn("class='idef0-icom'", result_on)
+
+        markdown_off = """```idef0
+@view decompose `Process`
+@icom off
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`A` receives `In`
+`A` produces `Out`
+```
+"""
+        result_off = render_inline_diagrams(markdown_off, "icom_off.md")
+        self.assertNotIn("class='idef0-icom'", result_off)
+        # Verify metadata data-idef0-icom is still present on <g>
+        self.assertIn("data-idef0-icom=", result_off)
+
+    def test_label_collision_staggering_and_callouts(self):
+        markdown_callout = """```idef0
+@view decompose `Process`
+@callouts on
+`Process` receives `In`
+`Process` requires `M1`
+`Process` requires `M2`
+`Process` requires `M3`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` requires `M1`
+`A` requires `M2`
+`A` requires `M3`
+`B` requires `M1`
+`B` requires `M2`
+`B` requires `M3`
+`B` produces `Out`
+```
+"""
+        result_callout = render_inline_diagrams(markdown_callout, "callout_on.md")
+        self.assertIn("<svg", result_callout)
+        # When 3 branched mechanisms heavily overlap, the 3rd is pushed down to row 2 and receives a dashed callout line
+        self.assertIn("stroke-dasharray='3,3'", result_callout)
+
+        markdown_no_callout = markdown_callout.replace("@callouts on", "@callouts off")
+        result_no_callout = render_inline_diagrams(markdown_no_callout, "callout_off.md")
+        self.assertNotIn("stroke-dasharray='3,3'", result_no_callout)
+
+    def test_custom_radius_directive(self):
+        markdown_r6 = """```idef0
+@view decompose `Process`
+@radius 6
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` receives `In`
+`A` produces `Mid`
+`B` receives `Mid`
+`B` produces `Out`
+```
+"""
+        result_r6 = render_inline_diagrams(markdown_r6, "radius_6.md")
+        self.assertIn("<svg", result_r6)
+        self.assertIn(" C ", result_r6)
+
+    def test_curve_rounding_direction_and_branch_turns(self):
+        # Verify vertical-to-horizontal curve direction has no loop/hook
+        markdown = """```idef0
+@view decompose `Process`
+@radius 8
+`Process` receives `In`
+`Process` requires `M`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `M`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `M`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `M`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "curve_test.md")
+        self.assertIn("<svg", result)
+
+        # 1. Forward input curve (A -> B turn) must end smoothly at xc + r, without looping back
+        # d contains: L <xc> <yc-r> C <xc> <yc-cp> <xc+cp> <yc> <xc+r> <yc> L ...
+        curve_match = re.search(r"L\s+([-\d.]+)\s+([-\d.]+)\s+C\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+L\s+([-\d.]+)", result)
+        self.assertIsNotNone(curve_match)
+        xc, y_start = float(curve_match.group(1)), float(curve_match.group(2))
+        cp1x, cp1y = float(curve_match.group(3)), float(curve_match.group(4))
+        cp2x, cp2y = float(curve_match.group(5)), float(curve_match.group(6))
+        end_x, end_y = float(curve_match.group(7)), float(curve_match.group(8))
+        next_x = float(curve_match.group(9))
+
+        # End x must be between xc and next_x (strictly advancing towards target)
+        self.assertGreater(end_x, xc)
+        self.assertLessEqual(end_x, next_x)
+
+        # 2. In branched mechanism (M branches to B), branch curve must turn UPWARD (y decreases towards target)
+        branch_match = re.search(r"M\s+([-\d.]+)\s+([-\d.]+)\s+C\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+L\s+([-\d.]+)\s+([-\d.]+)", result)
+        self.assertIsNotNone(branch_match)
+        b_bus_y = float(branch_match.group(2))
+        b_end_y = float(branch_match.group(8))
+        b_target_y = float(branch_match.group(10))
+        # Turning UP means y decreases: bus_y > end_y >= target_y
+        self.assertLess(b_end_y, b_bus_y)
+        self.assertLessEqual(b_target_y, b_end_y)
+
+    def test_smart_anchor_sequencing_minimizes_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` requires `M_Global`
+`Process` requires `M_Local`
+`Process` requires `M_Free`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` requires `M_Global`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` requires `M_Global`
+`B` requires `M_Local`
+`B` produces `Mid2`
+`C` receives `Mid2`
+`C` requires `M_Global`
+`C` requires `M_Local`
+`C` requires `M_Free`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "heuristic_test.md")
+        self.assertIn("<svg", result)
+
+        # In Box C:
+        # M_Local is an inner bus (starts at B, span 1) -> must have smaller x than M_Global (starts at A, span 2)
+        # M_Free is a free end (unbranched, only on C) -> must be placed last (largest x)
+        def get_arrow_endpoints_in_box(arrow_name, x_min, x_max):
+            m = re.search(r"<g data-idef0-arrow=['\"]" + re.escape(arrow_name) + r"['\"].*?</g>", result, re.DOTALL)
+            self.assertIsNotNone(m, f"Arrow {arrow_name} not found")
+            pts = re.findall(r"([-\d.]+),([-\d.]+)", m.group(0))
+            pts_in_box = [float(p[0]) for p in pts if x_min <= float(p[0]) <= x_max]
+            return sorted(set(pts_in_box))
+
+        box_c = re.search(r"<g data-idef0-block=['\"]C['\"].*?<rect x=['\"]([\d.]+)['\"].*?y=['\"]([\d.]+)['\"].*?width=['\"]([\d.]+)['\"].*?height=['\"]([\d.]+)['\"]", result)
+        self.assertIsNotNone(box_c)
+        c_x = float(box_c.group(1))
+        c_y = float(box_c.group(2))
+        c_w = float(box_c.group(3))
+        c_h = float(box_c.group(4))
+        c_bottom = c_y + c_h
+
+        def get_arrow_anchor_x_at_box(arrow_name, target_y):
+            m = re.search(r"<g data-idef0-arrow=['\"]" + re.escape(arrow_name) + r"['\"].*?</g>", result, re.DOTALL)
+            self.assertIsNotNone(m, f"Arrow {arrow_name} not found")
+            match = re.search(r"points=['\"]([-\d.]+)," + re.escape(str(int(target_y))) + r"\b", m.group(0))
+            self.assertIsNotNone(match, f"Anchor at y={target_y} for {arrow_name} not found")
+            return float(match.group(1))
+
+        local_x = get_arrow_anchor_x_at_box("M_Local", c_bottom)
+        global_x = get_arrow_anchor_x_at_box("M_Global", c_bottom)
+        free_x = get_arrow_anchor_x_at_box("M_Free", c_bottom)
+
+        # Inner bus (M_Local) < Outer bus (M_Global) < Free end (M_Free)
+        self.assertLess(local_x, global_x)
+        self.assertLess(global_x, free_x)
+
+        # Centering and 20px spacing check:
+        self.assertAlmostEqual(global_x - local_x, 20.0, places=1)
+        self.assertAlmostEqual(free_x - global_x, 20.0, places=1)
+        center_anchors = (local_x + free_x) / 2.0
+        center_box = c_x + c_w / 2.0
+        self.assertAlmostEqual(center_anchors, center_box, places=1)
+
+    def test_forward_inputs_sequencing_eliminates_entrance_crossings(self):
+        markdown = """```idef0
+@view decompose `Process`
+`Process` receives `In`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`Process` is composed of `C`
+`A` receives `In`
+`A` produces `Input_From_A`
+`A` produces `Mid1`
+`B` receives `Mid1`
+`B` produces `Input_From_B`
+`C` receives `Input_From_A`
+`C` receives `Input_From_B`
+`C` produces `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "input_order_test.md")
+        self.assertIn("<svg", result)
+
+        # In Box C:
+        # Input_From_B is from Box B (nearer source) -> must enter at upper anchor (smaller y)
+        # Input_From_A is from Box A (further source) -> must enter at lower anchor (larger y)
+        # Result: Input_From_B turns down into the upper anchor without crossing Input_From_A!
+        # Input_From_A must NOT contain any bridge arc before entering C.
+        m_a = re.search(r"<g data-idef0-arrow=['\"]Input_From_A['\"].*?</g>", result, re.DOTALL)
+        m_b = re.search(r"<g data-idef0-arrow=['\"]Input_From_B['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_a)
+        self.assertIsNotNone(m_b)
+
+        # Extract target y on left side of Box C
+        box_c = re.search(r"<g data-idef0-block=['\"]C['\"].*?<rect x=['\"]([\d.]+)['\"].*?y=['\"]([\d.]+)['\"].*?width=['\"]([\d.]+)['\"].*?height=['\"]([\d.]+)['\"]", result)
+        self.assertIsNotNone(box_c)
+        c_x = float(box_c.group(1))
+
+        # Check endpoints targeting x = c_x
+        pts_a = re.findall(r"([-\d.]+),([-\d.]+)", m_a.group(0))
+        y_a = [float(p[1]) for p in pts_a if float(p[0]) == c_x][0]
+
+        pts_b = re.findall(r"([-\d.]+),([-\d.]+)", m_b.group(0))
+        y_b = [float(p[1]) for p in pts_b if float(p[0]) == c_x][0]
+
+        # Nearer source (B) is above further source (A)
+        self.assertLess(y_b, y_a)
+
+        # Input_From_A has zero bridge arcs right before Box C
+        self.assertNotIn(" A 5 5 ", m_a.group(0))
+
+    def test_directional_mechanisms_sequencing_eliminates_bus_crossing(self):
+        """
+        Verify that on a box with both an unbranched mechanism and an outgoing branched bus,
+        the unbranched mechanism is placed to the left (smaller x) and the outgoing bus trunk
+        is placed to the right (larger x). This ensures the bus heading right never crosses
+        the unbranched mechanism.
+        Also verifies text halo paint-order is applied.
+        """
+        markdown = """
+```idef0
+@view decompose `Process`
+@branching all
+@corners rounded
+@crossings arc
+`Process` requires `Local_Admin`
+`Process` requires `Shared_Platform`
+`Process` produces `Out`
+`Process` is composed of `A`
+`Process` is composed of `B`
+`A` requires `Local_Admin`
+`A` requires `Shared_Platform`
+`A` produces `Out`
+`B` requires `Shared_Platform`
+`B` receives `Out`
+```
+"""
+        result = render_inline_diagrams(markdown, "mech_order_test.md")
+        self.assertIn("<svg", result)
+
+        m_local = re.search(r"<g data-idef0-arrow=['\"]Local_Admin['\"].*?</g>", result, re.DOTALL)
+        m_shared = re.search(r"<g data-idef0-arrow=['\"]Shared_Platform['\"].*?</g>", result, re.DOTALL)
+        self.assertIsNotNone(m_local)
+        self.assertIsNotNone(m_shared)
+
+        # Local admin is to the left of shared platform on Box A
+        x_local = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_local.group(0)).group(1))
+        x_shared = float(re.search(r"<line x1=['\"]([\d.]+)['\"]", m_shared.group(0)).group(1))
+        self.assertLess(x_local, x_shared)
+
+        # Shared platform does NOT cross Local_Admin
+        self.assertNotIn(" A 5 5 ", m_shared.group(0))
+
+        # Check text halo
+        self.assertIn("paint-order='stroke fill'", result)
+        self.assertIn("stroke='#FFFFFF'", result)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+

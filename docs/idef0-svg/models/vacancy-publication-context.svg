@@ -23,19 +23,19 @@ viewBox='0.0 0.0 525.0 220.0'
 </g>
   <g data-idef0-arrow='Vacancy Brief'><line x1='20' y1='110' x2='177' y2='110' stroke='#3B536E' />
 <polygon fill='#3B536E' stroke='#3B536E' points='177,110 171,113 171,107 177,110' />
-<text fill='#21364D' text-anchor='start' x='25' y='105'>Vacancy Brief</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='start' x='25' y='105'>Vacancy Brief</text>
 </g>
 <g data-idef0-arrow='Published Vacancy'><line x1='323' y1='110' x2='505' y2='110' stroke='#16804A' />
 <polygon fill='#16804A' stroke='#16804A' points='505,110 499,113 499,107 505,110' />
-<text fill='#17603A' text-anchor='end' x='500' y='105'>Published Vacancy</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#17603A' text-anchor='end' x='500' y='105'>Published Vacancy</text>
 </g>
 <g data-idef0-arrow='Publication Policy'><line x1='250' y1='40' x2='250' y2='80' stroke='#3B536E' />
 <polygon fill='#3B536E' stroke='#3B536E' points='250,80 247,74 253,74 250,80' />
-<text fill='#21364D' text-anchor='middle' x='250' y='35'>Publication Policy</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='middle' x='250' y='35'>Publication Policy</text>
 </g>
 <g data-idef0-arrow='Recruiting Team'><line x1='250' y1='180' x2='250' y2='140' stroke='#3B536E' />
 <polygon fill='#3B536E' stroke='#3B536E' points='250,140 247,146 253,146 250,140' />
-<text fill='#21364D' text-anchor='middle' x='250' y='195'>Recruiting Team</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='middle' x='250' y='195'>Recruiting Team</text>
 </g>
 </g>
 </svg>

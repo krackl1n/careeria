@@ -14,6 +14,7 @@ module CareeriaIdef0Boundary
 
   class << self
     def load(settings)
+      @settings = settings
       raw = settings.fetch('boundaries', {})
       raise 'boundaries must be an object' unless raw.is_a?(Hash)
       @tunnels = {}
@@ -143,13 +144,20 @@ module CareeriaIdef0Boundary
         + '</g>'
     end
 
+    def icom_enabled?
+      raw = @settings&.fetch('icom', false)
+      return true if raw == true || raw == 'true' || raw == 'on' || raw == 'show' || raw == 'yes'
+      false
+    end
+
     def icom_label(line, code, color)
       kind = boundary_pair(line).first
       case kind
-      when 'input' then x, y, anchor = line.x1 - 4, line.y1 + 4, 'end'
-      when 'output' then x, y, anchor = line.x2 + 4, line.y2 + 4, 'start'
-      when 'control' then x, y, anchor = line.x1 + 13, line.y1 - 4, 'start'
-      else x, y, anchor = line.x1 + 13, line.y1 - 24, 'start'
+      when 'input'   then x, y, anchor = line.x1 - 4, line.y1 + 4, 'end'
+      when 'output'  then x, y, anchor = line.x2 + 4, line.y2 + 4, 'start'
+      when 'control' then x, y, anchor = line.x1 + 4, line.y1 - 4, 'start'
+      else
+        x, y, anchor = line.x1 + 4, line.y1 - 12, 'start'
       end
       %(<text class='idef0-icom' x='#{x}' y='#{y}' text-anchor='#{anchor}' fill='#{color}' font-size='11' font-weight='700'>#{code}</text>)
     end
@@ -202,7 +210,7 @@ module CareeriaIdef0Boundary
         else
           code = @codes.fetch(@current_process).fetch(pair)
           attributes << "data-idef0-icom='#{code}'"
-          extra << icom_label(line, code, color)
+          extra << icom_label(line, code, color) if icom_enabled?
         end
       end
       names, markers = parent_markers(line, color)

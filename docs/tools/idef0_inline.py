@@ -164,6 +164,55 @@ def _parse_block(body: str, page_path: str, first_line: int):
             values = _style_values(line[len("@defaults"):].strip(), STYLE_KEYS["@defaults"],
                                    page_path, line_number)
             settings.setdefault("defaults", {}).update(values)
+        elif line.startswith("@order"):
+            val = line[len("@order"):].strip()
+            if val not in {"auto", "source", "fixed", "heuristic"}:
+                raise _error(page_path, line_number, "use @order auto|source|fixed|heuristic")
+            settings["order"] = val
+        elif line.startswith("@branching"):
+            val = line[len("@branching"):].strip()
+            if val not in {"auto", "true", "false", "none", "mechanisms", "all"}:
+                raise _error(page_path, line_number, "use @branching auto|true|false|none|mechanisms|all")
+            settings["branching"] = val
+        elif line.startswith("@corners"):
+            val = line[len("@corners"):].strip()
+            parts = val.split()
+            mode = parts[0] if parts else ""
+            if mode not in {"rounded", "sharp"}:
+                raise _error(page_path, line_number, "use @corners rounded [radius]|sharp")
+            settings["corners"] = mode
+            if len(parts) > 1:
+                try:
+                    settings["radius"] = float(parts[1])
+                except ValueError:
+                    raise _error(page_path, line_number, "radius must be a number")
+        elif line.startswith("@radius"):
+            val = line[len("@radius"):].strip()
+            try:
+                settings["radius"] = float(val)
+            except ValueError:
+                raise _error(page_path, line_number, "use @radius <number>")
+        elif line.startswith("@icom"):
+            val = line[len("@icom"):].strip().lower()
+            if val in {"false", "off", "none", "hide", "no"}:
+                settings["icom"] = False
+            elif val in {"true", "on", "show", "yes"}:
+                settings["icom"] = True
+            else:
+                raise _error(page_path, line_number, "use @icom on|off")
+        elif line.startswith("@callouts"):
+            val = line[len("@callouts"):].strip().lower()
+            if val in {"false", "off", "none", "no"}:
+                settings["callouts"] = False
+            elif val in {"true", "on", "yes"}:
+                settings["callouts"] = True
+            else:
+                raise _error(page_path, line_number, "use @callouts on|off")
+        elif line.startswith("@crossings"):
+            val = line[len("@crossings"):].strip()
+            if val not in {"arc", "bridge", "gap", "break", "none", "plain"}:
+                raise _error(page_path, line_number, "use @crossings arc|gap|none")
+            settings["crossings"] = "arc" if val == "bridge" else ("gap" if val == "break" else ("none" if val == "plain" else val))
         elif line.startswith("@block ") or line.startswith("@arrow "):
             directive, rest = line.split(maxsplit=1)
             name, separator, raw_values = rest.partition("|")
