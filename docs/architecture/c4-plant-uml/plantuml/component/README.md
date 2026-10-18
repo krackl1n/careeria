@@ -9,6 +9,8 @@
 - [Candidate Service](backend/candidate-service.md)
 - [Integration Service](backend/integration-service.md)
 - [Identity Service](backend/identity-service.md)
+- [Assessment Service](backend/assessment-service.md)
+- [Communication Service](backend/communication-service.md)
 
 ## Содержание описаний
 
@@ -21,6 +23,8 @@
 | [Candidate Service](backend/candidate-service.md) | 9 | 24 группы сценариев; предлагаемые контракты | Профиль и профессиональные данные, статус поиска и видимость, версии резюме в S3 через File Service, безопасное скачивание, cleanup и снимки для найма. |
 | [Integration Service](backend/integration-service.md) | 13 | 21 группа сценариев; предлагаемые контракты | Входящие и исходящие webhooks, подключения компаний, подписи и ключи, inbox/outbox, подписки, deliveries, leases, retry/redrive и SSRF-защита. |
 | [Identity Service](backend/identity-service.md) | 12 | 20 сценариев | Регистрация, credentials, access/refresh токены , ротация сессий, обнаружение reuse, Debezium CDC и адаптер для внешних интеграций. |
+| [Assessment Service](backend/assessment-service.md) | 12 | 14 сценариев | Шаблоны тестов и заданий, Live Coding через LiveKit, паттерн Strategy для скоринга, раннер в Sandbox, сессии FSM и Debezium outbox. |
+| [Communication Service](backend/communication-service.md) | 10 | 17 сценариев | Диалоги и треды, ReBAC-доступ через OpenFGA, вложения через File Service в S3, outbox для Centrifugo и Notification Service, soft delete и watermarks. |
 
 На каждой странице есть таблицы внутренних компонентов и соседних контейнеров. Юзкейсы описаны через вход, инициатора, проверки, порядок выполнения, результат и ограничения; отдельно разобраны конкуренция, ошибки и границы транзакций.
 

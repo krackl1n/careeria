@@ -23,23 +23,23 @@ viewBox='0.0 0.0 548.0 220.0'
 </g>
   <g data-idef0-arrow='Hiring Request'><line x1='20' y1='120' x2='231' y2='120' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='231,120 225,123 225,117 231,120' />
-<text fill='#26384B' text-anchor='start' x='25' y='115'>Hiring Request</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='115'>Hiring Request</text>
 </g>
 <g data-idef0-arrow='Candidate Applications'><line x1='20' y1='100' x2='231' y2='100' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='231,100 225,103 225,97 231,100' />
-<text fill='#26384B' text-anchor='start' x='25' y='95'>Candidate Applications</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='start' x='25' y='95'>Candidate Applications</text>
 </g>
 <g data-idef0-arrow='Hiring Decision'><line x1='366' y1='110' x2='528' y2='110' stroke='#15803D' />
 <polygon fill='#15803D' stroke='#15803D' points='528,110 522,113 522,107 528,110' />
-<text fill='#14532D' text-anchor='end' x='523' y='105'>Hiring Decision</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#14532D' text-anchor='end' x='523' y='105'>Hiring Decision</text>
 </g>
 <g data-idef0-arrow='Hiring Policy'><line x1='298' y1='40' x2='298' y2='80' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='298,80 295,74 301,74 298,80' />
-<text fill='#26384B' text-anchor='middle' x='298' y='35'>Hiring Policy</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='298' y='35'>Hiring Policy</text>
 </g>
 <g data-idef0-arrow='Recruitment Team'><line x1='298' y1='180' x2='298' y2='140' stroke='#43566D' />
 <polygon fill='#43566D' stroke='#43566D' points='298,140 295,146 301,146 298,140' />
-<text fill='#26384B' text-anchor='middle' x='298' y='195'>Recruitment Team</text>
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#26384B' text-anchor='middle' x='298' y='195'>Recruitment Team</text>
 </g>
 </g>
 </svg>

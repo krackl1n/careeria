@@ -5,8 +5,8 @@
 ]>
 <svg xmlns='http://www.w3.org/2000/svg'
 xmlns:xlink='http://www.w3.org/1999/xlink'
-width='860pt' height='360pt'
-viewBox='0.0 0.0 860.0 360.0'
+width='920pt' height='360pt'
+viewBox='0.0 0.0 920.0 360.0'
 >
 <style type='text/css'>
   svg {
@@ -18,34 +18,34 @@ viewBox='0.0 0.0 860.0 360.0'
   }
 </style>
 <g>
-  <g data-idef0-block='Write Description'><rect x='157' y='40' width='160' height='60' fill='#F4F8FD' stroke='#2F5377' />
-<text fill='#17324D' text-anchor='middle' x='237' y='74'><tspan x='237' dy='0'>Write Description</tspan></text>
+  <g data-idef0-block='Analyze Requirements'><rect x='177' y='40' width='181' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='267' y='74'><tspan x='267' dy='0'>Analyze Requirements</tspan></text>
 </g>
-<g data-idef0-block='Assemble Draft'><rect x='357' y='140' width='142' height='60' fill='#F4F8FD' stroke='#2F5377' />
-<text fill='#17324D' text-anchor='middle' x='428' y='174'><tspan x='428' dy='0'>Assemble Draft</tspan></text>
+<g data-idef0-block='Write Description'><rect x='398' y='140' width='160' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='478' y='174'><tspan x='478' dy='0'>Write Description</tspan></text>
 </g>
-<g data-idef0-block='Analyze Requirements'><rect x='519' y='240' width='181' height='60' fill='#F4F8FD' stroke='#2F5377' />
-<text fill='#17324D' text-anchor='middle' x='609' y='274'><tspan x='609' dy='0'>Analyze Requirements</tspan></text>
+<g data-idef0-block='Assemble Draft'><rect x='598' y='240' width='142' height='60' fill='#F4F8FD' stroke='#2F5377' />
+<text fill='#17324D' text-anchor='middle' x='669' y='274'><tspan x='669' dy='0'>Assemble Draft</tspan></text>
 </g>
-  <g data-idef0-arrow='Role Requirements'><path stroke='#3B536E' fill='none' d='M 700 270 L 710 270 C 715 270 720 275 720 280 L 720 310 C 720 315 715 320 710 320 L 147 320 C 142 320 137 315 137 310 L 137 80 C 137 75 142 70 147 70 L 157 70' />
-<polygon fill='#3B536E' stroke='#3B536E' points='157,70 151,73 151,67 157,70' />
-<text fill='#21364D' text-anchor='start' x='147' y='315'>Role Requirements</text>
+  <g data-idef0-arrow='Role Requirements'><path stroke='#3B536E' fill='none' d='M 358 70 L 370.0 70.0 C 374.0 70.0 378.0 74.0 378.0 78.0 L 378.0 162.0 C 378.0 166.0 382.0 170.0 386.0 170.0 L 398 170' />
+<polygon fill='#3B536E' stroke='#3B536E' points='398,170 392,173 392,167 398,170' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='start' x='363' y='65'>Role Requirements</text>
 </g>
-<g data-idef0-arrow='Vacancy Text'><path stroke='#3B536E' fill='none' d='M 317 70 L 327 70 C 332 70 337 75 337 80 L 337 160 C 337 165 342 170 347 170 L 357 170' />
-<polygon fill='#3B536E' stroke='#3B536E' points='357,170 351,173 351,167 357,170' />
-<text fill='#21364D' text-anchor='start' x='322' y='65'>Vacancy Text</text>
+<g data-idef0-arrow='Vacancy Text'><path stroke='#3B536E' fill='none' d='M 558 170 L 570.0 170.0 C 574.0 170.0 578.0 174.0 578.0 178.0 L 578.0 262.0 C 578.0 266.0 582.0 270.0 586.0 270.0 L 598 270' />
+<polygon fill='#3B536E' stroke='#3B536E' points='598,270 592,273 592,267 598,270' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='start' x='563' y='165'>Vacancy Text</text>
 </g>
-<g data-idef0-arrow='Vacancy Brief' data-idef0-icom='I1'><line x1='20' y1='270' x2='519' y2='270' stroke='#3B536E' />
-<polygon fill='#3B536E' stroke='#3B536E' points='519,270 513,273 513,267 519,270' />
-<text fill='#21364D' text-anchor='start' x='25' y='265'>Vacancy Brief</text>
-<text class='idef0-icom' x='16' y='274' text-anchor='end' fill='#3B536E' font-size='11' font-weight='700'>I1</text></g>
-<g data-idef0-arrow='Vacancy Draft' data-idef0-icom='O1'><line x1='499' y1='170' x2='840' y2='170' stroke='#3B536E' />
-<polygon fill='#3B536E' stroke='#3B536E' points='840,170 834,173 834,167 840,170' />
-<text fill='#21364D' text-anchor='end' x='835' y='165'>Vacancy Draft</text>
-<text class='idef0-icom' x='844' y='174' text-anchor='start' fill='#3B536E' font-size='11' font-weight='700'>O1</text></g>
-<g data-idef0-arrow='Recruiting Team' data-idef0-icom='M1'><line x1='237' y1='320' x2='237' y2='100' stroke='#3B536E' />
-<polygon fill='#3B536E' stroke='#3B536E' points='237,100 234,106 240,106 237,100' />
-<text fill='#21364D' text-anchor='middle' x='237' y='335'>Recruiting Team</text>
-<text class='idef0-icom' x='250' y='316' text-anchor='start' fill='#3B536E' font-size='11' font-weight='700'>M1</text></g>
+<g data-idef0-arrow='Vacancy Brief' data-idef0-icom='I1'><line x1='20' y1='70' x2='177' y2='70' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='177,70 171,73 171,67 177,70' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='start' x='25' y='65'>Vacancy Brief</text>
+</g>
+<g data-idef0-arrow='Vacancy Draft' data-idef0-icom='O1'><line x1='740' y1='270' x2='900' y2='270' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='900,270 894,273 894,267 900,270' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='end' x='895' y='265'>Vacancy Draft</text>
+</g>
+<g data-idef0-arrow='Recruiting Team' data-idef0-icom='M1'><line x1='478' y1='320' x2='478' y2='200' stroke='#3B536E' />
+<polygon fill='#3B536E' stroke='#3B536E' points='478,200 475,206 481,206 478,200' />
+<text paint-order='stroke fill' stroke='#FFFFFF' stroke-width='4' stroke-linejoin='round' fill='#21364D' text-anchor='middle' x='478' y='335'>Recruiting Team</text>
+</g>
 </g>
 </svg>

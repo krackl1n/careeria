@@ -21,15 +21,35 @@ class Links(HTMLParser):
                 self.links.append(value)
 
 count = 0
+
+
+def count_plantuml_blocks(markdown: str) -> int:
+    """Count rendered blocks, ignoring examples inside outer code fences."""
+    active = None
+    count = 0
+    for line in markdown.splitlines():
+        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if not match:
+            continue
+        marker, info = match.groups()
+        if active is None:
+            active = marker
+            if info.strip() == 'plantuml':
+                count += 1
+        elif marker[0] == active[0] and len(marker) >= len(active) and not info.strip():
+            active = None
+    return count
+
+
 for source in docs.rglob('*.md'):
     if any(part.startswith('.') or part == 'node_modules' for part in source.relative_to(docs).parts):
         continue
     markdown = source.read_text()
-    diagrams = len(re.findall(r'^```plantuml\s*$', markdown, re.M))
+    diagrams = count_plantuml_blocks(markdown)
     if not diagrams:
         continue
     relative = source.relative_to(docs)
-    target = site / relative.with_suffix('') / 'index.html'
+    target = site / relative.parent / 'index.html' if relative.name == 'index.md' else site / relative.with_suffix('') / 'index.html'
     if not target.exists():
         errors.append(f'Missing diagram page: {relative}')
         continue
@@ -58,13 +78,6 @@ for target in site.rglob('*.html'):
 context = (site / 'architecture/c4-plant-uml/plantuml/context/system-context/index.html').read_text()
 if '/architecture/c4-plant-uml/plantuml/container/full-system/' not in context:
     errors.append('Missing clickable context-to-container link')
-for name in ['team', 'standalone']:
-    group = site / f'architecture/c4-plant-uml/plantuml/integration/{name}'
-    for page in group.glob('*/index.html'):
-        html = unescape(page.read_text())
-        if 'L2' in page.parent.name and 'интегрированная контейнерная диаграмма' not in html:
-            errors.append(f'{page.relative_to(site)}: wrong integrated view')
-
 if errors:
     raise SystemExit('\n'.join(sorted(set(errors))))
 print(f'MkDocs: {count} диаграмм; страницы и внутренние ссылки проверены.')

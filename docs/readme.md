@@ -82,12 +82,10 @@ Hiring Service
 * Application
 * Hiring Pipeline
 * Hiring Stage
-* Stage Transition
 * Interview
 * Offer
 * Rejection
 * Withdrawal
-* Hiring History
 Главный агрегат:
 Application
 - id
@@ -104,11 +102,13 @@ APPLIED
    ↓
 SCREENING
    ↓
+TECH_ASSESSMENT
+   ↓
 INTERVIEW
    ↓
-ASSESSMENT
+OFFER_PENDING
    ↓
-OFFER
+OFFER_ACCEPTED
    ↓
 HIRED
 Терминальные состояния:
@@ -117,16 +117,10 @@ WITHDRAWN
 CANCELLED
 HIRED
 Только Hiring Service может менять состояние Application.
-Каждый переход сохраняется в истории:
-ApplicationTransition
-- id
-- application_id
-- from_stage
-- to_stage
-- reason
-- changed_by
-- changed_at
-- metadata
+Каждое изменение статуса сохраняется в истории отклика:
+- исходный и новый этап;
+- причина изменения;
+- автор и время действия.
 Это позволяет восстановить полный timeline процесса найма и строить аналитику по длительности этапов и воронке найма.
 
 Assessment Service
