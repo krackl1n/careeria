@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package careeria.identity.admin.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/admin/v1;identityadminv1";
+
+message SigningKey {
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string.uuid = true
+  ];
+  string key_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string algorithm = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 64
+    }
+  ];
+  string public_jwk = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string.min_len = 1
+  ];
+  string status = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 32
+    }
+  ];
+  google.protobuf.Timestamp created_at = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp not_before = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp activated_at = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message CreateSigningKeyRequest {}
+
+message CreateSigningKeyResponse {
+  SigningKey signing_key = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}

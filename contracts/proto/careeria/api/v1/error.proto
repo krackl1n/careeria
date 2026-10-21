@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package careeria.api.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/api/v1;apiv1";
+
+// Единый JSON envelope ошибок API Gateway.
+message ErrorResponse {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "ErrorResponse"
+      description: "Единый ответ API Gateway для transport, validation и domain errors."
+    }
+  };
+
+  APIError error = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+  string request_id = 2 [
+    json_name = "request_id",
+    (validate.rules).string.max_len = 255
+  ];
+}
+
+message APIError {
+  // Стабильный snake_case код. Для доменных ошибок используется нормализованный
+  // доменный код, например document_version_conflict.
+  string code = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+      pattern: "^[a-z][a-z0-9_]*$"
+    }
+  ];
+  string message = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 2000
+    }
+  ];
+  // Дополнительные структурированные данные ошибки.
+  ErrorDetails details = 3;
+}
+
+message ErrorDetails {
+  // Заполняется для validation_failed.
+  repeated FieldViolation fields = 1 [(validate.rules).repeated = {
+    max_items: 1000
+    items: {
+      message: {required: true}
+    }
+  }];
+  // Метаданные доменной ошибки, если они безопасны для клиента.
+  google.protobuf.Struct metadata = 2;
+}
+
+message FieldViolation {
+  string field = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 1000
+    }
+  ];
+  string code = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+      pattern: "^[a-z][a-z0-9_]*$"
+    }
+  ];
+  string message = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 2000
+    }
+  ];
+}

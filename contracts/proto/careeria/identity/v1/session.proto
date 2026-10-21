@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "careeria/identity/v1/common.proto";
+import "google/api/field_behavior.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+message GetIdentitySessionRequest {}
+
+message GetIdentitySessionResponse {
+  IdentitySession session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message LogoutIdentitySessionRequest {}
+
+message LogoutIdentitySessionResponse {}
