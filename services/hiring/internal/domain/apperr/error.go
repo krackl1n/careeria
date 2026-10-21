@@ -50,6 +50,24 @@ func Unavailable(code, message string, cause error) *Error {
 	return New(TypeUnavailable, code, message, cause)
 }
 
+func As(err error) (*Error, bool) {
+	var appErr *Error
+	if !errors.As(err, &appErr) {
+		return nil, false
+	}
+	return appErr, true
+}
+
+func IsType(err error, t Type) bool {
+	appErr, ok := As(err)
+	return ok && appErr.Type() == t
+}
+
+func IsCode(err error, code string) bool {
+	appErr, ok := As(err)
+	return ok && appErr.Code() == code
+}
+
 func (e *Error) Error() string {
 	if e == nil {
 		return "<nil>"

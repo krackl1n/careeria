@@ -12,6 +12,7 @@ import (
 	sharedidgen "github.com/krackl1n/careeria/idgen"
 	sharedmetrics "github.com/krackl1n/careeria/metrics"
 	sharedruntime "github.com/krackl1n/careeria/runtime"
+	hiringgrpc "github.com/krackl1n/careeria/services/hiring/internal/transport/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -115,8 +116,9 @@ func (a *App) GRPCServer() (*grpcserver.Server, error) {
 	}
 
 	preset := grpcpreset.Server(grpcpreset.ServerConfig{
-		Logger:  a.dependencies.Logger,
-		Metrics: metrics,
+		Logger:        a.dependencies.Logger,
+		Metrics:       metrics,
+		ErrorResolver: hiringgrpc.NewErrorResolver(),
 	})
 
 	server, err := grpcserver.New(
