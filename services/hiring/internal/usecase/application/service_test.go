@@ -23,12 +23,12 @@ func newMockAppRepo() *mockAppRepo {
 }
 
 func (m *mockAppRepo) Create(_ context.Context, app *applicationdomain.JobApplication) error {
-	m.apps[app.ID()] = app
+	m.apps[app.ID] = app
 	return nil
 }
 
 func (m *mockAppRepo) Update(_ context.Context, app *applicationdomain.JobApplication) error {
-	m.apps[app.ID()] = app
+	m.apps[app.ID] = app
 	return nil
 }
 
@@ -42,7 +42,7 @@ func (m *mockAppRepo) GetByID(_ context.Context, id uuid.UUID) (*applicationdoma
 
 func (m *mockAppRepo) GetActiveByCandidateAndVacancy(_ context.Context, candidateID, vacancyID uuid.UUID) (*applicationdomain.JobApplication, error) {
 	for _, app := range m.apps {
-		if app.CandidateID() == candidateID && app.VacancyID() == vacancyID && !app.CurrentStage().IsTerminal() {
+		if app.CandidateID == candidateID && app.VacancyID == vacancyID && !app.CurrentStage.IsTerminal() {
 			return app, nil
 		}
 	}

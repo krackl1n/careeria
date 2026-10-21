@@ -8,6 +8,7 @@ import (
 	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	eventdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/event"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
+	"github.com/krackl1n/careeria/services/hiring/internal/usecase/interview/room"
 )
 
 type InterviewRepository interface {
@@ -19,11 +20,6 @@ type InterviewRepository interface {
 
 type ApplicationStageChecker interface {
 	GetStage(ctx context.Context, appID uuid.UUID) (applicationdomain.PipelineStage, error)
-}
-
-type ConferenceService interface {
-	CreateRoom(ctx context.Context, roomName string) (string, error)
-	EndRoom(ctx context.Context, roomName string) error
 }
 
 type OutboxRepository interface {
@@ -48,21 +44,21 @@ type IDGenerator interface {
 }
 
 type Service struct {
-	interviewRepo   InterviewRepository
-	appChecker      ApplicationStageChecker
-	conferenceSvc   ConferenceService
-	outboxRepo      OutboxRepository
-	authPort        AuthorizationPort
-	txManager       TransactionManager
-	eventFactory    eventdomain.Factory
-	clock           Clock
-	idGen           IDGenerator
+	interviewRepo InterviewRepository
+	appChecker    ApplicationStageChecker
+	roomRegistry  room.Registry
+	outboxRepo    OutboxRepository
+	authPort      AuthorizationPort
+	txManager     TransactionManager
+	eventFactory  eventdomain.Factory
+	clock         Clock
+	idGen         IDGenerator
 }
 
 func NewService(
 	interviewRepo InterviewRepository,
 	appChecker ApplicationStageChecker,
-	conferenceSvc ConferenceService,
+	roomRegistry room.Registry,
 	outboxRepo OutboxRepository,
 	authPort AuthorizationPort,
 	txManager TransactionManager,
@@ -73,7 +69,7 @@ func NewService(
 	return &Service{
 		interviewRepo: interviewRepo,
 		appChecker:    appChecker,
-		conferenceSvc: conferenceSvc,
+		roomRegistry:  roomRegistry,
 		outboxRepo:    outboxRepo,
 		authPort:      authPort,
 		txManager:     txManager,
@@ -82,4 +78,3 @@ func NewService(
 		idGen:         idGen,
 	}
 }
-

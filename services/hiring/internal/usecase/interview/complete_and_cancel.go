@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
+	"github.com/krackl1n/careeria/services/hiring/internal/usecase/interview/room"
 )
 
 type CompleteInterviewInput struct {
@@ -28,7 +29,7 @@ func (s *Service) CompleteInterview(ctx context.Context, input CompleteInterview
 		return fmt.Errorf("load interview: %w", err)
 	}
 
-	if err := s.authPort.CanManageInterview(ctx, input.ActorID, it.ApplicationID()); err != nil {
+	if err := s.authPort.CanManageInterview(ctx, input.ActorID, it.ApplicationID); err != nil {
 		return err
 	}
 
@@ -41,15 +42,15 @@ func (s *Service) CompleteInterview(ctx context.Context, input CompleteInterview
 	}
 
 	payload := interviewdomain.InterviewCompletedPayload{
-		InterviewID: it.ID(),
+		InterviewID: it.ID,
 		CompletedAt: now,
 	}
 
-	version := it.Version()
+	version := it.Version
 	eventMsg, err := s.eventFactory.Create(
 		interviewdomain.EventTypeInterviewCompleted,
 		interviewdomain.AggregateTypeInterview,
-		it.ID(),
+		it.ID,
 		&version,
 		payload,
 		now,
@@ -88,7 +89,7 @@ func (s *Service) CancelInterview(ctx context.Context, input CancelInterviewInpu
 		return fmt.Errorf("load interview: %w", err)
 	}
 
-	if err := s.authPort.CanManageInterview(ctx, input.ActorID, it.ApplicationID()); err != nil {
+	if err := s.authPort.CanManageInterview(ctx, input.ActorID, it.ApplicationID); err != nil {
 		return err
 	}
 
@@ -100,21 +101,26 @@ func (s *Service) CancelInterview(ctx context.Context, input CancelInterviewInpu
 		return err
 	}
 
-	if it.MeetingRoomURL() != "" && s.conferenceSvc != nil {
-		_ = s.conferenceSvc.EndRoom(ctx, fmt.Sprintf("interview-%s", it.ID()))
+	if it.MeetingRoomURL != "" && s.roomRegistry != nil {
+		if strat, err := s.roomRegistry.Get(it.Format); err == nil {
+			_ = strat.Teardown(ctx, room.TeardownRequest{
+				InterviewID: it.ID,
+				MeetingURL:  it.MeetingRoomURL,
+			})
+		}
 	}
 
 	payload := interviewdomain.InterviewCancelledPayload{
-		InterviewID: it.ID(),
+		InterviewID: it.ID,
 		Reason:      input.Reason,
 		CancelledAt: now,
 	}
 
-	version := it.Version()
+	version := it.Version
 	eventMsg, err := s.eventFactory.Create(
 		interviewdomain.EventTypeInterviewCancelled,
 		interviewdomain.AggregateTypeInterview,
-		it.ID(),
+		it.ID,
 		&version,
 		payload,
 		now,

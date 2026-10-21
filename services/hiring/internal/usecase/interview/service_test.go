@@ -9,6 +9,7 @@ import (
 	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	eventdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/event"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
+	"github.com/krackl1n/careeria/services/hiring/internal/usecase/interview/room"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,12 +22,12 @@ func newMockInterviewRepo() *mockInterviewRepo {
 }
 
 func (m *mockInterviewRepo) Create(_ context.Context, it *interviewdomain.Interview) error {
-	m.interviews[it.ID()] = it
+	m.interviews[it.ID] = it
 	return nil
 }
 
 func (m *mockInterviewRepo) Update(_ context.Context, it *interviewdomain.Interview) error {
-	m.interviews[it.ID()] = it
+	m.interviews[it.ID] = it
 	return nil
 }
 
@@ -41,7 +42,7 @@ func (m *mockInterviewRepo) GetByID(_ context.Context, id uuid.UUID) (*interview
 func (m *mockInterviewRepo) ListByApplicationID(_ context.Context, appID uuid.UUID) ([]*interviewdomain.Interview, error) {
 	var list []*interviewdomain.Interview
 	for _, it := range m.interviews {
-		if it.ApplicationID() == appID {
+		if it.ApplicationID == appID {
 			list = append(list, it)
 		}
 	}
@@ -56,17 +57,17 @@ func (m *mockAppStageChecker) GetStage(_ context.Context, _ uuid.UUID) (applicat
 	return m.stage, nil
 }
 
-type mockConferenceSvc struct {
+type mockConferenceClient struct {
 	createdRooms []string
 	endedRooms   []string
 }
 
-func (m *mockConferenceSvc) CreateRoom(_ context.Context, roomName string) (string, error) {
+func (m *mockConferenceClient) CreateRoom(_ context.Context, roomName string) (string, error) {
 	m.createdRooms = append(m.createdRooms, roomName)
 	return "https://livekit.example/rooms/" + roomName, nil
 }
 
-func (m *mockConferenceSvc) EndRoom(_ context.Context, roomName string) error {
+func (m *mockConferenceClient) EndRoom(_ context.Context, roomName string) error {
 	m.endedRooms = append(m.endedRooms, roomName)
 	return nil
 }
@@ -104,30 +105,43 @@ func (c fixedClock) Now() time.Time {
 	return c.now
 }
 
-type fixedIDGen struct {
-	id uuid.UUID
+type sequentialIDGen struct {
+	ids []uuid.UUID
+	idx int
 }
 
-func (g fixedIDGen) New() uuid.UUID {
-	return g.id
+func (g *sequentialIDGen) New() uuid.UUID {
+	if g.idx < len(g.ids) {
+		id := g.ids[g.idx]
+		g.idx++
+		return id
+	}
+	return uuid.New()
 }
 
 func TestInterviewService(t *testing.T) {
 	ctx := context.Background()
 	itRepo := newMockInterviewRepo()
 	appChecker := &mockAppStageChecker{stage: applicationdomain.StageInterview}
-	confSvc := &mockConferenceSvc{}
+	confClient := &mockConferenceClient{}
+
+	roomRegistry := room.NewRegistry(
+		room.NewLiveKitStrategy(confClient),
+		room.NewOnsiteStrategy("Main Office, 4th floor"),
+	)
+
 	outboxRepo := &mockOutboxRepo{}
 	authPort := &mockAuthPort{}
 	txMgr := &mockTxManager{}
 
 	now := time.Now().UTC()
 	clock := fixedClock{now: now}
-	interviewID := uuid.New()
-	idGen := fixedIDGen{id: interviewID}
+	interviewID1 := uuid.New()
+	interviewID2 := uuid.New()
+	idGen := &sequentialIDGen{ids: []uuid.UUID{interviewID1, interviewID2}}
 	eventFactory := eventdomain.NewFactory(idGen)
 
-	svc := NewService(itRepo, appChecker, confSvc, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
+	svc := NewService(itRepo, appChecker, roomRegistry, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
 
 	appID := uuid.New()
 	actorID := uuid.New()
@@ -136,26 +150,32 @@ func TestInterviewService(t *testing.T) {
 	startTime := now.Add(2 * time.Hour)
 	endTime := startTime.Add(time.Hour)
 
-	// 1. Schedule Interview
-	id, err := svc.ScheduleInterview(ctx, ScheduleInterviewInput{
+	id1, err := svc.ScheduleInterview(ctx, ScheduleInterviewInput{
 		ApplicationID:      appID,
 		InterviewType:      "TECHNICAL",
+		Format:             interviewdomain.FormatOnlineLiveKit,
 		ScheduledStartTime: startTime,
 		ScheduledEndTime:   endTime,
 		Participants: []interviewdomain.Participant{
 			{UserID: interviewerID, Role: "tech_interviewer"},
 		},
-		ActorID:           actorID,
-		RequireOnlineRoom: true,
+		ActorID: actorID,
 	})
 	require.NoError(t, err)
-	require.Equal(t, interviewID, id)
-	require.Len(t, confSvc.createdRooms, 1)
+	require.Equal(t, interviewID1, id1)
+	require.Len(t, confClient.createdRooms, 1)
 	require.Len(t, outboxRepo.messages, 1)
 
-	// 2. Submit Feedback
+	access, err := svc.GetMeetingAccess(ctx, GetMeetingAccessInput{
+		InterviewID: interviewID1,
+		ActorID:     interviewerID,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, access.JoinURL)
+	require.NotEmpty(t, access.Token)
+
 	err = svc.SubmitFeedback(ctx, SubmitFeedbackInput{
-		InterviewID:       interviewID,
+		InterviewID:       interviewID1,
 		InterviewerUserID: interviewerID,
 		Score:             5,
 		Notes:             "Exceeded expectations in algorithms and design",
@@ -163,18 +183,53 @@ func TestInterviewService(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, outboxRepo.messages, 2)
 
-	// 3. Complete Interview
 	err = svc.CompleteInterview(ctx, CompleteInterviewInput{
-		InterviewID: interviewID,
+		InterviewID: interviewID1,
 		ActorID:     actorID,
 	})
 	require.NoError(t, err)
 	require.Len(t, outboxRepo.messages, 3)
 
-	// 4. Query Interview
-	it, err := svc.GetInterview(ctx, interviewID, actorID)
+	it, err := svc.GetInterview(ctx, interviewID1, actorID)
 	require.NoError(t, err)
-	require.Equal(t, interviewdomain.StatusCompleted, it.Status())
-	require.Len(t, it.Feedbacks(), 1)
-}
+	require.Equal(t, interviewdomain.StatusCompleted, it.Status)
+	require.Equal(t, interviewdomain.FormatOnlineLiveKit, it.Format)
+	require.Len(t, it.Feedbacks, 1)
 
+	id2, err := svc.ScheduleInterview(ctx, ScheduleInterviewInput{
+		ApplicationID:      appID,
+		InterviewType:      "CULTURE_FIT",
+		Format:             interviewdomain.FormatOnsite,
+		ScheduledStartTime: startTime.Add(24 * time.Hour),
+		ScheduledEndTime:   endTime.Add(24 * time.Hour),
+		Location:           "Room 302, Green Wing",
+		Participants: []interviewdomain.Participant{
+			{UserID: interviewerID, Role: "hr_lead"},
+		},
+		ActorID: actorID,
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, uuid.Nil, id2)
+
+	onsiteIt, err := svc.GetInterview(ctx, id2, actorID)
+	require.NoError(t, err)
+	require.Equal(t, interviewdomain.FormatOnsite, onsiteIt.Format)
+	require.Equal(t, "Room 302, Green Wing", onsiteIt.MeetingRoomURL)
+
+	onsiteAccess, err := svc.GetMeetingAccess(ctx, GetMeetingAccessInput{
+		InterviewID: id2,
+		ActorID:     interviewerID,
+	})
+	require.NoError(t, err)
+	require.Contains(t, onsiteAccess.Instructions, "Room 302, Green Wing")
+
+	err = svc.CancelInterview(ctx, CancelInterviewInput{
+		InterviewID: id2,
+		Reason:      "Rescheduled by recruiter",
+		ActorID:     actorID,
+	})
+	require.NoError(t, err)
+	cancelledIt, err := svc.GetInterview(ctx, id2, actorID)
+	require.NoError(t, err)
+	require.Equal(t, interviewdomain.StatusCancelled, cancelledIt.Status)
+}

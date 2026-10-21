@@ -32,7 +32,7 @@ func (s *Service) GetApplication(ctx context.Context, appID, actorID uuid.UUID) 
 		return nil, fmt.Errorf("load application: %w", err)
 	}
 
-	if app.CandidateID() != actorID {
+	if app.CandidateID != actorID {
 		if err := s.authPort.CanManageApplication(ctx, actorID, appID); err != nil {
 			return nil, apperr.Forbidden("not_authorized", "actor is not authorized to view application", nil)
 		}
@@ -48,12 +48,12 @@ func (s *Service) GetPipelineHistory(ctx context.Context, appID, actorID uuid.UU
 	}
 
 	return &PipelineHistoryOutput{
-		ApplicationID: app.ID(),
-		VacancyID:     app.VacancyID(),
-		CandidateID:   app.CandidateID(),
-		CurrentStage:  app.CurrentStage(),
-		Version:       app.Version(),
-		History:       app.History(),
+		ApplicationID: app.ID,
+		VacancyID:     app.VacancyID,
+		CandidateID:   app.CandidateID,
+		CurrentStage:  app.CurrentStage,
+		Version:       app.Version,
+		History:       app.History,
 	}, nil
 }
 

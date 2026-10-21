@@ -27,12 +27,12 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 		return fmt.Errorf("load application: %w", err)
 	}
 
-	if app.CurrentStage() != applicationdomain.StageTechAssessment {
+	if app.CurrentStage != applicationdomain.StageTechAssessment {
 		return nil
 	}
 
 	now := s.clock.Now().UTC()
-	fromStage := app.CurrentStage()
+	fromStage := app.CurrentStage
 
 	if input.Passed {
 		if err := app.AdvanceFromAssessment(input.Score, input.ActorID, now); err != nil {
@@ -43,7 +43,7 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 		}
 
 		payload := applicationdomain.StageChangedPayload{
-			ApplicationID: app.ID(),
+			ApplicationID: app.ID,
 			FromStage:     fromStage,
 			ToStage:       applicationdomain.StageInterview,
 			ChangedBy:     input.ActorID,
@@ -51,11 +51,11 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 			Reason:        fmt.Sprintf("tech assessment passed with score %d", input.Score),
 		}
 
-		version := app.Version()
+		version := app.Version
 		eventMsg, err := s.eventFactory.Create(
 			applicationdomain.EventTypeStageChanged,
 			applicationdomain.AggregateTypeJobApplication,
-			app.ID(),
+			app.ID,
 			&version,
 			payload,
 			now,
@@ -90,18 +90,18 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 	}
 
 	payload := applicationdomain.ApplicationRejectedPayload{
-		ApplicationID: app.ID(),
+		ApplicationID: app.ID,
 		FromStage:     fromStage,
 		RejectReason:  reason,
 		RejectedBy:    input.ActorID,
 		RejectedAt:    now,
 	}
 
-	version := app.Version()
+	version := app.Version
 	eventMsg, err := s.eventFactory.Create(
 		applicationdomain.EventTypeApplicationRejected,
 		applicationdomain.AggregateTypeJobApplication,
-		app.ID(),
+		app.ID,
 		&version,
 		payload,
 		now,

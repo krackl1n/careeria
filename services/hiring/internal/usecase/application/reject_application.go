@@ -37,7 +37,7 @@ func (s *Service) RejectApplication(ctx context.Context, input RejectInput) erro
 		return fmt.Errorf("load application: %w", err)
 	}
 
-	fromStage := app.CurrentStage()
+	fromStage := app.CurrentStage
 	now := s.clock.Now().UTC()
 
 	reason := applicationdomain.RejectReason{
@@ -56,18 +56,18 @@ func (s *Service) RejectApplication(ctx context.Context, input RejectInput) erro
 	}
 
 	payload := applicationdomain.ApplicationRejectedPayload{
-		ApplicationID: app.ID(),
+		ApplicationID: app.ID,
 		FromStage:     fromStage,
 		RejectReason:  reason,
 		RejectedBy:    input.ActorID,
 		RejectedAt:    now,
 	}
 
-	version := app.Version()
+	version := app.Version
 	eventMsg, err := s.eventFactory.Create(
 		applicationdomain.EventTypeApplicationRejected,
 		applicationdomain.AggregateTypeJobApplication,
-		app.ID(),
+		app.ID,
 		&version,
 		payload,
 		now,

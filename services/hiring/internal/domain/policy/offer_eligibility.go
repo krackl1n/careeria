@@ -21,8 +21,8 @@ func (p *OfferEligibilityPolicy) CanInitiateOffer(
 		return ErrNilApplication
 	}
 
-	if app.CurrentStage() != application.StageInterview {
-		return fmt.Errorf("%w: application is in stage %s", ErrInvalidStageForOffer, app.CurrentStage())
+	if app.CurrentStage != application.StageInterview {
+		return fmt.Errorf("%w: application is in stage %s", ErrInvalidStageForOffer, app.CurrentStage)
 	}
 
 	hasCompletedWithFeedback := false

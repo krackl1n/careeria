@@ -27,6 +27,27 @@ func (s InterviewStatus) Valid() bool {
 	}
 }
 
+type MeetingFormat string
+
+const (
+	FormatOnlineLiveKit MeetingFormat = "ONLINE_LIVEKIT"
+	FormatOnsite        MeetingFormat = "ONSITE"
+	FormatExternalLink  MeetingFormat = "EXTERNAL_LINK"
+)
+
+func (f MeetingFormat) String() string {
+	return string(f)
+}
+
+func (f MeetingFormat) Valid() bool {
+	switch f {
+	case FormatOnlineLiveKit, FormatOnsite, FormatExternalLink:
+		return true
+	default:
+		return false
+	}
+}
+
 type Participant struct {
 	UserID uuid.UUID
 	Role   string

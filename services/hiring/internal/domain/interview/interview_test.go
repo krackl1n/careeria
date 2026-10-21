@@ -28,6 +28,7 @@ func TestInterviewLifecycle(t *testing.T) {
 		interviewID,
 		applicationID,
 		"TECHNICAL",
+		FormatOnlineLiveKit,
 		startTime,
 		endTime,
 		participants,
@@ -35,14 +36,16 @@ func TestInterviewLifecycle(t *testing.T) {
 		now,
 	)
 	require.NoError(t, err)
-	require.Equal(t, StatusScheduled, it.Status())
-	require.Equal(t, int64(1), it.Version())
+	require.Equal(t, FormatOnlineLiveKit, it.Format)
+	require.Equal(t, StatusScheduled, it.Status)
+	require.Equal(t, int64(1), it.Version)
 
 	// Validate cannot schedule in the past
 	_, err = Schedule(
 		uuid.New(),
 		applicationID,
 		"HR",
+		FormatOnlineLiveKit,
 		now.Add(-time.Hour),
 		now,
 		participants,
@@ -66,8 +69,8 @@ func TestInterviewLifecycle(t *testing.T) {
 		Notes:             "Good knowledge of Go and system design",
 	}, now)
 	require.NoError(t, err)
-	require.Len(t, it.Feedbacks(), 1)
-	require.Equal(t, int64(2), it.Version())
+	require.Len(t, it.Feedbacks, 1)
+	require.Equal(t, int64(2), it.Version)
 
 	// Forbid duplicate feedback
 	err = it.SubmitFeedback(Feedback{
@@ -80,7 +83,7 @@ func TestInterviewLifecycle(t *testing.T) {
 	// Complete interview
 	err = it.Complete(now.Add(3 * time.Hour))
 	require.NoError(t, err)
-	require.Equal(t, StatusCompleted, it.Status())
+	require.Equal(t, StatusCompleted, it.Status)
 
 	// Check summary projection
 	summary := it.ToSummary()
@@ -98,21 +101,23 @@ func TestInterviewCancellation(t *testing.T) {
 	it, err := Schedule(
 		uuid.New(),
 		uuid.New(),
-		"HR",
+		"BEHAVIORAL",
+		FormatOnsite,
 		startTime,
 		endTime,
 		[]Participant{{UserID: uuid.New(), Role: "recruiter"}},
-		"",
+		"Office Moscow, Room 101",
 		now,
 	)
 	require.NoError(t, err)
 
-	err = it.Cancel("Candidate requested reschedule", now)
+	err = it.Cancel("candidate requested reschedule", now)
 	require.NoError(t, err)
-	require.Equal(t, StatusCancelled, it.Status())
+	require.Equal(t, StatusCancelled, it.Status)
 
-	// Cannot complete cancelled interview
-	err = it.Complete(now)
-	require.ErrorIs(t, err, ErrInvalidStatus)
+	err = it.SubmitFeedback(Feedback{
+		InterviewerUserID: it.Participants[0].UserID,
+		Score:             3,
+	}, now)
+	require.ErrorIs(t, err, ErrInterviewCancelled)
 }
-

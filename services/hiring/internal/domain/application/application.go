@@ -8,14 +8,14 @@ import (
 )
 
 type JobApplication struct {
-	id           uuid.UUID
-	vacancyID    uuid.UUID
-	candidateID  uuid.UUID
-	currentStage PipelineStage
-	version      int64
-	history      []StageTransition
-	createdAt    time.Time
-	updatedAt    time.Time
+	ID           uuid.UUID
+	VacancyID    uuid.UUID
+	CandidateID  uuid.UUID
+	CurrentStage PipelineStage
+	Version      int64
+	History      []StageTransition
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func New(
@@ -39,14 +39,14 @@ func New(
 	}
 
 	app := &JobApplication{
-		id:           id,
-		vacancyID:    vacancyID,
-		candidateID:  candidateID,
-		currentStage: StageApplied,
-		version:      1,
-		createdAt:    now,
-		updatedAt:    now,
-		history: []StageTransition{
+		ID:           id,
+		VacancyID:    vacancyID,
+		CandidateID:  candidateID,
+		CurrentStage: StageApplied,
+		Version:      1,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		History: []StageTransition{
 			{
 				ID:        uuid.New(),
 				FromStage: "",
@@ -72,49 +72,15 @@ func Reconstitute(
 	updatedAt time.Time,
 ) *JobApplication {
 	return &JobApplication{
-		id:           id,
-		vacancyID:    vacancyID,
-		candidateID:  candidateID,
-		currentStage: currentStage,
-		version:      version,
-		history:      history,
-		createdAt:    createdAt,
-		updatedAt:    updatedAt,
+		ID:           id,
+		VacancyID:    vacancyID,
+		CandidateID:  candidateID,
+		CurrentStage: currentStage,
+		Version:      version,
+		History:      history,
+		CreatedAt:    createdAt,
+		UpdatedAt:    updatedAt,
 	}
-}
-
-func (a *JobApplication) ID() uuid.UUID {
-	return a.id
-}
-
-func (a *JobApplication) VacancyID() uuid.UUID {
-	return a.vacancyID
-}
-
-func (a *JobApplication) CandidateID() uuid.UUID {
-	return a.candidateID
-}
-
-func (a *JobApplication) CurrentStage() PipelineStage {
-	return a.currentStage
-}
-
-func (a *JobApplication) Version() int64 {
-	return a.version
-}
-
-func (a *JobApplication) History() []StageTransition {
-	copied := make([]StageTransition, len(a.history))
-	copy(copied, a.history)
-	return copied
-}
-
-func (a *JobApplication) CreatedAt() time.Time {
-	return a.createdAt
-}
-
-func (a *JobApplication) UpdatedAt() time.Time {
-	return a.updatedAt
 }
 
 func (a *JobApplication) ChangeStage(
@@ -127,8 +93,8 @@ func (a *JobApplication) ChangeStage(
 		return ErrEmptyActorID
 	}
 
-	if !a.currentStage.CanTransitionTo(targetStage) {
-		return fmt.Errorf("%w: cannot transition from %s to %s", ErrInvalidStageTransition, a.currentStage, targetStage)
+	if !a.CurrentStage.CanTransitionTo(targetStage) {
+		return fmt.Errorf("%w: cannot transition from %s to %s", ErrInvalidStageTransition, a.CurrentStage, targetStage)
 	}
 
 	a.addTransition(targetStage, actorID, reason, now)
@@ -144,8 +110,8 @@ func (a *JobApplication) MarkOfferPending(actorID uuid.UUID, now time.Time) erro
 }
 
 func (a *JobApplication) AdvanceFromAssessment(score int, actorID uuid.UUID, now time.Time) error {
-	if a.currentStage != StageTechAssessment {
-		return fmt.Errorf("%w: cannot advance from assessment while in stage %s", ErrInvalidStageTransition, a.currentStage)
+	if a.CurrentStage != StageTechAssessment {
+		return fmt.Errorf("%w: cannot advance from assessment while in stage %s", ErrInvalidStageTransition, a.CurrentStage)
 	}
 
 	reason := fmt.Sprintf("assessment passed with score %d", score)
@@ -153,8 +119,8 @@ func (a *JobApplication) AdvanceFromAssessment(score int, actorID uuid.UUID, now
 }
 
 func (a *JobApplication) Reject(reason RejectReason, actorID uuid.UUID, now time.Time) error {
-	if a.currentStage.IsTerminal() {
-		return fmt.Errorf("%w: cannot reject application in stage %s", ErrTerminalStage, a.currentStage)
+	if a.CurrentStage.IsTerminal() {
+		return fmt.Errorf("%w: cannot reject application in stage %s", ErrTerminalStage, a.CurrentStage)
 	}
 
 	comment := reason.Comment
@@ -166,8 +132,8 @@ func (a *JobApplication) Reject(reason RejectReason, actorID uuid.UUID, now time
 }
 
 func (a *JobApplication) Withdraw(actorID uuid.UUID, reason string, now time.Time) error {
-	if a.currentStage.IsTerminal() {
-		return fmt.Errorf("%w: cannot withdraw application in stage %s", ErrTerminalStage, a.currentStage)
+	if a.CurrentStage.IsTerminal() {
+		return fmt.Errorf("%w: cannot withdraw application in stage %s", ErrTerminalStage, a.CurrentStage)
 	}
 
 	if reason == "" {
@@ -185,15 +151,15 @@ func (a *JobApplication) addTransition(
 ) {
 	transition := StageTransition{
 		ID:        uuid.New(),
-		FromStage: a.currentStage,
+		FromStage: a.CurrentStage,
 		ToStage:   to,
 		ChangedBy: by,
 		ChangedAt: now,
 		Reason:    reason,
 	}
 
-	a.history = append(a.history, transition)
-	a.currentStage = to
-	a.version++
-	a.updatedAt = now
+	a.History = append(a.History, transition)
+	a.CurrentStage = to
+	a.Version++
+	a.UpdatedAt = now
 }

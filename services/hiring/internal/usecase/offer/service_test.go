@@ -21,12 +21,12 @@ func newMockOfferRepo() *mockOfferRepo {
 }
 
 func (m *mockOfferRepo) Create(_ context.Context, of *offerdomain.JobOffer) error {
-	m.offers[of.ID()] = of
+	m.offers[of.ID] = of
 	return nil
 }
 
 func (m *mockOfferRepo) Update(_ context.Context, of *offerdomain.JobOffer) error {
-	m.offers[of.ID()] = of
+	m.offers[of.ID] = of
 	return nil
 }
 
@@ -40,7 +40,7 @@ func (m *mockOfferRepo) GetByID(_ context.Context, id uuid.UUID) (*offerdomain.J
 
 func (m *mockOfferRepo) GetByApplicationID(_ context.Context, appID uuid.UUID) (*offerdomain.JobOffer, error) {
 	for _, of := range m.offers {
-		if of.ApplicationID() == appID {
+		if of.ApplicationID == appID {
 			return of, nil
 		}
 	}
@@ -172,6 +172,6 @@ func TestOfferService(t *testing.T) {
 
 	of, err := svc.GetOffer(ctx, offerID, actorID)
 	require.NoError(t, err)
-	require.Equal(t, offerdomain.StatusAccepted, of.Status())
+	require.Equal(t, offerdomain.StatusAccepted, of.Status)
 }
 

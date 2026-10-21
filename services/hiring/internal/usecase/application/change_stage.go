@@ -41,7 +41,7 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 		return fmt.Errorf("load application: %w", err)
 	}
 
-	fromStage := app.CurrentStage()
+	fromStage := app.CurrentStage
 
 	if input.TargetStage == applicationdomain.StageOfferPending {
 		interviews, err := s.interviewSum.FindByApplicationID(ctx, input.ApplicationID)
@@ -72,7 +72,7 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 	}
 
 	payload := applicationdomain.StageChangedPayload{
-		ApplicationID: app.ID(),
+		ApplicationID: app.ID,
 		FromStage:     fromStage,
 		ToStage:       input.TargetStage,
 		ChangedBy:     input.ActorID,
@@ -80,11 +80,11 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 		Reason:        input.Reason,
 	}
 
-	version := app.Version()
+	version := app.Version
 	eventMsg, err := s.eventFactory.Create(
 		applicationdomain.EventTypeStageChanged,
 		applicationdomain.AggregateTypeJobApplication,
-		app.ID(),
+		app.ID,
 		&version,
 		payload,
 		now,

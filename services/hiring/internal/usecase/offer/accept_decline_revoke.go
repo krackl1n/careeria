@@ -28,7 +28,7 @@ func (s *Service) AcceptOffer(ctx context.Context, input AcceptOfferInput) error
 		return fmt.Errorf("load offer: %w", err)
 	}
 
-	if err := s.authPort.CanRespondToOffer(ctx, input.ActorID, of.ApplicationID()); err != nil {
+	if err := s.authPort.CanRespondToOffer(ctx, input.ActorID, of.ApplicationID); err != nil {
 		return err
 	}
 
@@ -44,15 +44,15 @@ func (s *Service) AcceptOffer(ctx context.Context, input AcceptOfferInput) error
 	}
 
 	payload := offerdomain.OfferAcceptedPayload{
-		OfferID:    of.ID(),
+		OfferID:    of.ID,
 		AcceptedAt: now,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferAccepted,
 		offerdomain.AggregateTypeJobOffer,
-		of.ID(),
+		of.ID,
 		&version,
 		payload,
 		now,
@@ -65,7 +65,7 @@ func (s *Service) AcceptOffer(ctx context.Context, input AcceptOfferInput) error
 		if err := s.offerRepo.Update(txCtx, of); err != nil {
 			return fmt.Errorf("update offer: %w", err)
 		}
-		if err := s.appCoord.AdvanceToOfferAccepted(txCtx, of.ApplicationID(), input.ActorID, now); err != nil {
+		if err := s.appCoord.AdvanceToOfferAccepted(txCtx, of.ApplicationID, input.ActorID, now); err != nil {
 			return fmt.Errorf("coordinate application stage: %w", err)
 		}
 		if err := s.outboxRepo.Save(txCtx, eventMsg); err != nil {
@@ -94,7 +94,7 @@ func (s *Service) DeclineOffer(ctx context.Context, input DeclineOfferInput) err
 		return fmt.Errorf("load offer: %w", err)
 	}
 
-	if err := s.authPort.CanRespondToOffer(ctx, input.ActorID, of.ApplicationID()); err != nil {
+	if err := s.authPort.CanRespondToOffer(ctx, input.ActorID, of.ApplicationID); err != nil {
 		return err
 	}
 
@@ -107,16 +107,16 @@ func (s *Service) DeclineOffer(ctx context.Context, input DeclineOfferInput) err
 	}
 
 	payload := offerdomain.OfferDeclinedPayload{
-		OfferID:    of.ID(),
+		OfferID:    of.ID,
 		Reason:     input.Reason,
 		DeclinedAt: now,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferDeclined,
 		offerdomain.AggregateTypeJobOffer,
-		of.ID(),
+		of.ID,
 		&version,
 		payload,
 		now,
@@ -129,7 +129,7 @@ func (s *Service) DeclineOffer(ctx context.Context, input DeclineOfferInput) err
 		if err := s.offerRepo.Update(txCtx, of); err != nil {
 			return fmt.Errorf("update offer: %w", err)
 		}
-		if err := s.appCoord.RevertToInterview(txCtx, of.ApplicationID(), input.ActorID, "offer declined by candidate", now); err != nil {
+		if err := s.appCoord.RevertToInterview(txCtx, of.ApplicationID, input.ActorID, "offer declined by candidate", now); err != nil {
 			return fmt.Errorf("coordinate application stage: %w", err)
 		}
 		if err := s.outboxRepo.Save(txCtx, eventMsg); err != nil {
@@ -158,7 +158,7 @@ func (s *Service) RevokeOffer(ctx context.Context, input RevokeOfferInput) error
 		return fmt.Errorf("load offer: %w", err)
 	}
 
-	if err := s.authPort.CanManageOffer(ctx, input.ActorID, of.ApplicationID()); err != nil {
+	if err := s.authPort.CanManageOffer(ctx, input.ActorID, of.ApplicationID); err != nil {
 		return err
 	}
 
@@ -171,16 +171,16 @@ func (s *Service) RevokeOffer(ctx context.Context, input RevokeOfferInput) error
 	}
 
 	payload := offerdomain.OfferRevokedPayload{
-		OfferID:   of.ID(),
+		OfferID:   of.ID,
 		Reason:    input.Reason,
 		RevokedAt: now,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferRevoked,
 		offerdomain.AggregateTypeJobOffer,
-		of.ID(),
+		of.ID,
 		&version,
 		payload,
 		now,
@@ -193,7 +193,7 @@ func (s *Service) RevokeOffer(ctx context.Context, input RevokeOfferInput) error
 		if err := s.offerRepo.Update(txCtx, of); err != nil {
 			return fmt.Errorf("update offer: %w", err)
 		}
-		if err := s.appCoord.RevertToInterview(txCtx, of.ApplicationID(), input.ActorID, "offer revoked", now); err != nil {
+		if err := s.appCoord.RevertToInterview(txCtx, of.ApplicationID, input.ActorID, "offer revoked", now); err != nil {
 			return fmt.Errorf("coordinate application stage: %w", err)
 		}
 		if err := s.outboxRepo.Save(txCtx, eventMsg); err != nil {
@@ -228,15 +228,15 @@ func (s *Service) ExpireOffer(ctx context.Context, offerID uuid.UUID) error {
 	}
 
 	payload := offerdomain.OfferExpiredPayload{
-		OfferID:   of.ID(),
+		OfferID:   of.ID,
 		ExpiredAt: now,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferExpired,
 		offerdomain.AggregateTypeJobOffer,
-		of.ID(),
+		of.ID,
 		&version,
 		payload,
 		now,

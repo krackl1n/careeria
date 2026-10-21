@@ -17,4 +17,5 @@ var (
 	ErrFeedbackAlreadySubmitted = errors.New("feedback from this interviewer already exists")
 	ErrEmptyInterviewerID       = errors.New("interviewer user ID must not be empty")
 	ErrInvalidScore             = errors.New("score must be between 1 and 5")
+	ErrInvalidFormat            = errors.New("invalid meeting format")
 )

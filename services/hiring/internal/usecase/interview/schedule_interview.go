@@ -9,16 +9,18 @@ import (
 	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
+	"github.com/krackl1n/careeria/services/hiring/internal/usecase/interview/room"
 )
 
 type ScheduleInterviewInput struct {
 	ApplicationID      uuid.UUID
 	InterviewType      string
+	Format             interviewdomain.MeetingFormat
 	ScheduledStartTime time.Time
 	ScheduledEndTime   time.Time
 	Participants       []interviewdomain.Participant
+	Location           string
 	ActorID            uuid.UUID
-	RequireOnlineRoom  bool
 }
 
 func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterviewInput) (uuid.UUID, error) {
@@ -27,6 +29,9 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 	}
 	if input.ActorID == uuid.Nil {
 		return uuid.Nil, apperr.InvalidArgument("empty_actor_id", "actor ID is required", nil)
+	}
+	if input.Format == "" {
+		input.Format = interviewdomain.FormatOnlineLiveKit
 	}
 
 	if err := s.authPort.CanManageInterview(ctx, input.ActorID, input.ApplicationID); err != nil {
@@ -49,19 +54,32 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 	now := s.clock.Now().UTC()
 	interviewID := s.idGen.New()
 
-	roomURL := ""
-	if input.RequireOnlineRoom && s.conferenceSvc != nil {
-		url, err := s.conferenceSvc.CreateRoom(ctx, fmt.Sprintf("interview-%s", interviewID))
+	roomURL := input.Location
+	if s.roomRegistry != nil {
+		strat, err := s.roomRegistry.Get(input.Format)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("create conference room: %w", err)
+			return uuid.Nil, apperr.InvalidArgument("unsupported_format", err.Error(), err)
 		}
-		roomURL = url
+
+		res, err := strat.Provision(ctx, room.ProvisionRequest{
+			InterviewID:   interviewID,
+			ApplicationID: input.ApplicationID,
+			InterviewType: input.InterviewType,
+			StartTime:     input.ScheduledStartTime,
+			EndTime:       input.ScheduledEndTime,
+			Location:      input.Location,
+		})
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("provision meeting room: %w", err)
+		}
+		roomURL = res.MeetingURL
 	}
 
 	it, err := interviewdomain.Schedule(
 		interviewID,
 		input.ApplicationID,
 		input.InterviewType,
+		input.Format,
 		input.ScheduledStartTime,
 		input.ScheduledEndTime,
 		input.Participants,
@@ -75,13 +93,13 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 	payload := interviewdomain.InterviewScheduledPayload{
 		InterviewID:   interviewID,
 		ApplicationID: input.ApplicationID,
-		InterviewType: it.InterviewType(),
-		StartTime:     it.ScheduledStartTime(),
-		EndTime:       it.ScheduledEndTime(),
-		Participants:  it.Participants(),
+		InterviewType: it.InterviewType,
+		StartTime:     it.ScheduledStartTime,
+		EndTime:       it.ScheduledEndTime,
+		Participants:  it.Participants,
 	}
 
-	version := it.Version()
+	version := it.Version
 	eventMsg, err := s.eventFactory.Create(
 		interviewdomain.EventTypeInterviewScheduled,
 		interviewdomain.AggregateTypeInterview,
@@ -109,4 +127,3 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 
 	return interviewID, nil
 }
-

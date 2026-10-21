@@ -23,7 +23,7 @@ func (s *Service) GetInterview(ctx context.Context, interviewID, actorID uuid.UU
 		return nil, fmt.Errorf("load interview: %w", err)
 	}
 
-	if err := s.authPort.CanManageInterview(ctx, actorID, it.ApplicationID()); err != nil {
+	if err := s.authPort.CanManageInterview(ctx, actorID, it.ApplicationID); err != nil {
 		return nil, apperr.Forbidden("not_authorized", "actor is not authorized to view interview", nil)
 	}
 

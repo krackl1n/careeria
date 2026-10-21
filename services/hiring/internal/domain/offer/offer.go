@@ -11,16 +11,16 @@ import (
 const MinOfferDuration = 24 * time.Hour
 
 type JobOffer struct {
-	id            uuid.UUID
-	applicationID uuid.UUID
-	compensation  int64
-	currency      string
-	grade         string
-	status        OfferStatus
-	expiresAt     time.Time
-	version       int64
-	createdAt     time.Time
-	updatedAt     time.Time
+	ID            uuid.UUID
+	ApplicationID uuid.UUID
+	Compensation  int64
+	Currency      string
+	Grade         string
+	Status        OfferStatus
+	ExpiresAt     time.Time
+	Version       int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func Create(
@@ -54,158 +54,92 @@ func Create(
 	}
 
 	return &JobOffer{
-		id:            id,
-		applicationID: applicationID,
-		compensation:  compensation,
-		currency:      currency,
-		grade:         grade,
-		status:        StatusDraft,
-		expiresAt:     expiresAt,
-		version:       1,
-		createdAt:     now,
-		updatedAt:     now,
+		ID:            id,
+		ApplicationID: applicationID,
+		Compensation:  compensation,
+		Currency:      currency,
+		Grade:         grade,
+		Status:        StatusDraft,
+		ExpiresAt:     expiresAt,
+		Version:       1,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}, nil
 }
 
-func Reconstitute(
-	id uuid.UUID,
-	applicationID uuid.UUID,
-	compensation int64,
-	currency string,
-	grade string,
-	status OfferStatus,
-	expiresAt time.Time,
-	version int64,
-	createdAt time.Time,
-	updatedAt time.Time,
-) *JobOffer {
-	return &JobOffer{
-		id:            id,
-		applicationID: applicationID,
-		compensation:  compensation,
-		currency:      currency,
-		grade:         grade,
-		status:        status,
-		expiresAt:     expiresAt,
-		version:       version,
-		createdAt:     createdAt,
-		updatedAt:     updatedAt,
-	}
-}
-
-func (o *JobOffer) ID() uuid.UUID {
-	return o.id
-}
-
-func (o *JobOffer) ApplicationID() uuid.UUID {
-	return o.applicationID
-}
-
-func (o *JobOffer) Compensation() int64 {
-	return o.compensation
-}
-
-func (o *JobOffer) Currency() string {
-	return o.currency
-}
-
-func (o *JobOffer) Grade() string {
-	return o.grade
-}
-
-func (o *JobOffer) Status() OfferStatus {
-	return o.status
-}
-
-func (o *JobOffer) ExpiresAt() time.Time {
-	return o.expiresAt
-}
-
-func (o *JobOffer) Version() int64 {
-	return o.version
-}
-
-func (o *JobOffer) CreatedAt() time.Time {
-	return o.createdAt
-}
-
-func (o *JobOffer) UpdatedAt() time.Time {
-	return o.updatedAt
-}
-
 func (o *JobOffer) IsExpired(now time.Time) bool {
-	return now.After(o.expiresAt) || now.Equal(o.expiresAt)
+	return now.After(o.ExpiresAt) || now.Equal(o.ExpiresAt)
 }
 
 func (o *JobOffer) Send(now time.Time) error {
-	if o.status != StatusDraft {
-		return fmt.Errorf("%w: cannot send offer in status %s", ErrInvalidStatus, o.status)
+	if o.Status != StatusDraft {
+		return fmt.Errorf("%w: cannot send offer in status %s", ErrInvalidStatus, o.Status)
 	}
 
 	if o.IsExpired(now) {
-		o.status = StatusExpired
-		o.version++
-		o.updatedAt = now
+		o.Status = StatusExpired
+		o.Version++
+		o.UpdatedAt = now
 		return ErrOfferExpired
 	}
 
-	o.status = StatusSent
-	o.version++
-	o.updatedAt = now
+	o.Status = StatusSent
+	o.Version++
+	o.UpdatedAt = now
 	return nil
 }
 
 func (o *JobOffer) Accept(now time.Time) error {
-	if o.status != StatusSent {
-		return fmt.Errorf("%w: cannot accept offer in status %s", ErrInvalidStatus, o.status)
+	if o.Status != StatusSent {
+		return fmt.Errorf("%w: cannot accept offer in status %s", ErrInvalidStatus, o.Status)
 	}
 
 	if o.IsExpired(now) {
-		o.status = StatusExpired
-		o.version++
-		o.updatedAt = now
+		o.Status = StatusExpired
+		o.Version++
+		o.UpdatedAt = now
 		return ErrOfferExpired
 	}
 
-	o.status = StatusAccepted
-	o.version++
-	o.updatedAt = now
+	o.Status = StatusAccepted
+	o.Version++
+	o.UpdatedAt = now
 	return nil
 }
 
 func (o *JobOffer) Decline(reason string, now time.Time) error {
-	if o.status != StatusSent {
-		return fmt.Errorf("%w: cannot decline offer in status %s", ErrInvalidStatus, o.status)
+	if o.Status != StatusSent {
+		return fmt.Errorf("%w: cannot decline offer in status %s", ErrInvalidStatus, o.Status)
 	}
 
-	o.status = StatusDeclined
-	o.version++
-	o.updatedAt = now
+	o.Status = StatusDeclined
+	o.Version++
+	o.UpdatedAt = now
 	return nil
 }
 
 func (o *JobOffer) Revoke(reason string, now time.Time) error {
-	if o.status != StatusDraft && o.status != StatusSent {
-		return fmt.Errorf("%w: cannot revoke offer in status %s", ErrInvalidStatus, o.status)
+	if o.Status != StatusDraft && o.Status != StatusSent {
+		return fmt.Errorf("%w: cannot revoke offer in status %s", ErrInvalidStatus, o.Status)
 	}
 
-	o.status = StatusRevoked
-	o.version++
-	o.updatedAt = now
+	o.Status = StatusRevoked
+	o.Version++
+	o.UpdatedAt = now
 	return nil
 }
 
 func (o *JobOffer) Expire(now time.Time) error {
-	if o.status != StatusSent {
-		return fmt.Errorf("%w: cannot expire offer in status %s", ErrInvalidStatus, o.status)
+	if o.Status != StatusSent {
+		return fmt.Errorf("%w: cannot expire offer in status %s", ErrInvalidStatus, o.Status)
 	}
 
 	if !o.IsExpired(now) {
 		return ErrOfferNotExpired
 	}
 
-	o.status = StatusExpired
-	o.version++
-	o.updatedAt = now
+	o.Status = StatusExpired
+	o.Version++
+	o.UpdatedAt = now
 	return nil
 }

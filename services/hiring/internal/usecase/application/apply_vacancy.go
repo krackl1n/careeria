@@ -51,11 +51,11 @@ func (s *Service) ApplyVacancy(ctx context.Context, input ApplyVacancyInput) (uu
 		ApplicationID: appID,
 		VacancyID:     input.VacancyID,
 		CandidateID:   input.CandidateID,
-		InitialStage:  app.CurrentStage(),
+		InitialStage:  app.CurrentStage,
 		AppliedAt:     now,
 	}
 
-	version := app.Version()
+	version := app.Version
 	eventMsg, err := s.eventFactory.Create(
 		applicationdomain.EventTypeApplicationApplied,
 		applicationdomain.AggregateTypeJobApplication,

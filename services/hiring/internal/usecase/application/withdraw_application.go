@@ -32,13 +32,13 @@ func (s *Service) WithdrawApplication(ctx context.Context, input WithdrawInput) 
 		return fmt.Errorf("load application: %w", err)
 	}
 
-	if app.CandidateID() != input.ActorID {
+	if app.CandidateID != input.ActorID {
 		if err := s.authPort.CanManageApplication(ctx, input.ActorID, input.ApplicationID); err != nil {
 			return apperr.Forbidden("not_authorized", "actor is not authorized to withdraw application", nil)
 		}
 	}
 
-	fromStage := app.CurrentStage()
+	fromStage := app.CurrentStage
 	now := s.clock.Now().UTC()
 
 	if err := app.Withdraw(input.ActorID, input.Reason, now); err != nil {
@@ -52,18 +52,18 @@ func (s *Service) WithdrawApplication(ctx context.Context, input WithdrawInput) 
 	}
 
 	payload := applicationdomain.ApplicationWithdrawnPayload{
-		ApplicationID: app.ID(),
+		ApplicationID: app.ID,
 		FromStage:     fromStage,
 		WithdrawnBy:   input.ActorID,
 		WithdrawnAt:   now,
 		Reason:        input.Reason,
 	}
 
-	version := app.Version()
+	version := app.Version
 	eventMsg, err := s.eventFactory.Create(
 		applicationdomain.EventTypeApplicationWithdrawn,
 		applicationdomain.AggregateTypeJobApplication,
-		app.ID(),
+		app.ID,
 		&version,
 		payload,
 		now,

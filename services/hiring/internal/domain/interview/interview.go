@@ -9,24 +9,26 @@ import (
 )
 
 type Interview struct {
-	id                 uuid.UUID
-	applicationID      uuid.UUID
-	interviewType      string
-	status             InterviewStatus
-	scheduledStartTime time.Time
-	scheduledEndTime   time.Time
-	meetingRoomURL     string
-	participants       []Participant
-	feedbacks          []Feedback
-	version            int64
-	createdAt          time.Time
-	updatedAt          time.Time
+	ID                 uuid.UUID
+	ApplicationID      uuid.UUID
+	InterviewType      string
+	Format             MeetingFormat
+	Status             InterviewStatus
+	ScheduledStartTime time.Time
+	ScheduledEndTime   time.Time
+	MeetingRoomURL     string
+	Participants       []Participant
+	Feedbacks          []Feedback
+	Version            int64
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
 }
 
 func Schedule(
 	id uuid.UUID,
 	applicationID uuid.UUID,
 	interviewType string,
+	format MeetingFormat,
 	scheduledStartTime time.Time,
 	scheduledEndTime time.Time,
 	participants []Participant,
@@ -41,6 +43,9 @@ func Schedule(
 	}
 	if strings.TrimSpace(interviewType) == "" {
 		return nil, ErrEmptyInterviewType
+	}
+	if !format.Valid() {
+		return nil, ErrInvalidFormat
 	}
 	if scheduledStartTime.Before(now) {
 		return nil, ErrStartInPast
@@ -62,18 +67,19 @@ func Schedule(
 	copy(copiedParticipants, participants)
 
 	return &Interview{
-		id:                 id,
-		applicationID:      applicationID,
-		interviewType:      strings.TrimSpace(interviewType),
-		status:             StatusScheduled,
-		scheduledStartTime: scheduledStartTime,
-		scheduledEndTime:   scheduledEndTime,
-		meetingRoomURL:     strings.TrimSpace(meetingRoomURL),
-		participants:       copiedParticipants,
-		feedbacks:          make([]Feedback, 0),
-		version:            1,
-		createdAt:          now,
-		updatedAt:          now,
+		ID:                 id,
+		ApplicationID:      applicationID,
+		InterviewType:      strings.TrimSpace(interviewType),
+		Format:             format,
+		Status:             StatusScheduled,
+		ScheduledStartTime: scheduledStartTime,
+		ScheduledEndTime:   scheduledEndTime,
+		MeetingRoomURL:     strings.TrimSpace(meetingRoomURL),
+		Participants:       copiedParticipants,
+		Feedbacks:          make([]Feedback, 0),
+		Version:            1,
+		CreatedAt:          now,
+		UpdatedAt:          now,
 	}, nil
 }
 
@@ -81,6 +87,7 @@ func Reconstitute(
 	id uuid.UUID,
 	applicationID uuid.UUID,
 	interviewType string,
+	format MeetingFormat,
 	status InterviewStatus,
 	scheduledStartTime time.Time,
 	scheduledEndTime time.Time,
@@ -92,98 +99,47 @@ func Reconstitute(
 	updatedAt time.Time,
 ) *Interview {
 	return &Interview{
-		id:                 id,
-		applicationID:      applicationID,
-		interviewType:      interviewType,
-		status:             status,
-		scheduledStartTime: scheduledStartTime,
-		scheduledEndTime:   scheduledEndTime,
-		meetingRoomURL:     meetingRoomURL,
-		participants:       participants,
-		feedbacks:          feedbacks,
-		version:            version,
-		createdAt:          createdAt,
-		updatedAt:          updatedAt,
+		ID:                 id,
+		ApplicationID:      applicationID,
+		InterviewType:      interviewType,
+		Format:             format,
+		Status:             status,
+		ScheduledStartTime: scheduledStartTime,
+		ScheduledEndTime:   scheduledEndTime,
+		MeetingRoomURL:     meetingRoomURL,
+		Participants:       participants,
+		Feedbacks:          feedbacks,
+		Version:            version,
+		CreatedAt:          createdAt,
+		UpdatedAt:          updatedAt,
 	}
-}
-
-func (i *Interview) ID() uuid.UUID {
-	return i.id
-}
-
-func (i *Interview) ApplicationID() uuid.UUID {
-	return i.applicationID
-}
-
-func (i *Interview) InterviewType() string {
-	return i.interviewType
-}
-
-func (i *Interview) Status() InterviewStatus {
-	return i.status
-}
-
-func (i *Interview) ScheduledStartTime() time.Time {
-	return i.scheduledStartTime
-}
-
-func (i *Interview) ScheduledEndTime() time.Time {
-	return i.scheduledEndTime
-}
-
-func (i *Interview) MeetingRoomURL() string {
-	return i.meetingRoomURL
-}
-
-func (i *Interview) Participants() []Participant {
-	copied := make([]Participant, len(i.participants))
-	copy(copied, i.participants)
-	return copied
-}
-
-func (i *Interview) Feedbacks() []Feedback {
-	copied := make([]Feedback, len(i.feedbacks))
-	copy(copied, i.feedbacks)
-	return copied
-}
-
-func (i *Interview) Version() int64 {
-	return i.version
-}
-
-func (i *Interview) CreatedAt() time.Time {
-	return i.createdAt
-}
-
-func (i *Interview) UpdatedAt() time.Time {
-	return i.updatedAt
 }
 
 func (i *Interview) SetMeetingRoomURL(url string, now time.Time) {
-	i.meetingRoomURL = strings.TrimSpace(url)
-	i.version++
-	i.updatedAt = now
+	i.MeetingRoomURL = strings.TrimSpace(url)
+	i.Version++
+	i.UpdatedAt = now
 }
 
 func (i *Interview) Complete(now time.Time) error {
-	if i.status != StatusScheduled {
-		return fmt.Errorf("%w: cannot complete interview in status %s", ErrInvalidStatus, i.status)
+	if i.Status != StatusScheduled {
+		return fmt.Errorf("%w: cannot complete interview in status %s", ErrInvalidStatus, i.Status)
 	}
 
-	i.status = StatusCompleted
-	i.version++
-	i.updatedAt = now
+	i.Status = StatusCompleted
+	i.Version++
+	i.UpdatedAt = now
 	return nil
 }
 
 func (i *Interview) Cancel(reason string, now time.Time) error {
-	if i.status != StatusScheduled {
-		return fmt.Errorf("%w: cannot cancel interview in status %s", ErrInvalidStatus, i.status)
+	if i.Status != StatusScheduled {
+		return fmt.Errorf("%w: cannot cancel interview in status %s", ErrInvalidStatus, i.Status)
 	}
 
-	i.status = StatusCancelled
-	i.version++
-	i.updatedAt = now
+	i.Status = StatusCancelled
+	i.Version++
+	i.UpdatedAt = now
 	return nil
 }
 
@@ -192,12 +148,12 @@ func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 		return err
 	}
 
-	if i.status == StatusCancelled {
+	if i.Status == StatusCancelled {
 		return ErrInterviewCancelled
 	}
 
 	isParticipant := false
-	for _, p := range i.participants {
+	for _, p := range i.Participants {
 		if p.UserID == feedback.InterviewerUserID {
 			isParticipant = true
 			break
@@ -207,37 +163,37 @@ func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 		return ErrNotParticipant
 	}
 
-	for _, f := range i.feedbacks {
+	for _, f := range i.Feedbacks {
 		if f.InterviewerUserID == feedback.InterviewerUserID {
 			return ErrFeedbackAlreadySubmitted
 		}
 	}
 
 	feedback.SubmittedAt = now
-	i.feedbacks = append(i.feedbacks, feedback)
-	i.version++
-	i.updatedAt = now
+	i.Feedbacks = append(i.Feedbacks, feedback)
+	i.Version++
+	i.UpdatedAt = now
 	return nil
 }
 
 func (i *Interview) ToSummary() InterviewSummary {
-	hasFeedback := len(i.feedbacks) > 0
+	hasFeedback := len(i.Feedbacks) > 0
 	avgScore := 0
 	if hasFeedback {
 		total := 0
-		for _, f := range i.feedbacks {
+		for _, f := range i.Feedbacks {
 			total += f.Score
 		}
-		avgScore = total / len(i.feedbacks)
+		avgScore = total / len(i.Feedbacks)
 	}
 
 	return InterviewSummary{
-		InterviewID:   i.id,
-		ApplicationID: i.applicationID,
-		Stage:         i.interviewType,
-		Status:        i.status,
+		InterviewID:   i.ID,
+		ApplicationID: i.ApplicationID,
+		Stage:         i.InterviewType,
+		Status:        i.Status,
 		HasFeedback:   hasFeedback,
 		Score:         avgScore,
-		CompletedAt:   i.updatedAt,
+		CompletedAt:   i.UpdatedAt,
 	}
 }

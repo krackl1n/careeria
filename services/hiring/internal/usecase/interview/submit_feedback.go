@@ -59,17 +59,17 @@ func (s *Service) SubmitFeedback(ctx context.Context, input SubmitFeedbackInput)
 	}
 
 	payload := interviewdomain.FeedbackSubmittedPayload{
-		InterviewID:       it.ID(),
+		InterviewID:       it.ID,
 		InterviewerUserID: input.InterviewerUserID,
 		Score:             input.Score,
 		SubmittedAt:       now,
 	}
 
-	version := it.Version()
+	version := it.Version
 	eventMsg, err := s.eventFactory.Create(
 		interviewdomain.EventTypeFeedbackSubmitted,
 		interviewdomain.AggregateTypeInterview,
-		it.ID(),
+		it.ID,
 		&version,
 		payload,
 		now,

@@ -41,11 +41,11 @@ func (s *Service) CreateOffer(ctx context.Context, input CreateOfferInput) (uuid
 		return uuid.Nil, fmt.Errorf("load application: %w", err)
 	}
 
-	if app.CurrentStage() != applicationdomain.StageOfferPending {
+	if app.CurrentStage != applicationdomain.StageOfferPending {
 		return uuid.Nil, apperr.Conflict(
 			"invalid_stage",
 			fmt.Sprintf("cannot create offer for application in stage %s; must be %s",
-				app.CurrentStage(), applicationdomain.StageOfferPending),
+				app.CurrentStage, applicationdomain.StageOfferPending),
 			nil,
 		)
 	}
@@ -70,13 +70,13 @@ func (s *Service) CreateOffer(ctx context.Context, input CreateOfferInput) (uuid
 		OfferID:       offerID,
 		ApplicationID: input.ApplicationID,
 		Compensation:  input.Compensation,
-		Currency:      of.Currency(),
-		Grade:         of.Grade(),
+		Currency:      of.Currency,
+		Grade:         of.Grade,
 		ExpiresAt:     input.ExpiresAt,
 		CreatedAt:     now,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferCreated,
 		offerdomain.AggregateTypeJobOffer,
@@ -123,7 +123,7 @@ func (s *Service) SendOffer(ctx context.Context, input SendOfferInput) error {
 		return fmt.Errorf("load offer: %w", err)
 	}
 
-	if err := s.authPort.CanManageOffer(ctx, input.ActorID, of.ApplicationID()); err != nil {
+	if err := s.authPort.CanManageOffer(ctx, input.ActorID, of.ApplicationID); err != nil {
 		return err
 	}
 
@@ -139,16 +139,16 @@ func (s *Service) SendOffer(ctx context.Context, input SendOfferInput) error {
 	}
 
 	payload := offerdomain.OfferSentPayload{
-		OfferID:   of.ID(),
+		OfferID:   of.ID,
 		SentAt:    now,
-		ExpiresAt: of.ExpiresAt(),
+		ExpiresAt: of.ExpiresAt,
 	}
 
-	version := of.Version()
+	version := of.Version
 	eventMsg, err := s.eventFactory.Create(
 		offerdomain.EventTypeOfferSent,
 		offerdomain.AggregateTypeJobOffer,
-		of.ID(),
+		of.ID,
 		&version,
 		payload,
 		now,

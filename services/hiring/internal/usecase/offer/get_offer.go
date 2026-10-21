@@ -23,8 +23,8 @@ func (s *Service) GetOffer(ctx context.Context, offerID, actorID uuid.UUID) (*of
 		return nil, fmt.Errorf("load offer: %w", err)
 	}
 
-	if err := s.authPort.CanManageOffer(ctx, actorID, of.ApplicationID()); err != nil {
-		if errResp := s.authPort.CanRespondToOffer(ctx, actorID, of.ApplicationID()); errResp != nil {
+	if err := s.authPort.CanManageOffer(ctx, actorID, of.ApplicationID); err != nil {
+		if errResp := s.authPort.CanRespondToOffer(ctx, actorID, of.ApplicationID); errResp != nil {
 			return nil, apperr.Forbidden("not_authorized", "actor is not authorized to view offer", nil)
 		}
 	}
