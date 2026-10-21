@@ -27,6 +27,13 @@ c4-plant-uml/
 │   │   └── full-system.puml
 │   ├── component/               # C4 L3: компоненты контейнеров
 │   │   └── backend/company-service.puml
+│   ├── code/                    # C4 L4: детализация кода компонентов
+│   │   ├── README.md
+│   │   └── backend/
+│   │       ├── hiring-application-service.puml
+│   │       ├── hiring-application-service.md
+│   │       ├── candidate-profile-service.puml
+│   │       └── candidate-profile-service.md
 │   ├── projections/             # Срезы модели по теме и ответственности
 │   │   ├── high-level.puml
 │   │   ├── event-driven.puml

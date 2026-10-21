@@ -1,0 +1,110 @@
+@startuml candidate-profile-service-l4
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Candidate Profile Service" {
+
+    ' ===================================================
+    ' 1. СЛОЙ ПРИЛОЖЕНИЯ: СЕРВИС СО СЦЕНАРИЯМИ
+    ' ===================================================
+    package "Application Layer" {
+        class CandidateProfileService <<Application Service>> {
+            - profileRepo: CandidateProfileRepository
+            - outboxRepo: OutboxRepository
+            - authPort: AuthorizationPort
+            - strategyRegistry: StrategyRegistry
+            + CreateProfile(ctx: Context, input: CreateProfileInput): UUID
+            + UpdateSkills(ctx: Context, input: UpdateSkillsInput): error
+            + ChangeStatus(ctx: Context, input: ChangeStatusInput): error
+            + GetProfile(ctx: Context, input: GetProfileInput): ProfileOutput
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (АГРЕГАТ + ДОМЕННЫЕ СТРАТЕГИИ)
+    ' ===================================================
+    package "Domain Layer" {
+        class CandidateProfile <<Aggregate Root>> {
+            - id: UUID
+            - status: SearchStatus
+            - skills: List<Skill>
+            + SetSkills(skills: List<Skill>): error
+            + TransitionStatus(newStatus: SearchStatus): error
+        }
+
+        note right of CandidateProfile
+          Бизнес-инварианты и правила
+          переходов статусов поиска работы
+        end note
+
+        interface MaskingStrategy <<Domain Strategy>> {
+            + Apply(profile: CandidateProfile): ProfileOutput
+        }
+
+        class StrategyRegistry <<Domain Registry>> {
+            - strategies: Map<ViewerRole, MaskingStrategy>
+            + Get(role: ViewerRole): MaskingStrategy
+        }
+
+        together {
+            class OwnerMaskingStrategy <<Domain Strategy>> {
+                + Apply(profile: CandidateProfile): ProfileOutput
+            }
+            class RecruiterMaskingStrategy <<Domain Strategy>> {
+                + Apply(profile: CandidateProfile): ProfileOutput
+            }
+        }
+    }
+
+    ' ===================================================
+    ' 3. КОНТРАКТЫ К ВНЕШНИМ КОМПОНЕНТАМ (L3)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface CandidateProfileRepository <<interface>> {
+            + FindByID(ctx: Context, id: UUID): CandidateProfile
+            + Save(ctx: Context, profile: CandidateProfile): error
+        }
+
+        interface OutboxRepository <<interface>> {
+            + SaveEvent(ctx: Context, event: OutboxMessage): error
+        }
+
+        interface AuthorizationPort <<interface>> {
+            + CheckPermission(ctx: Context, actorID: UUID, profileID: UUID, action: string): error
+            + ResolveRole(ctx: Context, actorID: UUID, profileID: UUID): ViewerRole
+        }
+    }
+}
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+' Сервис работает с доменным агрегатом
+CandidateProfileService ..> CandidateProfile : mutates & creates
+
+' Сервис использует доменный реестр и стратегии
+CandidateProfileService --> StrategyRegistry : resolves strategy
+CandidateProfileService ..> MaskingStrategy : executes
+StrategyRegistry o-- MaskingStrategy : aggregates
+OwnerMaskingStrategy ..|> MaskingStrategy : implements
+RecruiterMaskingStrategy ..|> MaskingStrategy : implements
+MaskingStrategy ..> CandidateProfile : reads
+
+' Сервис обращается к интерфейсам контрактов
+CandidateProfileService --> CandidateProfileRepository : uses
+CandidateProfileService --> OutboxRepository : records events
+CandidateProfileService --> AuthorizationPort : checks access
+
+@enduml
+

@@ -1,0 +1,156 @@
+@startuml hiring-application-service-l4
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Application Service (Hiring Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class HiringApplicationService <<Application Service>> {
+            - appRepo: ApplicationRepository
+            - interviewSummaryRepo: InterviewSummaryRepository
+            - outboxRepo: OutboxRepository
+            - authPort: AuthorizationPort
+            - offerPolicy: OfferEligibilityPolicy
+            + ApplyVacancy(ctx: Context, input: ApplyVacancyInput): UUID
+            + PromoteToInterview(ctx: Context, input: PromoteInput): error
+            + InitiateOffer(ctx: Context, input: InitiateOfferInput): error
+            + RejectApplication(ctx: Context, input: RejectInput): error
+            + WithdrawApplication(ctx: Context, input: WithdrawInput): error
+            + HandleAssessmentResult(ctx: Context, event: AssessmentCompletedEvent): error
+            + GetPipelineHistory(ctx: Context, appID: UUID): PipelineHistoryOutput
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+        
+        ' Агрегат отклика (только свои данные)
+        class JobApplication <<Aggregate Root>> {
+            - id: UUID
+            - vacancyID: UUID
+            - candidateID: UUID
+            - currentStage: PipelineStage
+            - version: int
+            - history: List<StageTransition>
+            + MarkInterview(actorID: UUID, comment: string): error
+            + MarkOfferPending(actorID: UUID): error
+            + Reject(reason: RejectReason, actorID: UUID): error
+            + Withdraw(actorID: UUID): error
+            + AdvanceFromAssessment(score: int): error
+            - canTransitionTo(target: PipelineStage): bool
+            - addTransition(to: PipelineStage, by: UUID, comment: string)
+        }
+
+        ' Отдельный доменный объект / проекция интервью
+        class InterviewSummary <<Domain Model / Projection>> {
+            + interviewID: UUID
+            + applicationID: UUID
+            + stage: string
+            + status: InterviewStatus
+            + hasFeedback: bool
+            + score: int
+            + completedAt: Timestamp
+        }
+
+        ' Чистая межагрегатная политика: связывает отклик и проекцию интервью
+        class OfferEligibilityPolicy <<Domain Policy>> {
+            + CanInitiateOffer(app: JobApplication, interviews: List<InterviewSummary>): error
+        }
+
+        note right of OfferEligibilityPolicy
+          Чистое бизнес-правило:
+          - Проверяет текущую стадию отклика (INTERVIEW)
+          - Проверяет переданную коллекцию interviews:
+            наличие COMPLETED с фидбеком.
+          Никакого I/O внутри политики!
+        end note
+
+        class StageTransition <<Entity>> {
+            - id: UUID
+            - fromStage: PipelineStage
+            - toStage: PipelineStage
+            - changedBy: UUID
+            - changedAt: Timestamp
+            - comment: string
+        }
+
+        enum PipelineStage <<enumeration>> {
+            APPLIED
+            SCREENING
+            TECH_ASSESSMENT
+            INTERVIEW
+            OFFER_PENDING
+            OFFER_ACCEPTED
+            HIRED
+            REJECTED
+            WITHDRAWN
+        }
+
+        class RejectReason <<Value Object>> {
+            + code: string
+            + comment: string
+        }
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface ApplicationRepository <<interface>> {
+            + FindByID(ctx: Context, id: UUID): JobApplication
+            + Save(ctx: Context, app: JobApplication): error
+        }
+
+        interface InterviewSummaryRepository <<interface>> {
+            + FindByApplicationID(ctx: Context, appID: UUID): List<InterviewSummary>
+        }
+
+        interface OutboxRepository <<interface>> {
+            + SaveEvent(ctx: Context, event: OutboxMessage): error
+        }
+
+        interface AuthorizationPort <<interface>> {
+            + CanManageStage(ctx: Context, actorID: UUID, appID: UUID): error
+        }
+    }
+}
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+' Сервис оркестрирует сценарий
+HiringApplicationService ..> JobApplication : commands mutation
+HiringApplicationService --> OfferEligibilityPolicy : executes rule
+
+' Сервис загружает оба объекта и передает их в политику
+OfferEligibilityPolicy ..> JobApplication : evaluates
+OfferEligibilityPolicy ..> InterviewSummary : evaluates
+
+' Агрегат владеет ТОЛЬКО своей историей и перечислениями
+JobApplication *-- "1..*" StageTransition : records history
+JobApplication *-- "1" PipelineStage : current stage
+JobApplication ..> RejectReason : uses on reject
+
+' Контракты сервиса для загрузки и сохранения
+HiringApplicationService --> ApplicationRepository : persists application
+HiringApplicationService --> InterviewSummaryRepository : queries interview projection
+HiringApplicationService --> OutboxRepository : records domain events
+HiringApplicationService --> AuthorizationPort : checks access
+
+@enduml
