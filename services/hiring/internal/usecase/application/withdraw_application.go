@@ -42,6 +42,12 @@ func (s *Service) WithdrawApplication(ctx context.Context, input WithdrawInput) 
 	now := s.clock.Now().UTC()
 
 	if err := app.Withdraw(input.ActorID, input.Reason, now); err != nil {
+		if errors.Is(err, applicationdomain.ErrTerminalStage) {
+			return apperr.Conflict("terminal_stage", err.Error(), err)
+		}
+		if errors.Is(err, applicationdomain.ErrInvalidStageTransition) {
+			return apperr.Conflict("invalid_stage_transition", err.Error(), err)
+		}
 		return err
 	}
 

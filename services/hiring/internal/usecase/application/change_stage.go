@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	policydomain "github.com/krackl1n/careeria/services/hiring/internal/domain/policy"
 )
 
 type ChangeStageInput struct {
@@ -49,12 +50,24 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 		}
 
 		if err := s.offerPolicy.CanInitiateOffer(app, interviews); err != nil {
-			return err
+			if errors.Is(err, policydomain.ErrInvalidStageForOffer) {
+				return apperr.Conflict("invalid_stage_for_offer", err.Error(), err)
+			}
+			if errors.Is(err, policydomain.ErrMissingCompletedInterview) {
+				return apperr.Conflict("missing_completed_interview", err.Error(), err)
+			}
+			return apperr.InvalidArgument("offer_eligibility_failed", err.Error(), err)
 		}
 	}
 
 	now := s.clock.Now().UTC()
 	if err := app.ChangeStage(input.TargetStage, input.ActorID, input.Reason, now); err != nil {
+		if errors.Is(err, applicationdomain.ErrInvalidStageTransition) {
+			return apperr.Conflict("invalid_stage_transition", err.Error(), err)
+		}
+		if errors.Is(err, applicationdomain.ErrEmptyActorID) {
+			return apperr.InvalidArgument("empty_actor_id", err.Error(), err)
+		}
 		return err
 	}
 

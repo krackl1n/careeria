@@ -63,7 +63,7 @@ func (s *Service) CreateOffer(ctx context.Context, input CreateOfferInput) (uuid
 		now,
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, apperr.InvalidArgument("invalid_offer_params", err.Error(), err)
 	}
 
 	payload := offerdomain.OfferCreatedPayload{
@@ -129,6 +129,12 @@ func (s *Service) SendOffer(ctx context.Context, input SendOfferInput) error {
 
 	now := s.clock.Now().UTC()
 	if err := of.Send(now); err != nil {
+		if errors.Is(err, offerdomain.ErrOfferExpired) {
+			return apperr.Conflict("offer_expired", err.Error(), err)
+		}
+		if errors.Is(err, offerdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 

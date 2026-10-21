@@ -34,6 +34,12 @@ func (s *Service) AcceptOffer(ctx context.Context, input AcceptOfferInput) error
 
 	now := s.clock.Now().UTC()
 	if err := of.Accept(now); err != nil {
+		if errors.Is(err, offerdomain.ErrOfferExpired) {
+			return apperr.Conflict("offer_expired", err.Error(), err)
+		}
+		if errors.Is(err, offerdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 
@@ -94,6 +100,9 @@ func (s *Service) DeclineOffer(ctx context.Context, input DeclineOfferInput) err
 
 	now := s.clock.Now().UTC()
 	if err := of.Decline(input.Reason, now); err != nil {
+		if errors.Is(err, offerdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 
@@ -155,6 +164,9 @@ func (s *Service) RevokeOffer(ctx context.Context, input RevokeOfferInput) error
 
 	now := s.clock.Now().UTC()
 	if err := of.Revoke(input.Reason, now); err != nil {
+		if errors.Is(err, offerdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 
@@ -206,6 +218,12 @@ func (s *Service) ExpireOffer(ctx context.Context, offerID uuid.UUID) error {
 
 	now := s.clock.Now().UTC()
 	if err := of.Expire(now); err != nil {
+		if errors.Is(err, offerdomain.ErrOfferNotExpired) {
+			return apperr.Conflict("not_expired", err.Error(), err)
+		}
+		if errors.Is(err, offerdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 

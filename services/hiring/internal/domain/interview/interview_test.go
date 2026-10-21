@@ -49,7 +49,7 @@ func TestInterviewLifecycle(t *testing.T) {
 		"",
 		now,
 	)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrStartInPast)
 
 	// Validate cannot submit feedback from non-participant
 	err = it.SubmitFeedback(Feedback{
@@ -57,7 +57,7 @@ func TestInterviewLifecycle(t *testing.T) {
 		Score:             5,
 		Notes:             "Super candidate",
 	}, now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrNotParticipant)
 
 	// Submit valid feedback
 	err = it.SubmitFeedback(Feedback{
@@ -75,7 +75,7 @@ func TestInterviewLifecycle(t *testing.T) {
 		Score:             5,
 		Notes:             "Changed mind",
 	}, now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrFeedbackAlreadySubmitted)
 
 	// Complete interview
 	err = it.Complete(now.Add(3 * time.Hour))
@@ -113,6 +113,6 @@ func TestInterviewCancellation(t *testing.T) {
 
 	// Cannot complete cancelled interview
 	err = it.Complete(now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrInvalidStatus)
 }
 

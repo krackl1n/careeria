@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
 )
 
 type JobApplication struct {
@@ -27,16 +26,16 @@ func New(
 	now time.Time,
 ) (*JobApplication, error) {
 	if id == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_id", "application ID must not be empty", nil)
+		return nil, ErrEmptyID
 	}
 	if vacancyID == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_vacancy_id", "vacancy ID must not be empty", nil)
+		return nil, ErrEmptyVacancyID
 	}
 	if candidateID == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_candidate_id", "candidate ID must not be empty", nil)
+		return nil, ErrEmptyCandidateID
 	}
 	if actorID == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_actor_id", "actor ID must not be empty", nil)
+		return nil, ErrEmptyActorID
 	}
 
 	app := &JobApplication{
@@ -125,15 +124,11 @@ func (a *JobApplication) ChangeStage(
 	now time.Time,
 ) error {
 	if actorID == uuid.Nil {
-		return apperr.InvalidArgument("empty_actor_id", "actor ID must not be empty", nil)
+		return ErrEmptyActorID
 	}
 
 	if !a.currentStage.CanTransitionTo(targetStage) {
-		return apperr.Conflict(
-			"invalid_stage_transition",
-			fmt.Sprintf("cannot transition from %s to %s", a.currentStage, targetStage),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot transition from %s to %s", ErrInvalidStageTransition, a.currentStage, targetStage)
 	}
 
 	a.addTransition(targetStage, actorID, reason, now)
@@ -150,11 +145,7 @@ func (a *JobApplication) MarkOfferPending(actorID uuid.UUID, now time.Time) erro
 
 func (a *JobApplication) AdvanceFromAssessment(score int, actorID uuid.UUID, now time.Time) error {
 	if a.currentStage != StageTechAssessment {
-		return apperr.Conflict(
-			"invalid_stage_transition",
-			fmt.Sprintf("cannot advance from assessment while in stage %s", a.currentStage),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot advance from assessment while in stage %s", ErrInvalidStageTransition, a.currentStage)
 	}
 
 	reason := fmt.Sprintf("assessment passed with score %d", score)
@@ -163,11 +154,7 @@ func (a *JobApplication) AdvanceFromAssessment(score int, actorID uuid.UUID, now
 
 func (a *JobApplication) Reject(reason RejectReason, actorID uuid.UUID, now time.Time) error {
 	if a.currentStage.IsTerminal() {
-		return apperr.Conflict(
-			"terminal_stage",
-			fmt.Sprintf("cannot reject application in terminal stage %s", a.currentStage),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot reject application in stage %s", ErrTerminalStage, a.currentStage)
 	}
 
 	comment := reason.Comment
@@ -180,11 +167,7 @@ func (a *JobApplication) Reject(reason RejectReason, actorID uuid.UUID, now time
 
 func (a *JobApplication) Withdraw(actorID uuid.UUID, reason string, now time.Time) error {
 	if a.currentStage.IsTerminal() {
-		return apperr.Conflict(
-			"terminal_stage",
-			fmt.Sprintf("cannot withdraw application in terminal stage %s", a.currentStage),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot withdraw application in stage %s", ErrTerminalStage, a.currentStage)
 	}
 
 	if reason == "" {
@@ -214,4 +197,3 @@ func (a *JobApplication) addTransition(
 	a.version++
 	a.updatedAt = now
 }
-

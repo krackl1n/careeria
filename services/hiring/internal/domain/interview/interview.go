@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
 )
 
 type Interview struct {
@@ -35,27 +34,27 @@ func Schedule(
 	now time.Time,
 ) (*Interview, error) {
 	if id == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_id", "interview ID must not be empty", nil)
+		return nil, ErrEmptyID
 	}
 	if applicationID == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_application_id", "application ID must not be empty", nil)
+		return nil, ErrEmptyApplicationID
 	}
 	if strings.TrimSpace(interviewType) == "" {
-		return nil, apperr.InvalidArgument("empty_interview_type", "interview type must not be empty", nil)
+		return nil, ErrEmptyInterviewType
 	}
 	if scheduledStartTime.Before(now) {
-		return nil, apperr.InvalidArgument("start_in_past", "interview cannot be scheduled in the past", nil)
+		return nil, ErrStartInPast
 	}
 	if !scheduledEndTime.After(scheduledStartTime) {
-		return nil, apperr.InvalidArgument("invalid_interval", "interview end time must be strictly after start time", nil)
+		return nil, ErrInvalidInterval
 	}
 	if len(participants) == 0 {
-		return nil, apperr.InvalidArgument("empty_participants", "interview must have at least one participant", nil)
+		return nil, ErrEmptyParticipants
 	}
 
 	for _, p := range participants {
 		if p.UserID == uuid.Nil {
-			return nil, apperr.InvalidArgument("invalid_participant", "participant user ID must not be empty", nil)
+			return nil, ErrInvalidParticipant
 		}
 	}
 
@@ -168,11 +167,7 @@ func (i *Interview) SetMeetingRoomURL(url string, now time.Time) {
 
 func (i *Interview) Complete(now time.Time) error {
 	if i.status != StatusScheduled {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot complete interview in status %s", i.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot complete interview in status %s", ErrInvalidStatus, i.status)
 	}
 
 	i.status = StatusCompleted
@@ -183,11 +178,7 @@ func (i *Interview) Complete(now time.Time) error {
 
 func (i *Interview) Cancel(reason string, now time.Time) error {
 	if i.status != StatusScheduled {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot cancel interview in status %s", i.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot cancel interview in status %s", ErrInvalidStatus, i.status)
 	}
 
 	i.status = StatusCancelled
@@ -198,11 +189,11 @@ func (i *Interview) Cancel(reason string, now time.Time) error {
 
 func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 	if err := feedback.Validate(); err != nil {
-		return apperr.InvalidArgument("invalid_feedback", err.Error(), nil)
+		return err
 	}
 
 	if i.status == StatusCancelled {
-		return apperr.Conflict("interview_cancelled", "cannot submit feedback for cancelled interview", nil)
+		return ErrInterviewCancelled
 	}
 
 	isParticipant := false
@@ -213,20 +204,12 @@ func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 		}
 	}
 	if !isParticipant {
-		return apperr.Forbidden(
-			"not_participant",
-			"user is not an assigned interviewer for this interview",
-			nil,
-		)
+		return ErrNotParticipant
 	}
 
 	for _, f := range i.feedbacks {
 		if f.InterviewerUserID == feedback.InterviewerUserID {
-			return apperr.Conflict(
-				"feedback_exists",
-				"feedback from this interviewer already exists and cannot be modified",
-				nil,
-			)
+			return ErrFeedbackAlreadySubmitted
 		}
 	}
 
@@ -258,4 +241,3 @@ func (i *Interview) ToSummary() InterviewSummary {
 		CompletedAt:   i.updatedAt,
 	}
 }
-

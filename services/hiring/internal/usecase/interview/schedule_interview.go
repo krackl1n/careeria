@@ -69,7 +69,7 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 		now,
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, apperr.InvalidArgument("invalid_interview_params", err.Error(), err)
 	}
 
 	payload := interviewdomain.InterviewScheduledPayload{

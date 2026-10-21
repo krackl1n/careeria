@@ -34,6 +34,9 @@ func (s *Service) CompleteInterview(ctx context.Context, input CompleteInterview
 
 	now := s.clock.Now().UTC()
 	if err := it.Complete(now); err != nil {
+		if errors.Is(err, interviewdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 
@@ -91,6 +94,9 @@ func (s *Service) CancelInterview(ctx context.Context, input CancelInterviewInpu
 
 	now := s.clock.Now().UTC()
 	if err := it.Cancel(input.Reason, now); err != nil {
+		if errors.Is(err, interviewdomain.ErrInvalidStatus) {
+			return apperr.Conflict("invalid_status", err.Error(), err)
+		}
 		return err
 	}
 

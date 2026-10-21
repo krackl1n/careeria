@@ -46,7 +46,16 @@ func (s *Service) SubmitFeedback(ctx context.Context, input SubmitFeedbackInput)
 	}
 
 	if err := it.SubmitFeedback(feedback, now); err != nil {
-		return err
+		if errors.Is(err, interviewdomain.ErrNotParticipant) {
+			return apperr.Forbidden("not_participant", err.Error(), err)
+		}
+		if errors.Is(err, interviewdomain.ErrFeedbackAlreadySubmitted) {
+			return apperr.Conflict("feedback_exists", err.Error(), err)
+		}
+		if errors.Is(err, interviewdomain.ErrInterviewCancelled) {
+			return apperr.Conflict("interview_cancelled", err.Error(), err)
+		}
+		return apperr.InvalidArgument("invalid_feedback", err.Error(), err)
 	}
 
 	payload := interviewdomain.FeedbackSubmittedPayload{

@@ -23,7 +23,7 @@ func TestJobApplicationLifecycle(t *testing.T) {
 
 	// Invalid transition directly from APPLIED to HIRED
 	err = app.ChangeStage(StageHired, actorID, "direct hire", now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrInvalidStageTransition)
 
 	// APPLIED -> SCREENING
 	err = app.ChangeStage(StageScreening, actorID, "screening started", now)
@@ -59,9 +59,9 @@ func TestJobApplicationLifecycle(t *testing.T) {
 
 	// From terminal HIRED, cannot transition to any other stage
 	err = app.ChangeStage(StageInterview, actorID, "try again", now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrInvalidStageTransition)
 	err = app.Reject(RejectReason{Code: "reason"}, actorID, now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrTerminalStage)
 }
 
 func TestJobApplicationRejectionAndWithdrawal(t *testing.T) {
@@ -85,7 +85,7 @@ func TestJobApplicationRejectionAndWithdrawal(t *testing.T) {
 
 		// Cannot transition after rejection
 		err = app.ChangeStage(StageInterview, actorID, "oops", now)
-		require.Error(t, err)
+		require.ErrorIs(t, err, ErrInvalidStageTransition)
 	})
 
 	t.Run("withdraw during interview", func(t *testing.T) {

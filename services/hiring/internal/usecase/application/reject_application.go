@@ -46,6 +46,12 @@ func (s *Service) RejectApplication(ctx context.Context, input RejectInput) erro
 	}
 
 	if err := app.Reject(reason, input.ActorID, now); err != nil {
+		if errors.Is(err, applicationdomain.ErrTerminalStage) {
+			return apperr.Conflict("terminal_stage", err.Error(), err)
+		}
+		if errors.Is(err, applicationdomain.ErrInvalidStageTransition) {
+			return apperr.Conflict("invalid_stage_transition", err.Error(), err)
+		}
 		return err
 	}
 

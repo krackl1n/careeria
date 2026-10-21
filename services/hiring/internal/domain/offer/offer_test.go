@@ -16,7 +16,7 @@ func TestJobOfferLifecycle(t *testing.T) {
 
 	// Invariant: min 24 hours duration
 	_, err := Create(offerID, applicationID, 250000, "RUB", "Senior Go", now.Add(12*time.Hour), now)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrInvalidExpiration)
 
 	// Create valid offer
 	of, err := Create(offerID, applicationID, 250000, "RUB", "Senior Go", expiresAt, now)
@@ -32,7 +32,7 @@ func TestJobOfferLifecycle(t *testing.T) {
 	// Cannot accept an already expired offer
 	expiredNow := expiresAt.Add(time.Minute)
 	err = of.Accept(expiredNow)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrOfferExpired)
 	require.Equal(t, StatusExpired, of.Status())
 }
 

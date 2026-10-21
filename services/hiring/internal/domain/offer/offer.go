@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
 )
 
 const MinOfferDuration = 24 * time.Hour
@@ -34,28 +33,24 @@ func Create(
 	now time.Time,
 ) (*JobOffer, error) {
 	if id == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_id", "offer ID must not be empty", nil)
+		return nil, ErrEmptyID
 	}
 	if applicationID == uuid.Nil {
-		return nil, apperr.InvalidArgument("empty_application_id", "application ID must not be empty", nil)
+		return nil, ErrEmptyApplicationID
 	}
 	if compensation <= 0 {
-		return nil, apperr.InvalidArgument("invalid_compensation", "compensation must be strictly positive", nil)
+		return nil, ErrInvalidCompensation
 	}
 	currency = strings.ToUpper(strings.TrimSpace(currency))
 	if len(currency) != 3 {
-		return nil, apperr.InvalidArgument("invalid_currency", "currency must be a 3-letter ISO code", nil)
+		return nil, ErrInvalidCurrency
 	}
 	grade = strings.TrimSpace(grade)
 	if grade == "" {
-		return nil, apperr.InvalidArgument("empty_grade", "grade must not be empty", nil)
+		return nil, ErrEmptyGrade
 	}
 	if expiresAt.Before(now.Add(MinOfferDuration)) {
-		return nil, apperr.InvalidArgument(
-			"invalid_expiration",
-			"offer validity period must be at least 24 hours from creation",
-			nil,
-		)
+		return nil, ErrInvalidExpiration
 	}
 
 	return &JobOffer{
@@ -144,18 +139,14 @@ func (o *JobOffer) IsExpired(now time.Time) bool {
 
 func (o *JobOffer) Send(now time.Time) error {
 	if o.status != StatusDraft {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot send offer in status %s", o.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot send offer in status %s", ErrInvalidStatus, o.status)
 	}
 
 	if o.IsExpired(now) {
 		o.status = StatusExpired
 		o.version++
 		o.updatedAt = now
-		return apperr.Conflict("offer_expired", "cannot send an expired offer", nil)
+		return ErrOfferExpired
 	}
 
 	o.status = StatusSent
@@ -166,18 +157,14 @@ func (o *JobOffer) Send(now time.Time) error {
 
 func (o *JobOffer) Accept(now time.Time) error {
 	if o.status != StatusSent {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot accept offer in status %s", o.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot accept offer in status %s", ErrInvalidStatus, o.status)
 	}
 
 	if o.IsExpired(now) {
 		o.status = StatusExpired
 		o.version++
 		o.updatedAt = now
-		return apperr.Conflict("offer_expired", "cannot accept an expired offer", nil)
+		return ErrOfferExpired
 	}
 
 	o.status = StatusAccepted
@@ -188,11 +175,7 @@ func (o *JobOffer) Accept(now time.Time) error {
 
 func (o *JobOffer) Decline(reason string, now time.Time) error {
 	if o.status != StatusSent {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot decline offer in status %s", o.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot decline offer in status %s", ErrInvalidStatus, o.status)
 	}
 
 	o.status = StatusDeclined
@@ -203,11 +186,7 @@ func (o *JobOffer) Decline(reason string, now time.Time) error {
 
 func (o *JobOffer) Revoke(reason string, now time.Time) error {
 	if o.status != StatusDraft && o.status != StatusSent {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot revoke offer in status %s", o.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot revoke offer in status %s", ErrInvalidStatus, o.status)
 	}
 
 	o.status = StatusRevoked
@@ -218,15 +197,11 @@ func (o *JobOffer) Revoke(reason string, now time.Time) error {
 
 func (o *JobOffer) Expire(now time.Time) error {
 	if o.status != StatusSent {
-		return apperr.Conflict(
-			"invalid_status",
-			fmt.Sprintf("cannot expire offer in status %s", o.status),
-			nil,
-		)
+		return fmt.Errorf("%w: cannot expire offer in status %s", ErrInvalidStatus, o.status)
 	}
 
 	if !o.IsExpired(now) {
-		return apperr.Conflict("not_expired", "offer expiration time has not been reached yet", nil)
+		return ErrOfferNotExpired
 	}
 
 	o.status = StatusExpired
@@ -234,4 +209,3 @@ func (o *JobOffer) Expire(now time.Time) error {
 	o.updatedAt = now
 	return nil
 }
-

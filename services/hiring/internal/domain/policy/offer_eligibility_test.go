@@ -20,7 +20,7 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 
 	// In APPLIED stage - should fail
 	err = policy.CanInitiateOffer(app, nil)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrInvalidStageForOffer)
 
 	// Move to SCREENING -> INTERVIEW
 	err = app.ChangeStage(application.StageScreening, actorID, "screening", now)
@@ -30,7 +30,7 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 
 	// In INTERVIEW stage, but no interviews - should fail
 	err = policy.CanInitiateOffer(app, nil)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with only SCHEDULED interview - should fail
 	scheduled := []interview.InterviewSummary{
@@ -41,7 +41,7 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 		},
 	}
 	err = policy.CanInitiateOffer(app, scheduled)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with COMPLETED interview, but no feedback - should fail
 	completedWithoutFeedback := []interview.InterviewSummary{
@@ -52,7 +52,7 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 		},
 	}
 	err = policy.CanInitiateOffer(app, completedWithoutFeedback)
-	require.Error(t, err)
+	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with COMPLETED interview and feedback - should PASS
 	completedWithFeedback := []interview.InterviewSummary{

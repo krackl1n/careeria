@@ -1,7 +1,6 @@
 package interview
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,10 +41,10 @@ type Feedback struct {
 
 func (f Feedback) Validate() error {
 	if f.InterviewerUserID == uuid.Nil {
-		return fmt.Errorf("interviewer user ID must not be empty")
+		return ErrEmptyInterviewerID
 	}
 	if f.Score < 1 || f.Score > 5 {
-		return fmt.Errorf("score must be between 1 and 5, got %d", f.Score)
+		return ErrInvalidScore
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -35,6 +36,9 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 
 	if input.Passed {
 		if err := app.AdvanceFromAssessment(input.Score, input.ActorID, now); err != nil {
+			if errors.Is(err, applicationdomain.ErrInvalidStageTransition) {
+				return apperr.Conflict("invalid_stage_transition", err.Error(), err)
+			}
 			return err
 		}
 
@@ -76,6 +80,12 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 		Comment: fmt.Sprintf("score %d below passing threshold", input.Score),
 	}
 	if err := app.Reject(reason, input.ActorID, now); err != nil {
+		if errors.Is(err, applicationdomain.ErrTerminalStage) {
+			return apperr.Conflict("terminal_stage", err.Error(), err)
+		}
+		if errors.Is(err, applicationdomain.ErrInvalidStageTransition) {
+			return apperr.Conflict("invalid_stage_transition", err.Error(), err)
+		}
 		return err
 	}
 
