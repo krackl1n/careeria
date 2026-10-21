@@ -150,16 +150,17 @@ func TestInterviewService(t *testing.T) {
 	startTime := now.Add(2 * time.Hour)
 	endTime := startTime.Add(time.Hour)
 
+	pInterviewer, err := interviewdomain.NewParticipant(interviewerID, interviewdomain.RoleInterviewer)
+	require.NoError(t, err)
+
 	id1, err := svc.ScheduleInterview(ctx, ScheduleInterviewInput{
 		ApplicationID:      appID,
-		InterviewType:      "TECHNICAL",
+		InterviewType:      interviewdomain.TypeTechnical,
 		Format:             interviewdomain.FormatOnlineLiveKit,
 		ScheduledStartTime: startTime,
 		ScheduledEndTime:   endTime,
-		Participants: []interviewdomain.Participant{
-			{UserID: interviewerID, Role: "tech_interviewer"},
-		},
-		ActorID: actorID,
+		Participants:       []interviewdomain.Participant{pInterviewer},
+		ActorID:            actorID,
 	})
 	require.NoError(t, err)
 	require.Equal(t, interviewID1, id1)
@@ -196,17 +197,18 @@ func TestInterviewService(t *testing.T) {
 	require.Equal(t, interviewdomain.FormatOnlineLiveKit, it.Format)
 	require.Len(t, it.Feedbacks, 1)
 
+	pHr, err := interviewdomain.NewParticipant(interviewerID, interviewdomain.RoleRecruiter)
+	require.NoError(t, err)
+
 	id2, err := svc.ScheduleInterview(ctx, ScheduleInterviewInput{
 		ApplicationID:      appID,
-		InterviewType:      "CULTURE_FIT",
+		InterviewType:      interviewdomain.TypeBehavioral,
 		Format:             interviewdomain.FormatOnsite,
 		ScheduledStartTime: startTime.Add(24 * time.Hour),
 		ScheduledEndTime:   endTime.Add(24 * time.Hour),
 		Location:           "Room 302, Green Wing",
-		Participants: []interviewdomain.Participant{
-			{UserID: interviewerID, Role: "hr_lead"},
-		},
-		ActorID: actorID,
+		Participants:       []interviewdomain.Participant{pHr},
+		ActorID:            actorID,
 	})
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, id2)

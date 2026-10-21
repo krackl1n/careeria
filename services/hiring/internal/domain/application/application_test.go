@@ -60,7 +60,9 @@ func TestJobApplicationLifecycle(t *testing.T) {
 	// From terminal HIRED, cannot transition to any other stage
 	err = app.ChangeStage(StageInterview, actorID, "try again", now)
 	require.ErrorIs(t, err, ErrInvalidStageTransition)
-	err = app.Reject(RejectReason{Code: "reason"}, actorID, now)
+	rejectReason, err := NewRejectReason(RejectCodeOther, "reason")
+	require.NoError(t, err)
+	err = app.Reject(rejectReason, actorID, now)
 	require.ErrorIs(t, err, ErrTerminalStage)
 }
 
@@ -78,7 +80,9 @@ func TestJobApplicationRejectionAndWithdrawal(t *testing.T) {
 		err = app.ChangeStage(StageScreening, actorID, "screening", now)
 		require.NoError(t, err)
 
-		err = app.Reject(RejectReason{Code: "not_qualified", Comment: "Insufficient experience"}, actorID, now)
+		rejectReason, err := NewRejectReason(RejectCodeNotQualified, "Insufficient experience")
+		require.NoError(t, err)
+		err = app.Reject(rejectReason, actorID, now)
 		require.NoError(t, err)
 		require.Equal(t, StageRejected, app.CurrentStage)
 		require.True(t, app.CurrentStage.IsTerminal())

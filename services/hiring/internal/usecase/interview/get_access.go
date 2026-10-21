@@ -44,7 +44,7 @@ func (s *Service) GetMeetingAccess(ctx context.Context, input GetMeetingAccessIn
 		return nil, apperr.Conflict("invalid_status", "interview is not in scheduled status", nil)
 	}
 
-	userRole := "candidate"
+	userRole := interviewdomain.RoleCandidate
 	for _, p := range it.Participants {
 		if p.UserID == input.ActorID {
 			userRole = p.Role

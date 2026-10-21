@@ -88,4 +88,3 @@ func ParseStage(value string) (PipelineStage, error) {
 	}
 	return stage, nil
 }
-

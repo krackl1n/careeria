@@ -15,7 +15,7 @@ import (
 type CreateOfferInput struct {
 	ApplicationID uuid.UUID
 	Compensation  int64
-	Currency      string
+	Currency      offerdomain.Currency
 	Grade         string
 	ExpiresAt     time.Time
 	ActorID       uuid.UUID

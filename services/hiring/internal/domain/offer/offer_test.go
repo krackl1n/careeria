@@ -15,11 +15,11 @@ func TestJobOfferLifecycle(t *testing.T) {
 	expiresAt := now.Add(48 * time.Hour)
 
 	// Invariant: min 24 hours duration
-	_, err := Create(offerID, applicationID, 250000, "RUB", "Senior Go", now.Add(12*time.Hour), now)
+	_, err := Create(offerID, applicationID, 250000, CurrencyRUB, "Senior Go", now.Add(12*time.Hour), now)
 	require.ErrorIs(t, err, ErrInvalidExpiration)
 
 	// Create valid offer
-	of, err := Create(offerID, applicationID, 250000, "RUB", "Senior Go", expiresAt, now)
+	of, err := Create(offerID, applicationID, 250000, CurrencyRUB, "Senior Go", expiresAt, now)
 	require.NoError(t, err)
 	require.Equal(t, StatusDraft, of.Status)
 	require.Equal(t, int64(1), of.Version)
@@ -41,7 +41,7 @@ func TestJobOfferAcceptAndDecline(t *testing.T) {
 	expiresAt := now.Add(48 * time.Hour)
 
 	t.Run("accept offer within validity period", func(t *testing.T) {
-		of, err := Create(uuid.New(), uuid.New(), 300000, "RUB", "Lead Go", expiresAt, now)
+		of, err := Create(uuid.New(), uuid.New(), 300000, CurrencyRUB, "Lead Go", expiresAt, now)
 		require.NoError(t, err)
 
 		err = of.Send(now)
@@ -53,7 +53,7 @@ func TestJobOfferAcceptAndDecline(t *testing.T) {
 	})
 
 	t.Run("decline offer", func(t *testing.T) {
-		of, err := Create(uuid.New(), uuid.New(), 300000, "RUB", "Lead Go", expiresAt, now)
+		of, err := Create(uuid.New(), uuid.New(), 300000, CurrencyRUB, "Lead Go", expiresAt, now)
 		require.NoError(t, err)
 
 		err = of.Send(now)
@@ -65,7 +65,7 @@ func TestJobOfferAcceptAndDecline(t *testing.T) {
 	})
 
 	t.Run("revoke offer", func(t *testing.T) {
-		of, err := Create(uuid.New(), uuid.New(), 300000, "RUB", "Lead Go", expiresAt, now)
+		of, err := Create(uuid.New(), uuid.New(), 300000, CurrencyRUB, "Lead Go", expiresAt, now)
 		require.NoError(t, err)
 
 		err = of.Revoke("Budget frozen", now)

@@ -47,7 +47,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		res, err := strat.Provision(ctx, ProvisionRequest{
 			InterviewID:   interviewID,
 			ApplicationID: appID,
-			InterviewType: "SYSTEM_DESIGN",
+			InterviewType: interviewdomain.TypeSystemDesign,
 			StartTime:     now,
 			EndTime:       now.Add(time.Hour),
 		})
@@ -58,7 +58,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		access, err := strat.GenerateAccess(ctx, AccessRequest{
 			InterviewID: interviewID,
 			UserID:      userID,
-			UserRole:    "candidate",
+			UserRole:    interviewdomain.RoleCandidate,
 			MeetingURL:  res.MeetingURL,
 		})
 		require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		res, err := strat.Provision(ctx, ProvisionRequest{
 			InterviewID:   interviewID,
 			ApplicationID: appID,
-			InterviewType: "BEHAVIORAL",
+			InterviewType: interviewdomain.TypeBehavioral,
 			Location:      "Conference Room Alpha, 2nd floor",
 		})
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		access, err := strat.GenerateAccess(ctx, AccessRequest{
 			InterviewID: interviewID,
 			UserID:      userID,
-			UserRole:    "candidate",
+			UserRole:    interviewdomain.RoleCandidate,
 			MeetingURL:  res.MeetingURL,
 		})
 		require.NoError(t, err)

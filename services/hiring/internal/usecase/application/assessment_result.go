@@ -75,9 +75,12 @@ func (s *Service) HandleAssessmentResult(ctx context.Context, input AssessmentCo
 		})
 	}
 
-	reason := applicationdomain.RejectReason{
-		Code:    "assessment_failed",
-		Comment: fmt.Sprintf("score %d below passing threshold", input.Score),
+	reason, err := applicationdomain.NewRejectReason(
+		applicationdomain.RejectCodeAssessmentFailed,
+		fmt.Sprintf("score %d below passing threshold", input.Score),
+	)
+	if err != nil {
+		return err
 	}
 	if err := app.Reject(reason, input.ActorID, now); err != nil {
 		if errors.Is(err, applicationdomain.ErrTerminalStage) {

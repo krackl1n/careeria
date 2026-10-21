@@ -38,6 +38,17 @@ func New(
 		return nil, ErrEmptyActorID
 	}
 
+	initialTransition, err := NewStageTransition(
+		"",
+		StageApplied,
+		actorID,
+		"application submitted",
+		now,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	app := &JobApplication{
 		ID:           id,
 		VacancyID:    vacancyID,
@@ -47,40 +58,11 @@ func New(
 		CreatedAt:    now,
 		UpdatedAt:    now,
 		History: []StageTransition{
-			{
-				ID:        uuid.New(),
-				FromStage: "",
-				ToStage:   StageApplied,
-				ChangedBy: actorID,
-				ChangedAt: now,
-				Reason:    "application submitted",
-			},
+			initialTransition,
 		},
 	}
 
 	return app, nil
-}
-
-func Reconstitute(
-	id uuid.UUID,
-	vacancyID uuid.UUID,
-	candidateID uuid.UUID,
-	currentStage PipelineStage,
-	version int64,
-	history []StageTransition,
-	createdAt time.Time,
-	updatedAt time.Time,
-) *JobApplication {
-	return &JobApplication{
-		ID:           id,
-		VacancyID:    vacancyID,
-		CandidateID:  candidateID,
-		CurrentStage: currentStage,
-		Version:      version,
-		History:      history,
-		CreatedAt:    createdAt,
-		UpdatedAt:    updatedAt,
-	}
 }
 
 func (a *JobApplication) ChangeStage(
@@ -123,12 +105,7 @@ func (a *JobApplication) Reject(reason RejectReason, actorID uuid.UUID, now time
 		return fmt.Errorf("%w: cannot reject application in stage %s", ErrTerminalStage, a.CurrentStage)
 	}
 
-	comment := reason.Comment
-	if comment == "" && reason.Code != "" {
-		comment = reason.Code
-	}
-
-	return a.ChangeStage(StageRejected, actorID, comment, now)
+	return a.ChangeStage(StageRejected, actorID, reason.EffectiveComment(), now)
 }
 
 func (a *JobApplication) Withdraw(actorID uuid.UUID, reason string, now time.Time) error {
@@ -149,13 +126,9 @@ func (a *JobApplication) addTransition(
 	reason string,
 	now time.Time,
 ) {
-	transition := StageTransition{
-		ID:        uuid.New(),
-		FromStage: a.CurrentStage,
-		ToStage:   to,
-		ChangedBy: by,
-		ChangedAt: now,
-		Reason:    reason,
+	transition, err := NewStageTransition(a.CurrentStage, to, by, reason, now)
+	if err != nil {
+		return
 	}
 
 	a.History = append(a.History, transition)

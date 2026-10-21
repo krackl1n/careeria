@@ -11,7 +11,7 @@ import (
 type ProvisionRequest struct {
 	InterviewID   uuid.UUID
 	ApplicationID uuid.UUID
-	InterviewType string
+	InterviewType interviewdomain.InterviewType
 	StartTime     time.Time
 	EndTime       time.Time
 	Location      string
@@ -25,7 +25,7 @@ type ProvisionResult struct {
 type AccessRequest struct {
 	InterviewID uuid.UUID
 	UserID      uuid.UUID
-	UserRole    string
+	UserRole    interviewdomain.ParticipantRole
 	MeetingURL  string
 }
 

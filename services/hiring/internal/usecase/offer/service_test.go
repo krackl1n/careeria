@@ -146,7 +146,7 @@ func TestOfferService(t *testing.T) {
 	id, err := svc.CreateOffer(ctx, CreateOfferInput{
 		ApplicationID: appID,
 		Compensation:  350000,
-		Currency:      "RUB",
+		Currency:      offerdomain.CurrencyRUB,
 		Grade:         "Principal Engineer",
 		ExpiresAt:     expiresAt,
 		ActorID:       actorID,

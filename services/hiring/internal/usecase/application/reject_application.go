@@ -12,7 +12,7 @@ import (
 
 type RejectInput struct {
 	ApplicationID uuid.UUID
-	ReasonCode    string
+	ReasonCode    applicationdomain.RejectCode
 	Comment       string
 	ActorID       uuid.UUID
 }
@@ -40,9 +40,9 @@ func (s *Service) RejectApplication(ctx context.Context, input RejectInput) erro
 	fromStage := app.CurrentStage
 	now := s.clock.Now().UTC()
 
-	reason := applicationdomain.RejectReason{
-		Code:    input.ReasonCode,
-		Comment: input.Comment,
+	reason, err := applicationdomain.NewRejectReason(input.ReasonCode, input.Comment)
+	if err != nil {
+		return apperr.InvalidArgument("invalid_reject_reason", err.Error(), err)
 	}
 
 	if err := app.Reject(reason, input.ActorID, now); err != nil {

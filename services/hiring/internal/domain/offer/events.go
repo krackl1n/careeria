@@ -22,7 +22,7 @@ type OfferCreatedPayload struct {
 	OfferID       uuid.UUID `json:"offer_id"`
 	ApplicationID uuid.UUID `json:"application_id"`
 	Compensation  int64     `json:"compensation"`
-	Currency      string    `json:"currency"`
+	Currency      Currency  `json:"currency"`
 	Grade         string    `json:"grade"`
 	ExpiresAt     time.Time `json:"expires_at"`
 	CreatedAt     time.Time `json:"created_at"`

@@ -19,7 +19,7 @@ const (
 type InterviewScheduledPayload struct {
 	InterviewID   uuid.UUID     `json:"interview_id"`
 	ApplicationID uuid.UUID     `json:"application_id"`
-	InterviewType string        `json:"interview_type"`
+	InterviewType InterviewType `json:"interview_type"`
 	StartTime     time.Time     `json:"start_time"`
 	EndTime       time.Time     `json:"end_time"`
 	Participants  []Participant `json:"participants"`

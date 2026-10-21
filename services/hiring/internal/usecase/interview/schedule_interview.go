@@ -14,7 +14,7 @@ import (
 
 type ScheduleInterviewInput struct {
 	ApplicationID      uuid.UUID
-	InterviewType      string
+	InterviewType      interviewdomain.InterviewType
 	Format             interviewdomain.MeetingFormat
 	ScheduledStartTime time.Time
 	ScheduledEndTime   time.Time

@@ -14,7 +14,7 @@ type JobOffer struct {
 	ID            uuid.UUID
 	ApplicationID uuid.UUID
 	Compensation  int64
-	Currency      string
+	Currency      Currency
 	Grade         string
 	Status        OfferStatus
 	ExpiresAt     time.Time
@@ -27,7 +27,7 @@ func Create(
 	id uuid.UUID,
 	applicationID uuid.UUID,
 	compensation int64,
-	currency string,
+	currency Currency,
 	grade string,
 	expiresAt time.Time,
 	now time.Time,
@@ -41,8 +41,7 @@ func Create(
 	if compensation <= 0 {
 		return nil, ErrInvalidCompensation
 	}
-	currency = strings.ToUpper(strings.TrimSpace(currency))
-	if len(currency) != 3 {
+	if !currency.Valid() {
 		return nil, ErrInvalidCurrency
 	}
 	grade = strings.TrimSpace(grade)

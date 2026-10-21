@@ -11,7 +11,7 @@ import (
 type Interview struct {
 	ID                 uuid.UUID
 	ApplicationID      uuid.UUID
-	InterviewType      string
+	InterviewType      InterviewType
 	Format             MeetingFormat
 	Status             InterviewStatus
 	ScheduledStartTime time.Time
@@ -27,7 +27,7 @@ type Interview struct {
 func Schedule(
 	id uuid.UUID,
 	applicationID uuid.UUID,
-	interviewType string,
+	interviewType InterviewType,
 	format MeetingFormat,
 	scheduledStartTime time.Time,
 	scheduledEndTime time.Time,
@@ -41,8 +41,8 @@ func Schedule(
 	if applicationID == uuid.Nil {
 		return nil, ErrEmptyApplicationID
 	}
-	if strings.TrimSpace(interviewType) == "" {
-		return nil, ErrEmptyInterviewType
+	if !interviewType.Valid() {
+		return nil, ErrInvalidInterviewType
 	}
 	if !format.Valid() {
 		return nil, ErrInvalidFormat
@@ -61,6 +61,9 @@ func Schedule(
 		if p.UserID == uuid.Nil {
 			return nil, ErrInvalidParticipant
 		}
+		if !p.Role.Valid() {
+			return nil, ErrInvalidParticipantRole
+		}
 	}
 
 	copiedParticipants := make([]Participant, len(participants))
@@ -69,7 +72,7 @@ func Schedule(
 	return &Interview{
 		ID:                 id,
 		ApplicationID:      applicationID,
-		InterviewType:      strings.TrimSpace(interviewType),
+		InterviewType:      interviewType,
 		Format:             format,
 		Status:             StatusScheduled,
 		ScheduledStartTime: scheduledStartTime,
@@ -81,38 +84,6 @@ func Schedule(
 		CreatedAt:          now,
 		UpdatedAt:          now,
 	}, nil
-}
-
-func Reconstitute(
-	id uuid.UUID,
-	applicationID uuid.UUID,
-	interviewType string,
-	format MeetingFormat,
-	status InterviewStatus,
-	scheduledStartTime time.Time,
-	scheduledEndTime time.Time,
-	meetingRoomURL string,
-	participants []Participant,
-	feedbacks []Feedback,
-	version int64,
-	createdAt time.Time,
-	updatedAt time.Time,
-) *Interview {
-	return &Interview{
-		ID:                 id,
-		ApplicationID:      applicationID,
-		InterviewType:      interviewType,
-		Format:             format,
-		Status:             status,
-		ScheduledStartTime: scheduledStartTime,
-		ScheduledEndTime:   scheduledEndTime,
-		MeetingRoomURL:     meetingRoomURL,
-		Participants:       participants,
-		Feedbacks:          feedbacks,
-		Version:            version,
-		CreatedAt:          createdAt,
-		UpdatedAt:          updatedAt,
-	}
 }
 
 func (i *Interview) SetMeetingRoomURL(url string, now time.Time) {
@@ -155,6 +126,9 @@ func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 	isParticipant := false
 	for _, p := range i.Participants {
 		if p.UserID == feedback.InterviewerUserID {
+			if !p.Role.CanEvaluate() {
+				return ErrParticipantCannotEvaluate
+			}
 			isParticipant = true
 			break
 		}

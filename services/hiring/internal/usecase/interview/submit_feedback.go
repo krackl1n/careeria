@@ -38,11 +38,9 @@ func (s *Service) SubmitFeedback(ctx context.Context, input SubmitFeedbackInput)
 	}
 
 	now := s.clock.Now().UTC()
-	feedback := interviewdomain.Feedback{
-		InterviewerUserID: input.InterviewerUserID,
-		Score:             input.Score,
-		Notes:             input.Notes,
-		SubmittedAt:       now,
+	feedback, err := interviewdomain.NewFeedback(input.InterviewerUserID, input.Score, input.Notes, now)
+	if err != nil {
+		return apperr.InvalidArgument("invalid_feedback", err.Error(), err)
 	}
 
 	if err := it.SubmitFeedback(feedback, now); err != nil {

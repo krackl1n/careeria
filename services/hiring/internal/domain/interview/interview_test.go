@@ -14,20 +14,24 @@ func TestInterviewLifecycle(t *testing.T) {
 	applicationID := uuid.New()
 	interviewer1 := uuid.New()
 	interviewer2 := uuid.New()
+	observer := uuid.New()
 
 	startTime := now.Add(2 * time.Hour)
 	endTime := startTime.Add(time.Hour)
 
-	participants := []Participant{
-		{UserID: interviewer1, Role: "tech_lead"},
-		{UserID: interviewer2, Role: "senior_dev"},
-	}
+	p1, err := NewParticipant(interviewer1, RoleLeadInterviewer)
+	require.NoError(t, err)
+	p2, err := NewParticipant(interviewer2, RoleInterviewer)
+	require.NoError(t, err)
+	pObs, err := NewParticipant(observer, RoleObserver)
+	require.NoError(t, err)
 
-	// Schedule interview
+	participants := []Participant{p1, p2, pObs}
+
 	it, err := Schedule(
 		interviewID,
 		applicationID,
-		"TECHNICAL",
+		TypeTechnical,
 		FormatOnlineLiveKit,
 		startTime,
 		endTime,
@@ -40,11 +44,10 @@ func TestInterviewLifecycle(t *testing.T) {
 	require.Equal(t, StatusScheduled, it.Status)
 	require.Equal(t, int64(1), it.Version)
 
-	// Validate cannot schedule in the past
 	_, err = Schedule(
 		uuid.New(),
 		applicationID,
-		"HR",
+		TypeScreening,
 		FormatOnlineLiveKit,
 		now.Add(-time.Hour),
 		now,
@@ -54,38 +57,30 @@ func TestInterviewLifecycle(t *testing.T) {
 	)
 	require.ErrorIs(t, err, ErrStartInPast)
 
-	// Validate cannot submit feedback from non-participant
-	err = it.SubmitFeedback(Feedback{
-		InterviewerUserID: uuid.New(),
-		Score:             5,
-		Notes:             "Super candidate",
-	}, now)
+	fbNonParticipant, err := NewFeedback(uuid.New(), 5, "Super candidate", now)
+	require.NoError(t, err)
+	err = it.SubmitFeedback(fbNonParticipant, now)
 	require.ErrorIs(t, err, ErrNotParticipant)
 
-	// Submit valid feedback
-	err = it.SubmitFeedback(Feedback{
-		InterviewerUserID: interviewer1,
-		Score:             4,
-		Notes:             "Good knowledge of Go and system design",
-	}, now)
+	fbObserver, err := NewFeedback(observer, 4, "Notes from observer", now)
+	require.NoError(t, err)
+	err = it.SubmitFeedback(fbObserver, now)
+	require.ErrorIs(t, err, ErrParticipantCannotEvaluate)
+
+	fbValid, err := NewFeedback(interviewer1, 4, "Good knowledge of Go and system design", now)
+	require.NoError(t, err)
+	err = it.SubmitFeedback(fbValid, now)
 	require.NoError(t, err)
 	require.Len(t, it.Feedbacks, 1)
 	require.Equal(t, int64(2), it.Version)
 
-	// Forbid duplicate feedback
-	err = it.SubmitFeedback(Feedback{
-		InterviewerUserID: interviewer1,
-		Score:             5,
-		Notes:             "Changed mind",
-	}, now)
+	err = it.SubmitFeedback(fbValid, now)
 	require.ErrorIs(t, err, ErrFeedbackAlreadySubmitted)
 
-	// Complete interview
 	err = it.Complete(now.Add(3 * time.Hour))
 	require.NoError(t, err)
 	require.Equal(t, StatusCompleted, it.Status)
 
-	// Check summary projection
 	summary := it.ToSummary()
 	require.Equal(t, interviewID, summary.InterviewID)
 	require.Equal(t, StatusCompleted, summary.Status)
@@ -98,14 +93,17 @@ func TestInterviewCancellation(t *testing.T) {
 	startTime := now.Add(2 * time.Hour)
 	endTime := startTime.Add(time.Hour)
 
+	recruiter, err := NewParticipant(uuid.New(), RoleRecruiter)
+	require.NoError(t, err)
+
 	it, err := Schedule(
 		uuid.New(),
 		uuid.New(),
-		"BEHAVIORAL",
+		TypeBehavioral,
 		FormatOnsite,
 		startTime,
 		endTime,
-		[]Participant{{UserID: uuid.New(), Role: "recruiter"}},
+		[]Participant{recruiter},
 		"Office Moscow, Room 101",
 		now,
 	)
@@ -115,9 +113,8 @@ func TestInterviewCancellation(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, StatusCancelled, it.Status)
 
-	err = it.SubmitFeedback(Feedback{
-		InterviewerUserID: it.Participants[0].UserID,
-		Score:             3,
-	}, now)
+	fb, err := NewFeedback(recruiter.UserID, 3, "", now)
+	require.NoError(t, err)
+	err = it.SubmitFeedback(fb, now)
 	require.ErrorIs(t, err, ErrInterviewCancelled)
 }
