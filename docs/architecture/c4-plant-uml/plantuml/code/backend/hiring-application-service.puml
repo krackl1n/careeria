@@ -20,17 +20,22 @@ package "Component: Application Service (Hiring Domain)" {
     package "Application Layer" {
         class HiringApplicationService <<Application Service>> {
             - appRepo: ApplicationRepository
-            - interviewSummaryRepo: InterviewSummaryRepository
+            - interviewSum: InterviewSummaryRepository
             - outboxRepo: OutboxRepository
             - authPort: AuthorizationPort
             - offerPolicy: OfferEligibilityPolicy
+            - txManager: TransactionManager
+            - eventFactory: Factory
+            - clock: Clock
+            - idGen: IDGenerator
             + ApplyVacancy(ctx: Context, input: ApplyVacancyInput): UUID
-            + PromoteToInterview(ctx: Context, input: PromoteInput): error
-            + InitiateOffer(ctx: Context, input: InitiateOfferInput): error
+            + ChangeStage(ctx: Context, input: ChangeStageInput): error
+            + GetApplication(ctx: Context, appID: UUID, actorID: UUID): JobApplication
+            + GetPipelineHistory(ctx: Context, appID: UUID, actorID: UUID): PipelineHistoryOutput
+            + HandleAssessmentResult(ctx: Context, input: AssessmentCompletedInput): error
+            + PromoteToInterview(ctx: Context, appID: UUID, actorID: UUID, reason: string): error
             + RejectApplication(ctx: Context, input: RejectInput): error
             + WithdrawApplication(ctx: Context, input: WithdrawInput): error
-            + HandleAssessmentResult(ctx: Context, event: AssessmentCompletedEvent): error
-            + GetPipelineHistory(ctx: Context, appID: UUID): PipelineHistoryOutput
         }
     }
 
@@ -38,55 +43,38 @@ package "Component: Application Service (Hiring Domain)" {
     ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
     ' ===================================================
     package "Domain Layer" {
-        
-        ' Агрегат отклика (только свои данные)
+
         class JobApplication <<Aggregate Root>> {
-            - id: UUID
-            - vacancyID: UUID
-            - candidateID: UUID
-            - currentStage: PipelineStage
-            - version: int
-            - history: List<StageTransition>
-            + MarkInterview(actorID: UUID, comment: string): error
-            + MarkOfferPending(actorID: UUID): error
-            + Reject(reason: RejectReason, actorID: UUID): error
-            + Withdraw(actorID: UUID): error
-            + AdvanceFromAssessment(score: int): error
-            - canTransitionTo(target: PipelineStage): bool
-            - addTransition(to: PipelineStage, by: UUID, comment: string)
+            + ID: UUID
+            + VacancyID: UUID
+            + CandidateID: UUID
+            + CurrentStage: PipelineStage
+            + Version: int
+            + History: List<StageTransition>
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+            + ChangeStage(targetStage: PipelineStage, actorID: UUID, reason: string, now: Timestamp): error
+            + MarkInterview(actorID: UUID, comment: string, now: Timestamp): error
+            + MarkOfferPending(actorID: UUID, now: Timestamp): error
+            + AdvanceFromAssessment(score: int, actorID: UUID, now: Timestamp): error
+            + Reject(reason: RejectReason, actorID: UUID, now: Timestamp): error
+            + Withdraw(actorID: UUID, reason: string, now: Timestamp): error
+            - addTransition(to: PipelineStage, by: UUID, reason: string, now: Timestamp): void
         }
-
-        ' Отдельный доменный объект / проекция интервью
-        class InterviewSummary <<Domain Model / Projection>> {
-            + interviewID: UUID
-            + applicationID: UUID
-            + stage: string
-            + status: InterviewStatus
-            + hasFeedback: bool
-            + score: int
-            + completedAt: Timestamp
-        }
-
-        ' Чистая межагрегатная политика: связывает отклик и проекцию интервью
-        class OfferEligibilityPolicy <<Domain Policy>> {
-            + CanInitiateOffer(app: JobApplication, interviews: List<InterviewSummary>): error
-        }
-
-        note right of OfferEligibilityPolicy
-          Чистое бизнес-правило:
-          - Проверяет текущую стадию отклика (INTERVIEW)
-          - Проверяет переданную коллекцию interviews:
-            наличие COMPLETED с фидбеком.
-          Никакого I/O внутри политики!
-        end note
 
         class StageTransition <<Entity>> {
-            - id: UUID
-            - fromStage: PipelineStage
-            - toStage: PipelineStage
-            - changedBy: UUID
-            - changedAt: Timestamp
-            - comment: string
+            + ID: UUID
+            + FromStage: PipelineStage
+            + ToStage: PipelineStage
+            + ChangedBy: UUID
+            + ChangedAt: Timestamp
+            + Reason: string
+            + IsInitial(): bool
+            + IsTerminal(): bool
+        }
+
+        class OfferEligibilityPolicy <<Domain Policy>> {
+            + CanInitiateOffer(app: JobApplication, interviews: List<InterviewSummary>): error
         }
 
         enum PipelineStage <<enumeration>> {
@@ -101,10 +89,22 @@ package "Component: Application Service (Hiring Domain)" {
             WITHDRAWN
         }
 
-        class RejectReason <<Value Object>> {
-            + code: string
-            + comment: string
+        enum RejectCode <<enumeration>> {
+            NOT_QUALIFIED
+            ASSESSMENT_FAILED
+            CULTURE_MISMATCH
+            CANDIDATE_WITHDREW
+            VACANCY_CLOSED
+            OVERQUALIFIED
+            OTHER
         }
+
+        class RejectReason <<Value Object>> {
+            + Code: RejectCode
+            + Comment: string
+            + EffectiveComment(): string
+        }
+
     }
 
     ' ===================================================
@@ -112,45 +112,48 @@ package "Component: Application Service (Hiring Domain)" {
     ' ===================================================
     package "External Contracts (Ports & Repositories)" {
         interface ApplicationRepository <<interface>> {
-            + FindByID(ctx: Context, id: UUID): JobApplication
-            + Save(ctx: Context, app: JobApplication): error
+            + Create(ctx: Context, app: JobApplication): error
+            + Update(ctx: Context, app: JobApplication): error
+            + GetByID(ctx: Context, id: UUID): JobApplication
+            + GetActiveByCandidateAndVacancy(ctx: Context, candidateID: UUID, vacancyID: UUID): JobApplication
         }
-
+        interface AuthorizationPort <<interface>> {
+            + CanApplyVacancy(ctx: Context, actorID: UUID, vacancyID: UUID): error
+            + CanManageApplication(ctx: Context, actorID: UUID, appID: UUID): error
+        }
         interface InterviewSummaryRepository <<interface>> {
             + FindByApplicationID(ctx: Context, appID: UUID): List<InterviewSummary>
         }
-
         interface OutboxRepository <<interface>> {
-            + SaveEvent(ctx: Context, event: OutboxMessage): error
-        }
-
-        interface AuthorizationPort <<interface>> {
-            + CanManageStage(ctx: Context, actorID: UUID, appID: UUID): error
+            + Save(ctx: Context, message: Message): error
         }
     }
 }
 
 ' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+"Application Layer" -[hidden]down-> "Domain Layer"
+
+HiringApplicationService -[hidden]right-> ApplicationRepository
+ApplicationRepository -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> InterviewSummaryRepository
+InterviewSummaryRepository -[hidden]down-> OutboxRepository
+
+' ========================================================
 ' СВЯЗИ
 ' ========================================================
 
-' Сервис оркестрирует сценарий
 HiringApplicationService ..> JobApplication : commands mutation
-HiringApplicationService --> OfferEligibilityPolicy : executes rule
-
-' Сервис загружает оба объекта и передает их в политику
+HiringApplicationService -right-> ApplicationRepository : uses
+HiringApplicationService --> AuthorizationPort : uses
+HiringApplicationService --> InterviewSummaryRepository : uses
+HiringApplicationService --> OutboxRepository : uses
+JobApplication *-- "*" StageTransition : owns
+JobApplication *-- "1" PipelineStage
+JobApplication *-- "1" RejectCode
+HiringApplicationService --> OfferEligibilityPolicy : executes policy
 OfferEligibilityPolicy ..> JobApplication : evaluates
-OfferEligibilityPolicy ..> InterviewSummary : evaluates
-
-' Агрегат владеет ТОЛЬКО своей историей и перечислениями
-JobApplication *-- "1..*" StageTransition : records history
-JobApplication *-- "1" PipelineStage : current stage
-JobApplication ..> RejectReason : uses on reject
-
-' Контракты сервиса для загрузки и сохранения
-HiringApplicationService --> ApplicationRepository : persists application
-HiringApplicationService --> InterviewSummaryRepository : queries interview projection
-HiringApplicationService --> OutboxRepository : records domain events
-HiringApplicationService --> AuthorizationPort : checks access
 
 @enduml

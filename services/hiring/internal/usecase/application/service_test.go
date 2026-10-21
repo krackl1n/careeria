@@ -160,7 +160,12 @@ func TestApplicationService(t *testing.T) {
 	err = svc.PromoteToInterview(ctx, appID, operatorID, "screening approved")
 	require.NoError(t, err)
 
-	err = svc.InitiateOffer(ctx, appID, operatorID, "all interviews completed")
+	err = svc.ChangeStage(ctx, ChangeStageInput{
+		ApplicationID: appID,
+		TargetStage:   applicationdomain.StageOfferPending,
+		ActorID:       operatorID,
+		Reason:        "all interviews completed",
+	})
 	require.Error(t, err)
 
 	intSumRepo.summaries[appID] = []interviewdomain.InterviewSummary{
@@ -172,7 +177,12 @@ func TestApplicationService(t *testing.T) {
 		},
 	}
 
-	err = svc.InitiateOffer(ctx, appID, operatorID, "all interviews completed")
+	err = svc.ChangeStage(ctx, ChangeStageInput{
+		ApplicationID: appID,
+		TargetStage:   applicationdomain.StageOfferPending,
+		ActorID:       operatorID,
+		Reason:        "all interviews completed",
+	})
 	require.NoError(t, err)
 
 	history, err := svc.GetPipelineHistory(ctx, appID, operatorID)

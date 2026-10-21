@@ -328,9 +328,10 @@ func normalizeDefault(schema map[string]any) {
 
 	switch schema["type"] {
 	case "boolean":
-		if defaultValue == "true" {
+		switch defaultValue {
+		case "true":
 			schema["default"] = true
-		} else if defaultValue == "false" {
+		case "false":
 			schema["default"] = false
 		}
 	}

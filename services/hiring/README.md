@@ -116,10 +116,14 @@ type MeetingRoomStrategy interface {
 
 ## 4. Взаимодействие сервисов (Service-to-Service)
 
-### 4.1. Внутрипроцессные координаторы (In-Process)
-Подсервисы `Application`, `Interview` и `Offer` скомпонованы в один процесс, но изолированы интерфейсными портами:
-* **`ApplicationCoordinator`**: вызывается из `Offer Service` при акцепте или отклонении оффера для продвижения или отката стадии заявки (`AdvanceToOfferAccepted`, `RevertToInterview`).
-* **`ApplicationStageChecker`**: вызывается из `Interview Service` для проверки допустимости планирования собеседования для текущей стадии отклика.
+### 4.1. Внутрипроцессная координация и атомарность (In-Process ACID)
+Подсервисы `Application`, `Interview` и `Offer` скомпонованы в один процесс сервиса `hiring`. Взаимодействие между агрегатами происходит напрямую через репозитории и доменные методы внутри единой транзакции базы данных (`txManager.Do`):
+* **`Offer Service` $\leftrightarrow$ `JobApplication`**:
+  * **Создание оффера (`CreateOffer`)**: если заявка находится в стадии `INTERVIEW`, агрегат переводится в `OFFER_PENDING` и сохраняется в `appRepo` атомарно с созданием черновика оффера. Больше нет необходимости вручную вызывать отдельный шаг инициации.
+  * **Принятие оффера (`AcceptOffer`)**: оффер переходит в статус `ACCEPTED`, а заявка переводится в стадию `OFFER_ACCEPTED` в рамках одной транзакции БД с генерацией Outbox-события.
+  * **Отклонение или отзыв (`DeclineOffer`, `RevokeOffer`)**: оффер переводится в `DECLINED` или `REVOKED`, а заявка откатывается обратно в стадию `INTERVIEW` в той же транзакции.
+* **`Interview Service` $\leftrightarrow$ `JobApplication`**:
+  * Вызывается порт `ApplicationStageChecker` для проверки допустимости планирования собеседования для текущей стадии отклика.
 
 ### 4.2. Межсервисное взаимодействие (Platform-wide)
 * **Синхронные внешние вызовы**: только инфраструктурные зависимости:
@@ -162,12 +166,12 @@ services/hiring/
 │   │   └── policy/                  # Межагрегатные политики (OfferEligibilityPolicy)
 │   ├── transport/                   # gRPC сервер, хэндлеры, маппинг ошибок
 │   │   └── grpc/
-│   └── usecase/                     # Сценарии приложения (оркестрация I/O)
-│       ├── application/             # ApplyVacancy, ChangeStage, Reject, Withdraw, PipelineHistory
-│       ├── conference/              # Клиент конференций
-│       ├── interview/               # ScheduleInterview, SubmitFeedback, Complete, Cancel, GetAccess
-│       │   └── room/                # Стратегии комнат (MeetingRoomStrategy, LiveKit, Onsite, Registry)
-│       └── offer/                   # CreateOffer, SendOffer, AcceptOffer, Decline, Revoke, Expire
+│   └── usecase/                     # Сценарии приложения (один сценарий = один файл)
+│       ├── application/             # apply.go, change_stage.go, assessment_result.go, promote.go, initiate_offer.go, reject.go, withdraw.go, get.go, history.go
+│       ├── conference/              # service.go (клиент конференций)
+│       ├── interview/               # schedule.go, complete.go, cancel.go, submit_feedback.go, get.go, get_access.go
+│       │   └── room/                # strategy.go, registry.go, livekit.go, onsite.go
+│       └── offer/                   # create.go, send.go, accept.go, decline.go, revoke.go, expire.go, get.go
 └── README.md                        # Данная документация
 ```
 

@@ -42,7 +42,7 @@ func TestOptionalAuthenticationSkipsRequestWithoutBearerToken(t *testing.T) {
 	require.Zero(t, authenticator.calls)
 }
 
-func TestOptionalAuthenticationAuthenticatesBearerAndPreservesTenantHeader(t *testing.T) {
+func TestOptionalAuthenticationAuthenticatesBearer(t *testing.T) {
 	authenticator := &authenticatorStub{principal: ctxmeta.Principal{SubjectID: "user-1"}}
 	called := false
 
@@ -52,13 +52,11 @@ func TestOptionalAuthenticationAuthenticatesBearerAndPreservesTenantHeader(t *te
 		principal, ok := ctxmeta.PrincipalFromContext(request.Context())
 		require.True(t, ok)
 		require.Equal(t, "user-1", principal.SubjectID)
-		require.Equal(t, "tenant-1", request.Header.Get("X-Tenant-ID"))
 		writer.WriteHeader(http.StatusNoContent)
 	})
 
 	request := httptest.NewRequest(http.MethodGet, "/oauth2/userinfo", nil)
 	request.Header.Set("Authorization", "Bearer token")
-	request.Header.Set("X-Tenant-ID", "tenant-1")
 	recorder := httptest.NewRecorder()
 	next(recorder, request, nil)
 

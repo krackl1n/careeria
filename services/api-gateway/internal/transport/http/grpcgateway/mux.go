@@ -77,7 +77,7 @@ func registerIdentity(ctx context.Context, mux *gatewayruntime.ServeMux, clients
 
 func incomingHeaderMatcher(key string) (string, bool) {
 	switch strings.ToLower(key) {
-	case "authorization", "cookie", "x-tenant-id":
+	case "authorization", "cookie":
 		return strings.ToLower(key), true
 	default:
 		return gatewayruntime.DefaultHeaderMatcher(key)

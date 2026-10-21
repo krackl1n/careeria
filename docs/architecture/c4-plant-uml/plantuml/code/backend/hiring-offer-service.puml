@@ -1,0 +1,132 @@
+@startuml hiring-offer-service-l4
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Offer Service (Hiring Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class HiringOfferService <<Application Service>> {
+            - offerRepo: OfferRepository
+            - appRepo: ApplicationRepository
+            - outboxRepo: OutboxRepository
+            - authPort: AuthorizationPort
+            - txManager: TransactionManager
+            - eventFactory: Factory
+            - clock: Clock
+            - idGen: IDGenerator
+            + AcceptOffer(ctx: Context, input: AcceptOfferInput): error
+            + CreateOffer(ctx: Context, input: CreateOfferInput): UUID
+            + DeclineOffer(ctx: Context, input: DeclineOfferInput): error
+            + ExpireOffer(ctx: Context, offerID: UUID): error
+            + GetOffer(ctx: Context, offerID: UUID, actorID: UUID): JobOffer
+            + GetOfferByApplication(ctx: Context, appID: UUID, actorID: UUID): JobOffer
+            + RevokeOffer(ctx: Context, input: RevokeOfferInput): error
+            + SendOffer(ctx: Context, input: SendOfferInput): error
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+
+        class JobOffer <<Aggregate Root>> {
+            + ID: UUID
+            + ApplicationID: UUID
+            + Compensation: int
+            + Currency: Currency
+            + Grade: string
+            + Status: OfferStatus
+            + ExpiresAt: Timestamp
+            + Version: int
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+            + IsExpired(now: Timestamp): bool
+            + Send(now: Timestamp): error
+            + Accept(now: Timestamp): error
+            + Decline(reason: string, now: Timestamp): error
+            + Revoke(reason: string, now: Timestamp): error
+            + Expire(now: Timestamp): error
+        }
+
+        enum Currency <<enumeration>> {
+            RUB
+            USD
+            EUR
+            CNY
+            KZT
+            BYN
+        }
+
+        enum OfferStatus <<enumeration>> {
+            DRAFT
+            SENT
+            ACCEPTED
+            DECLINED
+            EXPIRED
+            REVOKED
+        }
+
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface ApplicationRepository <<interface>> {
+            + GetByID(ctx: Context, id: UUID): JobApplication
+            + Update(ctx: Context, app: JobApplication): error
+        }
+        interface AuthorizationPort <<interface>> {
+            + CanManageOffer(ctx: Context, actorID: UUID, appID: UUID): error
+            + CanRespondToOffer(ctx: Context, actorID: UUID, appID: UUID): error
+        }
+        interface OfferRepository <<interface>> {
+            + Create(ctx: Context, offer: JobOffer): error
+            + Update(ctx: Context, offer: JobOffer): error
+            + GetByID(ctx: Context, id: UUID): JobOffer
+            + GetByApplicationID(ctx: Context, appID: UUID): JobOffer
+        }
+        interface OutboxRepository <<interface>> {
+            + Save(ctx: Context, message: Message): error
+        }
+    }
+}
+
+' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+"Application Layer" -[hidden]down-> "Domain Layer"
+
+HiringOfferService -[hidden]right-> ApplicationRepository
+ApplicationRepository -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> OfferRepository
+OfferRepository -[hidden]down-> OutboxRepository
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+HiringOfferService ..> JobOffer : commands mutation
+HiringOfferService -right-> ApplicationRepository : uses
+HiringOfferService --> AuthorizationPort : uses
+HiringOfferService --> OfferRepository : uses
+HiringOfferService --> OutboxRepository : uses
+JobOffer *-- "1" Currency
+JobOffer *-- "1" OfferStatus
+
+@enduml

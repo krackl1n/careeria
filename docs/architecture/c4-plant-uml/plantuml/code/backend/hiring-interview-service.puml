@@ -1,0 +1,206 @@
+@startuml hiring-interview-service-l4
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Interview Service (Hiring Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class HiringInterviewService <<Application Service>> {
+            - interviewRepo: InterviewRepository
+            - appChecker: ApplicationStageChecker
+            - roomRegistry: Registry
+            - outboxRepo: OutboxRepository
+            - authPort: AuthorizationPort
+            - txManager: TransactionManager
+            - eventFactory: Factory
+            - clock: Clock
+            - idGen: IDGenerator
+            + CancelInterview(ctx: Context, input: CancelInterviewInput): error
+            + CompleteInterview(ctx: Context, input: CompleteInterviewInput): error
+            + GetInterview(ctx: Context, interviewID: UUID, actorID: UUID): Interview
+            + GetMeetingAccess(ctx: Context, input: GetMeetingAccessInput): MeetingAccessOutput
+            + ListInterviewsByApplication(ctx: Context, appID: UUID, actorID: UUID): List<Interview>
+            + ScheduleInterview(ctx: Context, input: ScheduleInterviewInput): UUID
+            + SubmitFeedback(ctx: Context, input: SubmitFeedbackInput): error
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+
+        class Interview <<Aggregate Root>> {
+            + ID: UUID
+            + ApplicationID: UUID
+            + InterviewType: InterviewType
+            + Format: MeetingFormat
+            + Status: InterviewStatus
+            + ScheduledStartTime: Timestamp
+            + ScheduledEndTime: Timestamp
+            + MeetingRoomURL: string
+            + Participants: List<Participant>
+            + Feedbacks: List<Feedback>
+            + Version: int
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+            + SetMeetingRoomURL(url: string, now: Timestamp): void
+            + Complete(now: Timestamp): error
+            + Cancel(reason: string, now: Timestamp): error
+            + SubmitFeedback(feedback: Feedback, now: Timestamp): error
+            + ToSummary(): InterviewSummary
+        }
+
+        class Feedback <<Entity>> {
+            + InterviewerUserID: UUID
+            + Score: int
+            + Notes: string
+            + SubmittedAt: Timestamp
+            + IsPassing(): bool
+            + IsStrongPass(): bool
+            + Validate(): error
+        }
+
+        class Participant <<Entity>> {
+            + UserID: UUID
+            + Role: ParticipantRole
+            + IsInterviewer(): bool
+        }
+
+        interface ConferenceClient <<Domain Strategy>> {
+            + CreateRoom(ctx: Context, roomName: string): string
+            + EndRoom(ctx: Context, roomName: string): error
+        }
+
+        interface Registry <<Domain Strategy>> {
+            + Get(format: MeetingFormat): MeetingRoomStrategy
+            + Register(strategy: MeetingRoomStrategy): void
+        }
+
+        interface MeetingRoomStrategy <<Domain Strategy>> {
+            + Format(): MeetingFormat
+            + Provision(ctx: Context, req: ProvisionRequest): ProvisionResult
+            + GenerateAccess(ctx: Context, req: AccessRequest): AccessResult
+            + Teardown(ctx: Context, req: TeardownRequest): error
+        }
+
+        together {
+            class LiveKitStrategy <<Domain Strategy>> {
+            }
+            class OnsiteStrategy <<Domain Strategy>> {
+            }
+        }
+
+        enum InterviewStatus <<enumeration>> {
+            SCHEDULED
+            COMPLETED
+            CANCELLED
+        }
+
+        enum InterviewType <<enumeration>> {
+            SCREENING
+            TECHNICAL
+            SYSTEM_DESIGN
+            BEHAVIORAL
+            BAR_RAISER
+            EXECUTIVE
+        }
+
+        enum MeetingFormat <<enumeration>> {
+            ONLINE_LIVEKIT
+            ONSITE
+            EXTERNAL_LINK
+        }
+
+        enum ParticipantRole <<enumeration>> {
+            LEAD_INTERVIEWER
+            INTERVIEWER
+            HIRING_MANAGER
+            RECRUITER
+            BAR_RAISER
+            OBSERVER
+            CANDIDATE
+        }
+
+        class InterviewSummary <<Value Object>> {
+            + InterviewID: UUID
+            + ApplicationID: UUID
+            + Stage: InterviewType
+            + Status: InterviewStatus
+            + HasFeedback: bool
+            + Score: int
+            + CompletedAt: Timestamp
+        }
+
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface ApplicationStageChecker <<interface>> {
+            + GetStage(ctx: Context, appID: UUID): PipelineStage
+        }
+        interface AuthorizationPort <<interface>> {
+            + CanManageInterview(ctx: Context, actorID: UUID, appID: UUID): error
+            + CanSubmitFeedback(ctx: Context, actorID: UUID, interviewID: UUID): error
+        }
+        interface InterviewRepository <<interface>> {
+            + Create(ctx: Context, it: Interview): error
+            + Update(ctx: Context, it: Interview): error
+            + GetByID(ctx: Context, id: UUID): Interview
+            + ListByApplicationID(ctx: Context, appID: UUID): List<Interview>
+        }
+        interface OutboxRepository <<interface>> {
+            + Save(ctx: Context, message: Message): error
+        }
+    }
+}
+
+' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+"Application Layer" -[hidden]down-> "Domain Layer"
+
+HiringInterviewService -[hidden]right-> ApplicationStageChecker
+ApplicationStageChecker -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> InterviewRepository
+InterviewRepository -[hidden]down-> OutboxRepository
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+HiringInterviewService ..> Interview : commands mutation
+HiringInterviewService -right-> ApplicationStageChecker : uses
+HiringInterviewService --> AuthorizationPort : uses
+HiringInterviewService --> InterviewRepository : uses
+HiringInterviewService --> OutboxRepository : uses
+Interview *-- "*" Feedback : owns
+Interview *-- "*" Participant : owns
+Interview *-- "1" InterviewStatus
+Interview *-- "1" InterviewType
+Interview *-- "1" MeetingFormat
+Interview *-- "1" ParticipantRole
+LiveKitStrategy ..|> ConferenceClient : implements
+OnsiteStrategy ..|> ConferenceClient : implements
+LiveKitStrategy ..|> Registry : implements
+OnsiteStrategy ..|> Registry : implements
+LiveKitStrategy ..|> MeetingRoomStrategy : implements
+OnsiteStrategy ..|> MeetingRoomStrategy : implements
+
+@enduml

@@ -300,6 +300,9 @@ plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagram
 	@PLANTUML_VERSION="$(PLANTUML_VERSION)" PLANTUML_IMAGE="$(PLANTUML_IMAGE)" PLANTUML_JAR="$(PLANTUML_JAR)" \
 		./docs/tools/plantuml.sh validate $(PLANTUML_ARCHITECTURE_SOURCES)
 
+c4-l4-generate: ## Generate C4 Level 4 PlantUML and Markdown specs from Go domain code.
+	@$(GO) run ./packages/go/contracts/cmd/c4gen -config docs/architecture/c4-l4.yaml
+
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway
 

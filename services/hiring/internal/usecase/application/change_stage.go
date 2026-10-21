@@ -104,21 +104,3 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 	})
 }
 
-func (s *Service) PromoteToInterview(ctx context.Context, appID, actorID uuid.UUID, reason string) error {
-	return s.ChangeStage(ctx, ChangeStageInput{
-		ApplicationID: appID,
-		TargetStage:   applicationdomain.StageInterview,
-		ActorID:       actorID,
-		Reason:        reason,
-	})
-}
-
-func (s *Service) InitiateOffer(ctx context.Context, appID, actorID uuid.UUID, reason string) error {
-	return s.ChangeStage(ctx, ChangeStageInput{
-		ApplicationID: appID,
-		TargetStage:   applicationdomain.StageOfferPending,
-		ActorID:       actorID,
-		Reason:        reason,
-	})
-}
-

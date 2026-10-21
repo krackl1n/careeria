@@ -47,28 +47,24 @@ func (m *mockOfferRepo) GetByApplicationID(_ context.Context, appID uuid.UUID) (
 	return nil, offerdomain.ErrNotFound
 }
 
-type mockAppCoordinator struct {
-	app              *applicationdomain.JobApplication
-	advanceCalled    bool
-	revertCalled     bool
-	lastRevertReason string
+type mockAppRepo struct {
+	apps map[uuid.UUID]*applicationdomain.JobApplication
 }
 
-func (m *mockAppCoordinator) GetApplication(_ context.Context, _ uuid.UUID) (*applicationdomain.JobApplication, error) {
-	if m.app == nil {
+func newMockAppRepo() *mockAppRepo {
+	return &mockAppRepo{apps: make(map[uuid.UUID]*applicationdomain.JobApplication)}
+}
+
+func (m *mockAppRepo) GetByID(_ context.Context, id uuid.UUID) (*applicationdomain.JobApplication, error) {
+	app, ok := m.apps[id]
+	if !ok {
 		return nil, applicationdomain.ErrNotFound
 	}
-	return m.app, nil
+	return app, nil
 }
 
-func (m *mockAppCoordinator) AdvanceToOfferAccepted(_ context.Context, _ uuid.UUID, _ uuid.UUID, _ time.Time) error {
-	m.advanceCalled = true
-	return nil
-}
-
-func (m *mockAppCoordinator) RevertToInterview(_ context.Context, _ uuid.UUID, _ uuid.UUID, reason string, _ time.Time) error {
-	m.revertCalled = true
-	m.lastRevertReason = reason
+func (m *mockAppRepo) Update(_ context.Context, app *applicationdomain.JobApplication) error {
+	m.apps[app.ID] = app
 	return nil
 }
 
@@ -135,11 +131,11 @@ func TestOfferService(t *testing.T) {
 
 	_ = app.ChangeStage(applicationdomain.StageScreening, actorID, "screening", now)
 	_ = app.MarkInterview(actorID, "interview", now)
-	_ = app.MarkOfferPending(actorID, now)
 
-	appCoord := &mockAppCoordinator{app: app}
+	appRepo := newMockAppRepo()
+	appRepo.apps[appID] = app
 
-	svc := NewService(offerRepo, appCoord, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
+	svc := NewService(offerRepo, appRepo, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
 
 	expiresAt := now.Add(72 * time.Hour)
 
@@ -153,6 +149,7 @@ func TestOfferService(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, offerID, id)
+	require.Equal(t, applicationdomain.StageOfferPending, app.CurrentStage)
 	require.Len(t, outboxRepo.messages, 1)
 
 	err = svc.SendOffer(ctx, SendOfferInput{
@@ -167,11 +164,70 @@ func TestOfferService(t *testing.T) {
 		ActorID: candidateID,
 	})
 	require.NoError(t, err)
-	require.True(t, appCoord.advanceCalled)
+	require.Equal(t, applicationdomain.StageOfferAccepted, app.CurrentStage)
 	require.Len(t, outboxRepo.messages, 3)
 
 	of, err := svc.GetOffer(ctx, offerID, actorID)
 	require.NoError(t, err)
 	require.Equal(t, offerdomain.StatusAccepted, of.Status)
+
+	// Test Decline
+	app2, err := applicationdomain.New(uuid.New(), uuid.New(), candidateID, actorID, now)
+	require.NoError(t, err)
+	_ = app2.ChangeStage(applicationdomain.StageScreening, actorID, "screening", now)
+	_ = app2.MarkInterview(actorID, "interview", now)
+	appRepo.apps[app2.ID] = app2
+
+	offerID2 := uuid.New()
+	svc.idGen = fixedIDGen{id: offerID2}
+	_, err = svc.CreateOffer(ctx, CreateOfferInput{
+		ApplicationID: app2.ID,
+		Compensation:  300000,
+		Currency:      offerdomain.CurrencyRUB,
+		Grade:         "Senior",
+		ExpiresAt:     expiresAt,
+		ActorID:       actorID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, applicationdomain.StageOfferPending, app2.CurrentStage)
+
+	err = svc.SendOffer(ctx, SendOfferInput{OfferID: offerID2, ActorID: actorID})
+	require.NoError(t, err)
+
+	err = svc.DeclineOffer(ctx, DeclineOfferInput{
+		OfferID: offerID2,
+		Reason:  "accepted another offer",
+		ActorID: candidateID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, applicationdomain.StageInterview, app2.CurrentStage)
+
+	// Test Revoke
+	app3, err := applicationdomain.New(uuid.New(), uuid.New(), candidateID, actorID, now)
+	require.NoError(t, err)
+	_ = app3.ChangeStage(applicationdomain.StageScreening, actorID, "screening", now)
+	_ = app3.MarkInterview(actorID, "interview", now)
+	appRepo.apps[app3.ID] = app3
+
+	offerID3 := uuid.New()
+	svc.idGen = fixedIDGen{id: offerID3}
+	_, err = svc.CreateOffer(ctx, CreateOfferInput{
+		ApplicationID: app3.ID,
+		Compensation:  400000,
+		Currency:      offerdomain.CurrencyRUB,
+		Grade:         "Lead",
+		ExpiresAt:     expiresAt,
+		ActorID:       actorID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, applicationdomain.StageOfferPending, app3.CurrentStage)
+
+	err = svc.RevokeOffer(ctx, RevokeOfferInput{
+		OfferID: offerID3,
+		Reason:  "budget freeze",
+		ActorID: actorID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, applicationdomain.StageInterview, app3.CurrentStage)
 }
 

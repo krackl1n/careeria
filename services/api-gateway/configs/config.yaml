@@ -49,7 +49,7 @@ gateway:
     allowed_origins:
       - http://localhost:3000
     allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-    allowed_headers: [Authorization, Content-Type, X-Tenant-ID, X-Request-ID]
+    allowed_headers: [Authorization, Content-Type, X-Request-ID]
     exposed_headers: [X-Request-ID]
     allow_credentials: false
     max_age: 300
@@ -87,7 +87,6 @@ identity_grpc:
     timeout: 0s
     permit_without_stream: false
   tracing:
-    enabled: true
     enabled: true
 
 authentication:

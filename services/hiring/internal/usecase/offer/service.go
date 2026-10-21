@@ -17,10 +17,9 @@ type OfferRepository interface {
 	GetByApplicationID(ctx context.Context, appID uuid.UUID) (*offerdomain.JobOffer, error)
 }
 
-type ApplicationCoordinator interface {
-	GetApplication(ctx context.Context, appID uuid.UUID) (*applicationdomain.JobApplication, error)
-	AdvanceToOfferAccepted(ctx context.Context, appID, actorID uuid.UUID, now time.Time) error
-	RevertToInterview(ctx context.Context, appID, actorID uuid.UUID, reason string, now time.Time) error
+type ApplicationRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*applicationdomain.JobApplication, error)
+	Update(ctx context.Context, app *applicationdomain.JobApplication) error
 }
 
 type OutboxRepository interface {
@@ -46,7 +45,7 @@ type IDGenerator interface {
 
 type Service struct {
 	offerRepo    OfferRepository
-	appCoord     ApplicationCoordinator
+	appRepo      ApplicationRepository
 	outboxRepo   OutboxRepository
 	authPort     AuthorizationPort
 	txManager    TransactionManager
@@ -57,7 +56,7 @@ type Service struct {
 
 func NewService(
 	offerRepo OfferRepository,
-	appCoord ApplicationCoordinator,
+	appRepo ApplicationRepository,
 	outboxRepo OutboxRepository,
 	authPort AuthorizationPort,
 	txManager TransactionManager,
@@ -67,7 +66,7 @@ func NewService(
 ) *Service {
 	return &Service{
 		offerRepo:    offerRepo,
-		appCoord:     appCoord,
+		appRepo:      appRepo,
 		outboxRepo:   outboxRepo,
 		authPort:     authPort,
 		txManager:    txManager,

@@ -17,9 +17,13 @@ func TestPrincipalMetadata(t *testing.T) {
 }
 
 func TestIncomingHeaderMatcher(t *testing.T) {
-	key, ok := incomingHeaderMatcher("X-Tenant-Id")
+	key, ok := incomingHeaderMatcher("Authorization")
 	require.True(t, ok)
-	require.Equal(t, "x-tenant-id", key)
+	require.Equal(t, "authorization", key)
+
+	key, ok = incomingHeaderMatcher("Cookie")
+	require.True(t, ok)
+	require.Equal(t, "cookie", key)
 }
 
 func TestOutgoingHeaderMatcherHidesHTTPResponseMetadata(t *testing.T) {
