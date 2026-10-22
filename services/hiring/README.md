@@ -90,8 +90,8 @@ errors.New(...) ──> errors.Is(...) ──> apperr.Conflict / ──> codes.F
 
 ## 3. Паттерны проектирования
 
-### 3.1. MeetingRoomStrategy & Registry (`internal/usecase/interview/room`)
-Вместо жесткой привязки к конкретному сервису видеосвязи используется паттерн **Стратегия + Реестр**:
+### 3.1. MeetingRoomStrategy & RoomStrategy (`internal/usecase/interview/room`)
+Вместо жесткой привязки к конкретному сервису видеосвязи используется паттерн **Стратегия (GoF Strategy + Context/Registry)**:
 
 ```go
 type MeetingRoomStrategy interface {
@@ -100,16 +100,20 @@ type MeetingRoomStrategy interface {
     GenerateAccess(ctx context.Context, req AccessRequest) (*AccessResult, error)
     Teardown(ctx context.Context, req TeardownRequest) error
 }
+
+type RoomStrategy struct {
+    registry map[interviewdomain.MeetingFormat]MeetingRoomStrategy
+}
 ```
 
-* **`LiveKitStrategy`**: создает медиа-комнату в LiveKit, генерирует персонализированный JWT-токен на вход, при отмене закрывает комнату на сервере.
-* **`OnsiteStrategy`**: валидирует адрес офиса/переговорки, генерирует для кандидата памятку и инструкции для ресепшена, teardown — no-op.
-* **`Registry`**: потокобезопасный реестр, отдающий нужную стратегию по `MeetingFormat`.
+* **`LiveKitStrategy`**: создает медиа-комнату в LiveKit через внешний порт `ConferenceClient`, генерирует JWT-токен на вход, при отмене закрывает комнату на медиа-сервере.
+* **`OnsiteStrategy`**: валидирует адрес офиса/переговорки, генерирует для кандидата инструкции для ресепшена, teardown — no-op.
+* **`RoomStrategy`**: контекст стратегии с внутренним реестром реализаций по `MeetingFormat`, предоставляющий сервису методы делегирования (`Provision`, `GenerateAccess`, `Teardown`, `Resolve`).
 
 ### 3.2. Межагрегатная политика (`OfferEligibilityPolicy`)
 Чистое доменное правило (`internal/domain/policy`), проверяющее возможность выставления оффера:
 * Заявка должна находиться в стадии `INTERVIEW`.
-* В переданном списке завершенных собеседований (`InterviewSummary`) должно быть минимум одно собеседование со статусом `COMPLETED` и заполненным фидбеком.
+* В переданном списке собеседований (`Interview`) должно быть минимум одно собеседование со статусом `COMPLETED` и заполненным фидбеком.
 * Политика не содержит I/O; все данные загружаются юзкейсом заранее.
 
 ---

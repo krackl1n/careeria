@@ -42,13 +42,11 @@ func (s *Service) CancelInterview(ctx context.Context, input CancelInterviewInpu
 		return err
 	}
 
-	if it.MeetingRoomURL != "" && s.roomRegistry != nil {
-		if strat, err := s.roomRegistry.Get(it.Format); err == nil {
-			_ = strat.Teardown(ctx, room.TeardownRequest{
-				InterviewID: it.ID,
-				MeetingURL:  it.MeetingRoomURL,
-			})
-		}
+	if it.MeetingRoomURL != "" && s.roomStrategy != nil {
+		_ = s.roomStrategy.Teardown(ctx, it.Format, room.TeardownRequest{
+			InterviewID: it.ID,
+			MeetingURL:  it.MeetingRoomURL,
+		})
 	}
 
 	payload := interviewdomain.InterviewCancelledPayload{

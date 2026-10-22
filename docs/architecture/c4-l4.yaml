@@ -7,6 +7,7 @@ components:
     usecase_pkg: "services/hiring/internal/usecase/application"
     domain_pkg: "services/hiring/internal/domain/application"
     policy_pkg: "services/hiring/internal/domain/policy"
+    cross_domain_pkg: "services/hiring/internal/domain/interview"
     service_name: "HiringApplicationService"
     aggregate: "JobApplication"
     output_dir: "docs/architecture/c4-plant-uml/plantuml/code/backend"

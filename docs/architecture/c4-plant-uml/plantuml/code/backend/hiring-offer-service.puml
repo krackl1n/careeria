@@ -36,6 +36,7 @@ package "Component: Offer Service (Hiring Domain)" {
             + RevokeOffer(ctx: Context, input: RevokeOfferInput): error
             + SendOffer(ctx: Context, input: SendOfferInput): error
         }
+
     }
 
     ' ===================================================
@@ -110,12 +111,17 @@ package "Component: Offer Service (Hiring Domain)" {
 ' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
 ' ========================================================
 
-"Application Layer" -[hidden]down-> "Domain Layer"
+HiringOfferService -[hidden]down-> JobOffer
+
+JobOffer -[hidden]down-> Currency
+Currency -[hidden]down-> OfferStatus
 
 HiringOfferService -[hidden]right-> ApplicationRepository
 ApplicationRepository -[hidden]down-> AuthorizationPort
 AuthorizationPort -[hidden]down-> OfferRepository
 OfferRepository -[hidden]down-> OutboxRepository
+
+JobOffer -[hidden]right-> ApplicationRepository
 
 ' ========================================================
 ' СВЯЗИ

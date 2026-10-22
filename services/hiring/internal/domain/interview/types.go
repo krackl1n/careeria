@@ -191,13 +191,3 @@ func (f Feedback) Validate() error {
 	}
 	return nil
 }
-
-type InterviewSummary struct {
-	InterviewID   uuid.UUID
-	ApplicationID uuid.UUID
-	Stage         InterviewType
-	Status        InterviewStatus
-	HasFeedback   bool
-	Score         int
-	CompletedAt   time.Time
-}

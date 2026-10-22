@@ -33,37 +33,48 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with only SCHEDULED interview - should fail
-	scheduled := []interview.InterviewSummary{
-		{
-			InterviewID: uuid.New(),
-			Status:      interview.StatusScheduled,
-			HasFeedback: false,
-		},
-	}
-	err = policy.CanInitiateOffer(app, scheduled)
+	itScheduled, err := interview.Schedule(
+		uuid.New(), uuid.New(), interview.TypeTechnical, interview.FormatOnlineLiveKit,
+		now, now.Add(time.Hour),
+		[]interview.Participant{{UserID: uuid.New(), Role: interview.RoleLeadInterviewer}},
+		"https://meet.careeria.com/room",
+		now,
+	)
+	require.NoError(t, err)
+	err = policy.CanInitiateOffer(app, []*interview.Interview{itScheduled})
 	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with COMPLETED interview, but no feedback - should fail
-	completedWithoutFeedback := []interview.InterviewSummary{
-		{
-			InterviewID: uuid.New(),
-			Status:      interview.StatusCompleted,
-			HasFeedback: false,
-		},
-	}
-	err = policy.CanInitiateOffer(app, completedWithoutFeedback)
+	itCompletedWithoutFeedback, err := interview.Schedule(
+		uuid.New(), uuid.New(), interview.TypeTechnical, interview.FormatOnlineLiveKit,
+		now, now.Add(time.Hour),
+		[]interview.Participant{{UserID: uuid.New(), Role: interview.RoleLeadInterviewer}},
+		"https://meet.careeria.com/room",
+		now,
+	)
+	require.NoError(t, err)
+	err = itCompletedWithoutFeedback.Complete(now)
+	require.NoError(t, err)
+	err = policy.CanInitiateOffer(app, []*interview.Interview{itCompletedWithoutFeedback})
 	require.ErrorIs(t, err, ErrMissingCompletedInterview)
 
 	// In INTERVIEW stage, with COMPLETED interview and feedback - should PASS
-	completedWithFeedback := []interview.InterviewSummary{
-		{
-			InterviewID: uuid.New(),
-			Status:      interview.StatusCompleted,
-			HasFeedback: true,
-			Score:       4,
-		},
-	}
-	err = policy.CanInitiateOffer(app, completedWithFeedback)
+	interviewerID := uuid.New()
+	itWithFeedback, err := interview.Schedule(
+		uuid.New(), uuid.New(), interview.TypeTechnical, interview.FormatOnlineLiveKit,
+		now, now.Add(time.Hour),
+		[]interview.Participant{{UserID: interviewerID, Role: interview.RoleLeadInterviewer}},
+		"https://meet.careeria.com/room",
+		now,
+	)
+	require.NoError(t, err)
+	fb, err := interview.NewFeedback(interviewerID, 4, "Strong candidate", now)
+	require.NoError(t, err)
+	err = itWithFeedback.SubmitFeedback(fb, now)
+	require.NoError(t, err)
+	err = itWithFeedback.Complete(now)
+	require.NoError(t, err)
+	err = policy.CanInitiateOffer(app, []*interview.Interview{itWithFeedback})
 	require.NoError(t, err)
 }
 

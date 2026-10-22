@@ -32,19 +32,15 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 	livekitStrategy := NewLiveKitStrategy(mockClient)
 	onsiteStrategy := NewOnsiteStrategy("Main Office, 4th Floor")
 
-	registry := NewRegistry(livekitStrategy, onsiteStrategy)
+	roomStrategy := NewRoomStrategy(livekitStrategy, onsiteStrategy)
 
 	interviewID := uuid.New()
 	appID := uuid.New()
 	userID := uuid.New()
 	now := time.Now().UTC()
 
-	t.Run("LiveKit strategy lifecycle", func(t *testing.T) {
-		strat, err := registry.Get(interviewdomain.FormatOnlineLiveKit)
-		require.NoError(t, err)
-		require.Equal(t, interviewdomain.FormatOnlineLiveKit, strat.Format())
-
-		res, err := strat.Provision(ctx, ProvisionRequest{
+	t.Run("LiveKit strategy lifecycle via RoomStrategy", func(t *testing.T) {
+		res, err := roomStrategy.Provision(ctx, interviewdomain.FormatOnlineLiveKit, ProvisionRequest{
 			InterviewID:   interviewID,
 			ApplicationID: appID,
 			InterviewType: interviewdomain.TypeSystemDesign,
@@ -55,7 +51,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		require.Equal(t, "https://livekit.custom/interview-"+interviewID.String(), res.MeetingURL)
 		require.Len(t, mockClient.createdRooms, 1)
 
-		access, err := strat.GenerateAccess(ctx, AccessRequest{
+		access, err := roomStrategy.GenerateAccess(ctx, interviewdomain.FormatOnlineLiveKit, AccessRequest{
 			InterviewID: interviewID,
 			UserID:      userID,
 			UserRole:    interviewdomain.RoleCandidate,
@@ -65,7 +61,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		require.NotEmpty(t, access.JoinURL)
 		require.NotEmpty(t, access.Token)
 
-		err = strat.Teardown(ctx, TeardownRequest{
+		err = roomStrategy.Teardown(ctx, interviewdomain.FormatOnlineLiveKit, TeardownRequest{
 			InterviewID: interviewID,
 			MeetingURL:  res.MeetingURL,
 		})
@@ -73,12 +69,8 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		require.Len(t, mockClient.endedRooms, 1)
 	})
 
-	t.Run("Onsite strategy lifecycle", func(t *testing.T) {
-		strat, err := registry.Get(interviewdomain.FormatOnsite)
-		require.NoError(t, err)
-		require.Equal(t, interviewdomain.FormatOnsite, strat.Format())
-
-		res, err := strat.Provision(ctx, ProvisionRequest{
+	t.Run("Onsite strategy lifecycle via RoomStrategy", func(t *testing.T) {
+		res, err := roomStrategy.Provision(ctx, interviewdomain.FormatOnsite, ProvisionRequest{
 			InterviewID:   interviewID,
 			ApplicationID: appID,
 			InterviewType: interviewdomain.TypeBehavioral,
@@ -87,7 +79,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "Conference Room Alpha, 2nd floor", res.MeetingURL)
 
-		access, err := strat.GenerateAccess(ctx, AccessRequest{
+		access, err := roomStrategy.GenerateAccess(ctx, interviewdomain.FormatOnsite, AccessRequest{
 			InterviewID: interviewID,
 			UserID:      userID,
 			UserRole:    interviewdomain.RoleCandidate,
@@ -96,7 +88,7 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, access.Instructions, "Conference Room Alpha")
 
-		err = strat.Teardown(ctx, TeardownRequest{
+		err = roomStrategy.Teardown(ctx, interviewdomain.FormatOnsite, TeardownRequest{
 			InterviewID: interviewID,
 			MeetingURL:  res.MeetingURL,
 		})
@@ -112,8 +104,10 @@ func TestMeetingRoomStrategiesAndRegistry(t *testing.T) {
 	})
 
 	t.Run("Unsupported format error", func(t *testing.T) {
-		_, err := registry.Get(interviewdomain.MeetingFormat("UNKNOWN"))
+		_, err := roomStrategy.Resolve(interviewdomain.MeetingFormat("UNKNOWN"))
+		require.ErrorIs(t, err, ErrUnsupportedFormat)
+
+		_, err = roomStrategy.Provision(ctx, interviewdomain.MeetingFormat("UNKNOWN"), ProvisionRequest{})
 		require.ErrorIs(t, err, ErrUnsupportedFormat)
 	})
 }
-

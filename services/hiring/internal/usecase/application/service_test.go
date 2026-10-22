@@ -49,12 +49,12 @@ func (m *mockAppRepo) GetActiveByCandidateAndVacancy(_ context.Context, candidat
 	return nil, applicationdomain.ErrNotFound
 }
 
-type mockInterviewSummaryRepo struct {
-	summaries map[uuid.UUID][]interviewdomain.InterviewSummary
+type mockInterviewRepo struct {
+	interviews map[uuid.UUID][]*interviewdomain.Interview
 }
 
-func (m *mockInterviewSummaryRepo) FindByApplicationID(_ context.Context, appID uuid.UUID) ([]interviewdomain.InterviewSummary, error) {
-	return m.summaries[appID], nil
+func (m *mockInterviewRepo) ListByApplicationID(_ context.Context, appID uuid.UUID) ([]*interviewdomain.Interview, error) {
+	return m.interviews[appID], nil
 }
 
 type mockOutboxRepo struct {
@@ -115,7 +115,7 @@ func (g *sequentialIDGen) New() uuid.UUID {
 func TestApplicationService(t *testing.T) {
 	ctx := context.Background()
 	appRepo := newMockAppRepo()
-	intSumRepo := &mockInterviewSummaryRepo{summaries: make(map[uuid.UUID][]interviewdomain.InterviewSummary)}
+	interviewRepo := &mockInterviewRepo{interviews: make(map[uuid.UUID][]*interviewdomain.Interview)}
 	outboxRepo := &mockOutboxRepo{}
 	authPort := &mockAuthPort{}
 	policy := policydomain.NewOfferEligibilityPolicy()
@@ -125,7 +125,7 @@ func TestApplicationService(t *testing.T) {
 	idGen := &sequentialIDGen{ids: []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}}
 	eventFactory := eventdomain.NewFactory(idGen)
 
-	svc := NewService(appRepo, intSumRepo, outboxRepo, authPort, policy, txMgr, eventFactory, clock, idGen)
+	svc := NewService(appRepo, interviewRepo, outboxRepo, authPort, policy, txMgr, eventFactory, clock, idGen)
 
 	candidateID := uuid.New()
 	vacancyID := uuid.New()
@@ -168,14 +168,20 @@ func TestApplicationService(t *testing.T) {
 	})
 	require.Error(t, err)
 
-	intSumRepo.summaries[appID] = []interviewdomain.InterviewSummary{
-		{
-			InterviewID: uuid.New(),
-			Status:      interviewdomain.StatusCompleted,
-			HasFeedback: true,
-			Score:       5,
-		},
-	}
+	interviewerID := uuid.New()
+	it, err := interviewdomain.Schedule(
+		uuid.New(), appID, interviewdomain.TypeTechnical, interviewdomain.FormatOnlineLiveKit,
+		now, now.Add(time.Hour),
+		[]interviewdomain.Participant{{UserID: interviewerID, Role: interviewdomain.RoleLeadInterviewer}},
+		"https://meet.careeria.com/room",
+		now,
+	)
+	require.NoError(t, err)
+	fb, err := interviewdomain.NewFeedback(interviewerID, 5, "Excellent", now)
+	require.NoError(t, err)
+	require.NoError(t, it.SubmitFeedback(fb, now))
+	require.NoError(t, it.Complete(now))
+	interviewRepo.interviews[appID] = []*interviewdomain.Interview{it}
 
 	err = svc.ChangeStage(ctx, ChangeStageInput{
 		ApplicationID: appID,

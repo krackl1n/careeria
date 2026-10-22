@@ -46,7 +46,7 @@ type IDGenerator interface {
 type Service struct {
 	interviewRepo InterviewRepository
 	appChecker    ApplicationStageChecker
-	roomRegistry  room.Registry
+	roomStrategy  *room.RoomStrategy
 	outboxRepo    OutboxRepository
 	authPort      AuthorizationPort
 	txManager     TransactionManager
@@ -58,7 +58,7 @@ type Service struct {
 func NewService(
 	interviewRepo InterviewRepository,
 	appChecker ApplicationStageChecker,
-	roomRegistry room.Registry,
+	roomStrategy *room.RoomStrategy,
 	outboxRepo OutboxRepository,
 	authPort AuthorizationPort,
 	txManager TransactionManager,
@@ -69,7 +69,7 @@ func NewService(
 	return &Service{
 		interviewRepo: interviewRepo,
 		appChecker:    appChecker,
-		roomRegistry:  roomRegistry,
+		roomStrategy:  roomStrategy,
 		outboxRepo:    outboxRepo,
 		authPort:      authPort,
 		txManager:     txManager,

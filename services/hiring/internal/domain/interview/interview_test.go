@@ -80,12 +80,6 @@ func TestInterviewLifecycle(t *testing.T) {
 	err = it.Complete(now.Add(3 * time.Hour))
 	require.NoError(t, err)
 	require.Equal(t, StatusCompleted, it.Status)
-
-	summary := it.ToSummary()
-	require.Equal(t, interviewID, summary.InterviewID)
-	require.Equal(t, StatusCompleted, summary.Status)
-	require.True(t, summary.HasFeedback)
-	require.Equal(t, 4, summary.Score)
 }
 
 func TestInterviewCancellation(t *testing.T) {

@@ -149,25 +149,3 @@ func (i *Interview) SubmitFeedback(feedback Feedback, now time.Time) error {
 	i.UpdatedAt = now
 	return nil
 }
-
-func (i *Interview) ToSummary() InterviewSummary {
-	hasFeedback := len(i.Feedbacks) > 0
-	avgScore := 0
-	if hasFeedback {
-		total := 0
-		for _, f := range i.Feedbacks {
-			total += f.Score
-		}
-		avgScore = total / len(i.Feedbacks)
-	}
-
-	return InterviewSummary{
-		InterviewID:   i.ID,
-		ApplicationID: i.ApplicationID,
-		Stage:         i.InterviewType,
-		Status:        i.Status,
-		HasFeedback:   hasFeedback,
-		Score:         avgScore,
-		CompletedAt:   i.UpdatedAt,
-	}
-}

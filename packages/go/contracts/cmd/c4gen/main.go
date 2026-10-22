@@ -20,18 +20,19 @@ type Config struct {
 }
 
 type ComponentConfig struct {
-	Name              string   `yaml:"name"`
-	Slug              string   `yaml:"slug"`
-	Container         string   `yaml:"container"`
-	Title             string   `yaml:"title"`
-	Description       string   `yaml:"description"`
-	UsecasePkg        string   `yaml:"usecase_pkg"`
-	DomainPkg         string   `yaml:"domain_pkg"`
-	PolicyPkg         string   `yaml:"policy_pkg"`
-	Subpackages       []string `yaml:"subpackages"`
-	ServiceName       string   `yaml:"service_name"`
-	Aggregate         string   `yaml:"aggregate"`
-	OutputDir         string   `yaml:"output_dir"`
+	Name           string   `yaml:"name"`
+	Slug           string   `yaml:"slug"`
+	Container      string   `yaml:"container"`
+	Title          string   `yaml:"title"`
+	Description    string   `yaml:"description"`
+	UsecasePkg     string   `yaml:"usecase_pkg"`
+	DomainPkg      string   `yaml:"domain_pkg"`
+	PolicyPkg      string   `yaml:"policy_pkg"`
+	Subpackages    []string `yaml:"subpackages"`
+	CrossDomainPkg string   `yaml:"cross_domain_pkg"`
+	ServiceName    string   `yaml:"service_name"`
+	Aggregate      string   `yaml:"aggregate"`
+	OutputDir      string   `yaml:"output_dir"`
 }
 
 type FieldInfo struct {
@@ -63,16 +64,19 @@ type EnumInfo struct {
 }
 
 type ComponentModel struct {
-	Config     ComponentConfig
-	Service    StructInfo
-	Ports      []InterfaceInfo
-	Aggregate  StructInfo
-	Entities   []StructInfo
-	ValueObjs  []StructInfo
-	Enums      []EnumInfo
-	Policies   []StructInfo
-	Strategies []InterfaceInfo
-	StrategyImpls []StructInfo
+	Config             ComponentConfig
+	Service            StructInfo
+	Ports              []InterfaceInfo
+	Aggregate          StructInfo
+	Entities           []StructInfo
+	ValueObjs          []StructInfo
+	Projections        []StructInfo
+	ExternalAggregates []StructInfo
+	Enums              []EnumInfo
+	Policies           []StructInfo
+	StrategyIface      *InterfaceInfo
+	Registry           *StructInfo
+	StrategyImpls      []StructInfo
 }
 
 func main() {
@@ -286,17 +290,7 @@ func analyzeComponent(cfg ComponentConfig) (*ComponentModel, error) {
 						sInfo := &StructInfo{
 							Name: typeName,
 						}
-						if typeName == cfg.Aggregate {
-							sInfo.Role = "Aggregate Root"
-						} else if strings.Contains(strings.ToLower(typeName), "policy") {
-							sInfo.Role = "Domain Policy"
-						} else if strings.Contains(strings.ToLower(typeName), "transition") ||
-							strings.Contains(strings.ToLower(typeName), "participant") ||
-							strings.Contains(strings.ToLower(typeName), "feedback") {
-							sInfo.Role = "Entity"
-						} else {
-							sInfo.Role = "Value Object"
-						}
+						hasID := false
 						for _, field := range t.Fields.List {
 							fieldType := formatType(field.Type)
 							if len(field.Names) == 0 {
@@ -311,8 +305,23 @@ func analyzeComponent(cfg ComponentConfig) (*ComponentModel, error) {
 										Name: name.Name,
 										Type: fieldType,
 									})
+									if name.Name == "ID" || strings.HasSuffix(name.Name, "ID") || strings.HasSuffix(name.Name, "Id") {
+										hasID = true
+									}
 								}
 							}
+						}
+
+						if typeName == cfg.Aggregate {
+							sInfo.Role = "Aggregate Root"
+						} else if strings.HasSuffix(typeName, "Policy") {
+							sInfo.Role = "Domain Policy"
+						} else if strings.HasSuffix(typeName, "Summary") || strings.HasSuffix(typeName, "Projection") || strings.HasSuffix(typeName, "View") || strings.HasSuffix(typeName, "ReadModel") {
+							sInfo.Role = "Read Projection"
+						} else if hasID {
+							sInfo.Role = "Entity"
+						} else {
+							sInfo.Role = "Value Object"
 						}
 						allDomainStructs[typeName] = sInfo
 
@@ -382,6 +391,8 @@ func analyzeComponent(cfg ComponentConfig) (*ComponentModel, error) {
 			model.Entities = append(model.Entities, *sInfo)
 		} else if sInfo.Role == "Domain Policy" {
 			model.Policies = append(model.Policies, *sInfo)
+		} else if sInfo.Role == "Read Projection" {
+			model.Projections = append(model.Projections, *sInfo)
 		} else {
 			model.ValueObjs = append(model.ValueObjs, *sInfo)
 		}
@@ -456,37 +467,207 @@ func analyzeComponent(cfg ComponentConfig) (*ComponentModel, error) {
 							}
 							switch t := typeSpec.Type.(type) {
 							case *ast.InterfaceType:
-								iface := InterfaceInfo{Name: typeSpec.Name.Name}
-								for _, method := range t.Methods.List {
-									if funcType, ok := method.Type.(*ast.FuncType); ok {
-										for _, name := range method.Names {
-											iface.Methods = append(iface.Methods, MethodInfo{
-												Name:       name.Name,
-												Params:     formatParams(funcType.Params),
-												ReturnType: formatResults(funcType.Results),
+								if strings.HasSuffix(typeSpec.Name.Name, "Client") {
+									iface := InterfaceInfo{Name: typeSpec.Name.Name}
+									for _, method := range t.Methods.List {
+										if funcType, ok := method.Type.(*ast.FuncType); ok {
+											for _, name := range method.Names {
+												iface.Methods = append(iface.Methods, MethodInfo{
+													Name:       name.Name,
+													Params:     formatParams(funcType.Params),
+													ReturnType: formatResults(funcType.Results),
+												})
+											}
+										}
+									}
+									model.Ports = append(model.Ports, iface)
+								} else if strings.HasSuffix(typeSpec.Name.Name, "Strategy") {
+									iface := InterfaceInfo{Name: typeSpec.Name.Name}
+									for _, method := range t.Methods.List {
+										if funcType, ok := method.Type.(*ast.FuncType); ok {
+											for _, name := range method.Names {
+												iface.Methods = append(iface.Methods, MethodInfo{
+													Name:       name.Name,
+													Params:     formatParams(funcType.Params),
+													ReturnType: formatResults(funcType.Results),
+												})
+											}
+										}
+									}
+									model.StrategyIface = &iface
+								}
+							case *ast.StructType:
+								if strings.HasSuffix(typeSpec.Name.Name, "Request") || strings.HasSuffix(typeSpec.Name.Name, "Result") || !isExported(typeSpec.Name.Name) {
+									continue
+								}
+								if typeSpec.Name.Name == "RoomStrategy" {
+									reg := StructInfo{
+										Name: "RoomStrategy",
+										Role: "Strategy",
+										Fields: []FieldInfo{
+											{Name: "registry", Type: "Map<MeetingFormat, MeetingRoomStrategy>"},
+										},
+									}
+									model.Registry = &reg
+								} else if strings.HasSuffix(typeSpec.Name.Name, "Strategy") {
+									st := StructInfo{
+										Name: typeSpec.Name.Name,
+										Role: "Strategy",
+									}
+									for _, field := range t.Fields.List {
+										fieldType := formatType(field.Type)
+										for _, name := range field.Names {
+											st.Fields = append(st.Fields, FieldInfo{
+												Name: name.Name,
+												Type: fieldType,
 											})
 										}
 									}
+									model.StrategyImpls = append(model.StrategyImpls, st)
 								}
-								model.Strategies = append(model.Strategies, iface)
-							case *ast.StructType:
-								if strings.HasSuffix(typeSpec.Name.Name, "Request") || strings.HasSuffix(typeSpec.Name.Name, "Result") {
-									continue
-								}
-								st := StructInfo{
-									Name: typeSpec.Name.Name,
-									Role: "Domain Strategy",
-								}
-								if strings.Contains(typeSpec.Name.Name, "Registry") {
-									st.Role = "Domain Registry"
-								}
-								model.StrategyImpls = append(model.StrategyImpls, st)
+							}
+						}
+					}
+
+					for _, decl := range file.Decls {
+						funcDecl, ok := decl.(*ast.FuncDecl)
+						if !ok || funcDecl.Recv == nil || len(funcDecl.Recv.List) == 0 {
+							continue
+						}
+						recvType := cleanRecvType(formatType(funcDecl.Recv.List[0].Type))
+						if model.Registry != nil && model.Registry.Name == recvType && funcDecl.Name.IsExported() {
+							model.Registry.Methods = append(model.Registry.Methods, MethodInfo{
+								Name:       funcDecl.Name.Name,
+								Params:     formatParams(funcDecl.Type.Params),
+								ReturnType: formatResults(funcDecl.Type.Results),
+							})
+						}
+						for i := range model.StrategyImpls {
+							if model.StrategyImpls[i].Name == recvType && funcDecl.Name.IsExported() {
+								model.StrategyImpls[i].Methods = append(model.StrategyImpls[i].Methods, MethodInfo{
+									Name:       funcDecl.Name.Name,
+									Params:     formatParams(funcDecl.Type.Params),
+									ReturnType: formatResults(funcDecl.Type.Results),
+								})
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+
+	// 5. Parse Cross-Domain Package (e.g. read projections referenced by ports/policies)
+	if cfg.CrossDomainPkg != "" {
+		crossPkgs, err := parser.ParseDir(fset, cfg.CrossDomainPkg, func(fi os.FileInfo) bool {
+			return !strings.HasSuffix(fi.Name(), "_test.go")
+		}, parser.ParseComments)
+		if err == nil {
+			for _, pkg := range crossPkgs {
+				for _, file := range pkg.Files {
+					for _, decl := range file.Decls {
+						genDecl, ok := decl.(*ast.GenDecl)
+						if !ok {
+							continue
+						}
+						for _, spec := range genDecl.Specs {
+							typeSpec, ok := spec.(*ast.TypeSpec)
+							if !ok {
+								continue
+							}
+							typeName := typeSpec.Name.Name
+							if t, ok := typeSpec.Type.(*ast.StructType); ok {
+								isReferenced := false
+								for _, port := range model.Ports {
+									for _, m := range port.Methods {
+										if containsTypeName(m.ReturnType, typeName) || containsTypeName(m.Params, typeName) {
+											isReferenced = true
+											break
+										}
+									}
+									if isReferenced {
+										break
+									}
+								}
+								if !isReferenced {
+									for _, pol := range model.Policies {
+										for _, m := range pol.Methods {
+											if containsTypeName(m.Params, typeName) {
+												isReferenced = true
+												break
+											}
+										}
+										if isReferenced {
+											break
+										}
+									}
+								}
+
+								if isReferenced {
+									hasID := false
+									for _, field := range t.Fields.List {
+										for _, name := range field.Names {
+											if name.Name == "ID" || strings.HasSuffix(name.Name, "ID") {
+												hasID = true
+											}
+										}
+									}
+									role := "Aggregate Root"
+									if strings.HasSuffix(typeName, "Policy") {
+										role = "Domain Policy"
+									} else if strings.HasSuffix(typeName, "Summary") || strings.HasSuffix(typeName, "Projection") {
+										role = "Read Projection"
+									} else if !hasID {
+										role = "Value Object"
+									}
+									extInfo := StructInfo{
+										Name: typeName,
+										Role: role,
+									}
+									for _, field := range t.Fields.List {
+										fieldType := formatType(field.Type)
+										for _, name := range field.Names {
+											extInfo.Fields = append(extInfo.Fields, FieldInfo{
+												Name: name.Name,
+												Type: fieldType,
+											})
+										}
+									}
+									model.ExternalAggregates = append(model.ExternalAggregates, extInfo)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if model.Registry != nil {
+		sort.Slice(model.Registry.Methods, func(i, j int) bool {
+			return model.Registry.Methods[i].Name < model.Registry.Methods[j].Name
+		})
+	}
+	hasClient := func(s StructInfo) bool {
+		for _, f := range s.Fields {
+			if strings.Contains(f.Type, "Client") {
+				return true
+			}
+		}
+		return false
+	}
+	sort.Slice(model.StrategyImpls, func(i, j int) bool {
+		cI := hasClient(model.StrategyImpls[i])
+		cJ := hasClient(model.StrategyImpls[j])
+		if cI != cJ {
+			return !cI
+		}
+		return model.StrategyImpls[i].Name < model.StrategyImpls[j].Name
+	})
+	for i := range model.StrategyImpls {
+		sort.Slice(model.StrategyImpls[i].Methods, func(a, b int) bool {
+			return model.StrategyImpls[i].Methods[a].Name < model.StrategyImpls[i].Methods[b].Name
+		})
 	}
 
 	for _, enum := range allDomainEnums {
@@ -496,6 +677,8 @@ func analyzeComponent(cfg ComponentConfig) (*ComponentModel, error) {
 	sort.Slice(model.Ports, func(i, j int) bool { return model.Ports[i].Name < model.Ports[j].Name })
 	sort.Slice(model.Entities, func(i, j int) bool { return model.Entities[i].Name < model.Entities[j].Name })
 	sort.Slice(model.ValueObjs, func(i, j int) bool { return model.ValueObjs[i].Name < model.ValueObjs[j].Name })
+	sort.Slice(model.Projections, func(i, j int) bool { return model.Projections[i].Name < model.Projections[j].Name })
+	sort.Slice(model.ExternalAggregates, func(i, j int) bool { return model.ExternalAggregates[i].Name < model.ExternalAggregates[j].Name })
 	sort.Slice(model.Enums, func(i, j int) bool { return model.Enums[i].Name < model.Enums[j].Name })
 
 	return model, nil
@@ -532,7 +715,43 @@ func generatePlantUML(m *ComponentModel) string {
 	for _, method := range m.Service.Methods {
 		buf.WriteString(fmt.Sprintf("            + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
 	}
-	buf.WriteString("        }\n")
+	buf.WriteString("        }\n\n")
+
+	if m.Registry != nil || m.StrategyIface != nil || len(m.StrategyImpls) > 0 {
+		if m.Registry != nil {
+			buf.WriteString(fmt.Sprintf("        class %s <<%s>> {\n", m.Registry.Name, m.Registry.Role))
+			for _, f := range m.Registry.Fields {
+				buf.WriteString(fmt.Sprintf("            - %s: %s\n", f.Name, f.Type))
+			}
+			for _, method := range m.Registry.Methods {
+				buf.WriteString(fmt.Sprintf("            + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
+			}
+			buf.WriteString("        }\n\n")
+		}
+
+		if m.StrategyIface != nil {
+			buf.WriteString(fmt.Sprintf("        interface %s <<Strategy>> {\n", m.StrategyIface.Name))
+			for _, method := range m.StrategyIface.Methods {
+				buf.WriteString(fmt.Sprintf("            + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
+			}
+			buf.WriteString("        }\n\n")
+		}
+
+		if len(m.StrategyImpls) > 0 {
+			buf.WriteString("        together {\n")
+			for _, impl := range m.StrategyImpls {
+				buf.WriteString(fmt.Sprintf("            class %s <<%s>> {\n", impl.Name, impl.Role))
+				for _, f := range impl.Fields {
+					buf.WriteString(fmt.Sprintf("                - %s: %s\n", f.Name, f.Type))
+				}
+				for _, method := range impl.Methods {
+					buf.WriteString(fmt.Sprintf("                + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
+				}
+				buf.WriteString("            }\n")
+			}
+			buf.WriteString("        }\n")
+		}
+	}
 	buf.WriteString("    }\n\n")
 
 	// 2. Domain Layer
@@ -590,24 +809,7 @@ func generatePlantUML(m *ComponentModel) string {
 		buf.WriteString("        }\n\n")
 	}
 
-	for _, strat := range m.Strategies {
-		buf.WriteString(fmt.Sprintf("        interface %s <<Domain Strategy>> {\n", strat.Name))
-		for _, method := range strat.Methods {
-			buf.WriteString(fmt.Sprintf("            + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
-		}
-		buf.WriteString("        }\n\n")
-	}
 
-	if len(m.StrategyImpls) > 0 {
-		buf.WriteString("        together {\n")
-		for _, impl := range m.StrategyImpls {
-			if !isExported(impl.Name) {
-				continue
-			}
-			buf.WriteString(fmt.Sprintf("            class %s <<%s>> {\n            }\n", impl.Name, impl.Role))
-		}
-		buf.WriteString("        }\n\n")
-	}
 
 	// Enums & Value Objects
 	for _, enum := range m.Enums {
@@ -625,6 +827,44 @@ func generatePlantUML(m *ComponentModel) string {
 		}
 		for _, method := range vo.Methods {
 			buf.WriteString(fmt.Sprintf("            + %s(%s): %s\n", method.Name, method.Params, method.ReturnType))
+		}
+		buf.WriteString("        }\n\n")
+	}
+
+	for _, proj := range m.Projections {
+		buf.WriteString(fmt.Sprintf("        class %s <<%s>> {\n", proj.Name, proj.Role))
+		for _, f := range proj.Fields {
+			prefix := "-"
+			if isExported(f.Name) {
+				prefix = "+"
+			}
+			buf.WriteString(fmt.Sprintf("            %s %s: %s\n", prefix, f.Name, f.Type))
+		}
+		for _, method := range proj.Methods {
+			prefix := "-"
+			if isExported(method.Name) {
+				prefix = "+"
+			}
+			buf.WriteString(fmt.Sprintf("            %s %s(%s): %s\n", prefix, method.Name, method.Params, method.ReturnType))
+		}
+		buf.WriteString("        }\n\n")
+	}
+
+	for _, ext := range m.ExternalAggregates {
+		buf.WriteString(fmt.Sprintf("        class %s <<%s>> {\n", ext.Name, ext.Role))
+		for _, f := range ext.Fields {
+			prefix := "-"
+			if isExported(f.Name) {
+				prefix = "+"
+			}
+			buf.WriteString(fmt.Sprintf("            %s %s: %s\n", prefix, f.Name, f.Type))
+		}
+		for _, method := range ext.Methods {
+			prefix := "-"
+			if isExported(method.Name) {
+				prefix = "+"
+			}
+			buf.WriteString(fmt.Sprintf("            %s %s(%s): %s\n", prefix, method.Name, method.Params, method.ReturnType))
 		}
 		buf.WriteString("        }\n\n")
 	}
@@ -651,8 +891,127 @@ func generatePlantUML(m *ComponentModel) string {
 	buf.WriteString("' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ\n")
 	buf.WriteString("' ========================================================\n\n")
 
+	// Внутри прикладного слоя
+	if m.Registry != nil {
+		buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Service.Name, m.Registry.Name))
+		if m.StrategyIface != nil {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Registry.Name, m.StrategyIface.Name))
+			if len(m.StrategyImpls) > 0 {
+				buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.StrategyIface.Name, m.StrategyImpls[0].Name))
+				if len(m.StrategyImpls) > 1 {
+					buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.StrategyImpls[0].Name, m.StrategyImpls[1].Name))
+				}
+			}
+		}
+		buf.WriteString("\n")
+	}
+
 	// Слой приложения над доменным слоем
-	buf.WriteString("\"Application Layer\" -[hidden]down-> \"Domain Layer\"\n\n")
+	if len(m.StrategyImpls) > 0 && m.Aggregate.Name != "" {
+		buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n\n", m.StrategyImpls[0].Name, m.Aggregate.Name))
+	} else if m.Aggregate.Name != "" {
+		buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n\n", m.Service.Name, m.Aggregate.Name))
+	}
+
+	findOwner := func(enumName string) string {
+		for _, f := range m.Aggregate.Fields {
+			if f.Type == enumName {
+				return m.Aggregate.Name
+			}
+		}
+		for _, ent := range m.Entities {
+			for _, f := range ent.Fields {
+				if f.Type == enumName {
+					return ent.Name
+				}
+			}
+		}
+		for _, vo := range m.ValueObjs {
+			for _, f := range vo.Fields {
+				if f.Type == enumName {
+					return vo.Name
+				}
+			}
+		}
+		for _, pr := range m.Projections {
+			for _, f := range pr.Fields {
+				if f.Type == enumName {
+					return pr.Name
+				}
+			}
+		}
+		return m.Aggregate.Name
+	}
+
+	// Горизонтальное выравнивание политик и внешних агрегатов относительно основного агрегата
+	rightmostDomainElement := m.Aggregate.Name
+	if len(m.ExternalAggregates) > 0 {
+		rightmostDomainElement = m.ExternalAggregates[len(m.ExternalAggregates)-1].Name
+	} else if len(m.Projections) > 0 {
+		rightmostDomainElement = m.Projections[len(m.Projections)-1].Name
+	} else if len(m.Policies) > 0 {
+		rightmostDomainElement = m.Policies[len(m.Policies)-1].Name
+	}
+
+	if len(m.Policies) > 0 {
+		buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Aggregate.Name, m.Policies[0].Name))
+		if len(m.ExternalAggregates) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Policies[0].Name, m.ExternalAggregates[0].Name))
+		} else if len(m.Projections) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Policies[0].Name, m.Projections[0].Name))
+		}
+	}
+
+	// Внутри доменного слоя: компактная группировка
+	if m.Aggregate.Name != "" {
+		if len(m.Entities) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Aggregate.Name, m.Entities[0].Name))
+			if len(m.ValueObjs) > 0 {
+				buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Entities[0].Name, m.ValueObjs[0].Name))
+				for _, enum := range m.Enums {
+					if findOwner(enum.Name) == m.ValueObjs[0].Name {
+						buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.ValueObjs[0].Name, enum.Name))
+					}
+				}
+			} else if len(m.Projections) > 0 && len(m.Policies) == 0 {
+				buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Entities[0].Name, m.Projections[0].Name))
+			}
+
+			if len(m.Entities) > 1 {
+				buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Entities[0].Name, m.Entities[1].Name))
+				for _, enum := range m.Enums {
+					if findOwner(enum.Name) == m.Entities[1].Name {
+						buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Entities[1].Name, enum.Name))
+					}
+				}
+			}
+		} else if len(m.ValueObjs) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Aggregate.Name, m.ValueObjs[0].Name))
+			for _, enum := range m.Enums {
+				if findOwner(enum.Name) == m.ValueObjs[0].Name {
+					buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.ValueObjs[0].Name, enum.Name))
+				}
+			}
+		}
+
+		var aggEnums []EnumInfo
+		for _, enum := range m.Enums {
+			if findOwner(enum.Name) == m.Aggregate.Name {
+				aggEnums = append(aggEnums, enum)
+			}
+		}
+		if len(m.Entities) > 1 && len(aggEnums) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Entities[1].Name, aggEnums[0].Name))
+		} else if len(m.Entities) == 1 && len(aggEnums) > 0 {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n", m.Entities[0].Name, aggEnums[0].Name))
+		} else if len(aggEnums) > 0 && m.Aggregate.Name != "" {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Aggregate.Name, aggEnums[0].Name))
+		}
+		for i := 0; i < len(aggEnums)-1; i++ {
+			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", aggEnums[i].Name, aggEnums[i+1].Name))
+		}
+		buf.WriteString("\n")
+	}
 
 	// Внешние контракты выстраиваются вертикальным столбиком справа
 	if len(m.Ports) > 0 {
@@ -661,6 +1020,19 @@ func generatePlantUML(m *ComponentModel) string {
 			buf.WriteString(fmt.Sprintf("%s -[hidden]down-> %s\n", m.Ports[i].Name, m.Ports[i+1].Name))
 		}
 		buf.WriteString("\n")
+
+		if m.Aggregate.Name != "" {
+			repoPortName := ""
+			for _, port := range m.Ports {
+				if strings.HasSuffix(port.Name, "Repository") {
+					repoPortName = port.Name
+					break
+				}
+			}
+			if repoPortName != "" {
+				buf.WriteString(fmt.Sprintf("%s -[hidden]right-> %s\n\n", rightmostDomainElement, repoPortName))
+			}
+		}
 	}
 
 	buf.WriteString("' ========================================================\n")
@@ -671,33 +1043,131 @@ func generatePlantUML(m *ComponentModel) string {
 		buf.WriteString(fmt.Sprintf("%s ..> %s : commands mutation\n", m.Service.Name, m.Aggregate.Name))
 	}
 
-	for i, port := range m.Ports {
-		arrow := "-->"
-		if i == 0 {
-			arrow = "-right->"
+	firstPort := true
+	for _, port := range m.Ports {
+		usesPort := false
+		for _, f := range m.Service.Fields {
+			if strings.TrimPrefix(f.Type, "*") == port.Name {
+				usesPort = true
+				break
+			}
 		}
-		buf.WriteString(fmt.Sprintf("%s %s %s : uses\n", m.Service.Name, arrow, port.Name))
+		if usesPort {
+			arrow := "-->"
+			if firstPort && m.Registry == nil {
+				arrow = "-right->"
+				firstPort = false
+			}
+			buf.WriteString(fmt.Sprintf("%s %s %s : uses\n", m.Service.Name, arrow, port.Name))
+		}
 	}
 
 	for _, entity := range m.Entities {
 		buf.WriteString(fmt.Sprintf("%s *-- \"*\" %s : owns\n", m.Aggregate.Name, entity.Name))
 	}
 
+	for _, vo := range m.ValueObjs {
+		used := false
+		for _, mtd := range m.Aggregate.Methods {
+			if strings.Contains(mtd.Params, vo.Name) {
+				buf.WriteString(fmt.Sprintf("%s ..> %s : uses\n", m.Aggregate.Name, vo.Name))
+				used = true
+				break
+			}
+		}
+		if !used {
+			for _, f := range m.Aggregate.Fields {
+				if f.Type == vo.Name {
+					buf.WriteString(fmt.Sprintf("%s *-- %s\n", m.Aggregate.Name, vo.Name))
+					used = true
+					break
+				}
+			}
+		}
+	}
+
+	for _, proj := range m.Projections {
+		for _, mtd := range m.Aggregate.Methods {
+			if strings.Contains(mtd.ReturnType, proj.Name) {
+				buf.WriteString(fmt.Sprintf("%s ..> %s : produces\n", m.Aggregate.Name, proj.Name))
+				break
+			}
+		}
+		for _, p := range m.Ports {
+			for _, mtd := range p.Methods {
+				if strings.Contains(mtd.ReturnType, proj.Name) {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : provides\n", p.Name, proj.Name))
+					break
+				}
+			}
+		}
+	}
+
+	for _, ext := range m.ExternalAggregates {
+		for _, p := range m.Ports {
+			for _, mtd := range p.Methods {
+				if containsTypeName(mtd.ReturnType, ext.Name) {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : provides\n", p.Name, ext.Name))
+					break
+				}
+			}
+		}
+	}
+
 	for _, enum := range m.Enums {
-		buf.WriteString(fmt.Sprintf("%s *-- \"1\" %s\n", m.Aggregate.Name, enum.Name))
+		owner := findOwner(enum.Name)
+		buf.WriteString(fmt.Sprintf("%s *-- \"1\" %s\n", owner, enum.Name))
 	}
 
 	for _, policy := range m.Policies {
 		buf.WriteString(fmt.Sprintf("%s --> %s : executes policy\n", m.Service.Name, policy.Name))
-		if m.Aggregate.Name != "" {
-			buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, m.Aggregate.Name))
+		evaluated := make(map[string]bool)
+		for _, method := range policy.Methods {
+			if containsTypeName(method.Params, m.Aggregate.Name) && !evaluated[m.Aggregate.Name] {
+				buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, m.Aggregate.Name))
+				evaluated[m.Aggregate.Name] = true
+			}
+			for _, ext := range m.ExternalAggregates {
+				if containsTypeName(method.Params, ext.Name) && !evaluated[ext.Name] {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, ext.Name))
+					evaluated[ext.Name] = true
+				}
+			}
+			for _, proj := range m.Projections {
+				if containsTypeName(method.Params, proj.Name) && !evaluated[proj.Name] {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, proj.Name))
+					evaluated[proj.Name] = true
+				}
+			}
+			for _, ent := range m.Entities {
+				if containsTypeName(method.Params, ent.Name) && !evaluated[ent.Name] {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, ent.Name))
+					evaluated[ent.Name] = true
+				}
+			}
+			for _, vo := range m.ValueObjs {
+				if containsTypeName(method.Params, vo.Name) && !evaluated[vo.Name] {
+					buf.WriteString(fmt.Sprintf("%s ..> %s : evaluates\n", policy.Name, vo.Name))
+					evaluated[vo.Name] = true
+				}
+			}
 		}
 	}
 
-	for _, strat := range m.Strategies {
+	if m.Registry != nil {
+		buf.WriteString(fmt.Sprintf("%s --> %s : delegates room operations\n", m.Service.Name, m.Registry.Name))
+		if m.StrategyIface != nil {
+			buf.WriteString(fmt.Sprintf("%s o-- %s : registry\n", m.Registry.Name, m.StrategyIface.Name))
+		}
+	}
+
+	if m.StrategyIface != nil {
 		for _, impl := range m.StrategyImpls {
-			if strings.Contains(impl.Name, "Strategy") && !strings.Contains(impl.Name, "Registry") {
-				buf.WriteString(fmt.Sprintf("%s ..|> %s : implements\n", impl.Name, strat.Name))
+			buf.WriteString(fmt.Sprintf("%s ..|> %s : implements\n", impl.Name, m.StrategyIface.Name))
+			for _, f := range impl.Fields {
+				if strings.Contains(f.Type, "Client") {
+					buf.WriteString(fmt.Sprintf("%s -right-> %s : uses client\n", impl.Name, f.Type))
+				}
 			}
 		}
 	}
@@ -758,6 +1228,18 @@ func generateMarkdown(m *ComponentModel) string {
 		buf.WriteString(fmt.Sprintf("* `+%s(%s): %s`\n", method.Name, method.Params, method.ReturnType))
 	}
 	buf.WriteString("\n")
+
+	if m.Registry != nil {
+		buf.WriteString(fmt.Sprintf("### Стратегии прикладного уровня (%s)\n\n", m.Registry.Name))
+		buf.WriteString(fmt.Sprintf("Для оркестрации провижининга комнат используется объект стратегии `%s` с реестром реализаций `map[MeetingFormat]MeetingRoomStrategy`.\n\n", m.Registry.Name))
+		if m.StrategyIface != nil {
+			buf.WriteString(fmt.Sprintf("Интерфейс стратегии `%s` реализуют:\n\n", m.StrategyIface.Name))
+			for _, impl := range m.StrategyImpls {
+				buf.WriteString(fmt.Sprintf("* `%s`\n", impl.Name))
+			}
+			buf.WriteString("\n")
+		}
+	}
 
 	buf.WriteString("## 4. Внешние порты и контракты (Outbound Ports)\n\n")
 	for _, port := range m.Ports {
@@ -866,4 +1348,26 @@ func isExported(name string) bool {
 	}
 	first := name[0]
 	return first >= 'A' && first <= 'Z'
+}
+
+func isAlphaNum(b byte) bool {
+	return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_'
+}
+
+func containsTypeName(s, typeName string) bool {
+	idx := strings.Index(s, typeName)
+	for idx != -1 {
+		beforeOk := idx == 0 || !isAlphaNum(s[idx-1])
+		endIdx := idx + len(typeName)
+		afterOk := endIdx == len(s) || !isAlphaNum(s[endIdx])
+		if beforeOk && afterOk {
+			return true
+		}
+		nextIdx := strings.Index(s[idx+1:], typeName)
+		if nextIdx == -1 {
+			break
+		}
+		idx = idx + 1 + nextIdx
+	}
+	return false
 }

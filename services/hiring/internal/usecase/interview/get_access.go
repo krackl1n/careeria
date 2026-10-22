@@ -52,7 +52,7 @@ func (s *Service) GetMeetingAccess(ctx context.Context, input GetMeetingAccessIn
 		}
 	}
 
-	if s.roomRegistry == nil {
+	if s.roomStrategy == nil {
 		return &MeetingAccessOutput{
 			InterviewID: it.ID,
 			Format:      it.Format,
@@ -60,18 +60,16 @@ func (s *Service) GetMeetingAccess(ctx context.Context, input GetMeetingAccessIn
 		}, nil
 	}
 
-	strat, err := s.roomRegistry.Get(it.Format)
-	if err != nil {
-		return nil, apperr.Conflict("unsupported_format", err.Error(), err)
-	}
-
-	res, err := strat.GenerateAccess(ctx, room.AccessRequest{
+	res, err := s.roomStrategy.GenerateAccess(ctx, it.Format, room.AccessRequest{
 		InterviewID: it.ID,
 		UserID:      input.ActorID,
 		UserRole:    userRole,
 		MeetingURL:  it.MeetingRoomURL,
 	})
 	if err != nil {
+		if errors.Is(err, room.ErrUnsupportedFormat) {
+			return nil, apperr.Conflict("unsupported_format", err.Error(), err)
+		}
 		return nil, fmt.Errorf("generate access: %w", err)
 	}
 

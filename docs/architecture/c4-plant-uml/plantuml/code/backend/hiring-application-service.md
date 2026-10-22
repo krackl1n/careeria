@@ -78,9 +78,9 @@
 * `+CanApplyVacancy(ctx: Context, actorID: UUID, vacancyID: UUID): error`
 * `+CanManageApplication(ctx: Context, actorID: UUID, appID: UUID): error`
 
-### Порт `InterviewSummaryRepository`
+### Порт `InterviewRepository`
 
-* `+FindByApplicationID(ctx: Context, appID: UUID): List<InterviewSummary>`
+* `+ListByApplicationID(ctx: Context, appID: UUID): List<Interview>`
 
 ### Порт `OutboxRepository`
 

@@ -18,8 +18,8 @@ type ApplicationRepository interface {
 	GetActiveByCandidateAndVacancy(ctx context.Context, candidateID, vacancyID uuid.UUID) (*applicationdomain.JobApplication, error)
 }
 
-type InterviewSummaryRepository interface {
-	FindByApplicationID(ctx context.Context, appID uuid.UUID) ([]interviewdomain.InterviewSummary, error)
+type InterviewRepository interface {
+	ListByApplicationID(ctx context.Context, appID uuid.UUID) ([]*interviewdomain.Interview, error)
 }
 
 type OutboxRepository interface {
@@ -44,20 +44,20 @@ type IDGenerator interface {
 }
 
 type Service struct {
-	appRepo      ApplicationRepository
-	interviewSum InterviewSummaryRepository
-	outboxRepo   OutboxRepository
-	authPort     AuthorizationPort
-	offerPolicy  *policydomain.OfferEligibilityPolicy
-	txManager    TransactionManager
-	eventFactory eventdomain.Factory
-	clock        Clock
-	idGen        IDGenerator
+	appRepo       ApplicationRepository
+	interviewRepo InterviewRepository
+	outboxRepo    OutboxRepository
+	authPort      AuthorizationPort
+	offerPolicy   *policydomain.OfferEligibilityPolicy
+	txManager     TransactionManager
+	eventFactory  eventdomain.Factory
+	clock         Clock
+	idGen         IDGenerator
 }
 
 func NewService(
 	appRepo ApplicationRepository,
-	interviewSum InterviewSummaryRepository,
+	interviewRepo InterviewRepository,
 	outboxRepo OutboxRepository,
 	authPort AuthorizationPort,
 	offerPolicy *policydomain.OfferEligibilityPolicy,
@@ -67,12 +67,12 @@ func NewService(
 	idGen IDGenerator,
 ) *Service {
 	return &Service{
-		appRepo:      appRepo,
-		interviewSum: interviewSum,
-		outboxRepo:   outboxRepo,
-		authPort:     authPort,
-		offerPolicy:  offerPolicy,
-		txManager:    txManager,
+		appRepo:       appRepo,
+		interviewRepo: interviewRepo,
+		outboxRepo:    outboxRepo,
+		authPort:      authPort,
+		offerPolicy:   offerPolicy,
+		txManager:     txManager,
 		eventFactory: eventFactory,
 		clock:        clock,
 		idGen:        idGen,

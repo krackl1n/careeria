@@ -15,7 +15,7 @@ func NewOfferEligibilityPolicy() *OfferEligibilityPolicy {
 
 func (p *OfferEligibilityPolicy) CanInitiateOffer(
 	app *application.JobApplication,
-	interviews []interview.InterviewSummary,
+	interviews []*interview.Interview,
 ) error {
 	if app == nil {
 		return ErrNilApplication
@@ -27,7 +27,7 @@ func (p *OfferEligibilityPolicy) CanInitiateOffer(
 
 	hasCompletedWithFeedback := false
 	for _, it := range interviews {
-		if it.Status == interview.StatusCompleted && it.HasFeedback {
+		if it != nil && it.Status == interview.StatusCompleted && len(it.Feedbacks) > 0 {
 			hasCompletedWithFeedback = true
 			break
 		}

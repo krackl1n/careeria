@@ -125,7 +125,7 @@ func TestInterviewService(t *testing.T) {
 	appChecker := &mockAppStageChecker{stage: applicationdomain.StageInterview}
 	confClient := &mockConferenceClient{}
 
-	roomRegistry := room.NewRegistry(
+	roomStrategy := room.NewRoomStrategy(
 		room.NewLiveKitStrategy(confClient),
 		room.NewOnsiteStrategy("Main Office, 4th floor"),
 	)
@@ -141,7 +141,7 @@ func TestInterviewService(t *testing.T) {
 	idGen := &sequentialIDGen{ids: []uuid.UUID{interviewID1, interviewID2}}
 	eventFactory := eventdomain.NewFactory(idGen)
 
-	svc := NewService(itRepo, appChecker, roomRegistry, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
+	svc := NewService(itRepo, appChecker, roomStrategy, outboxRepo, authPort, txMgr, eventFactory, clock, idGen)
 
 	appID := uuid.New()
 	actorID := uuid.New()

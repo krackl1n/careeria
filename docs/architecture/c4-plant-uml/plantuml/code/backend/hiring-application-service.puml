@@ -20,7 +20,7 @@ package "Component: Application Service (Hiring Domain)" {
     package "Application Layer" {
         class HiringApplicationService <<Application Service>> {
             - appRepo: ApplicationRepository
-            - interviewSum: InterviewSummaryRepository
+            - interviewRepo: InterviewRepository
             - outboxRepo: OutboxRepository
             - authPort: AuthorizationPort
             - offerPolicy: OfferEligibilityPolicy
@@ -37,6 +37,7 @@ package "Component: Application Service (Hiring Domain)" {
             + RejectApplication(ctx: Context, input: RejectInput): error
             + WithdrawApplication(ctx: Context, input: WithdrawInput): error
         }
+
     }
 
     ' ===================================================
@@ -74,7 +75,7 @@ package "Component: Application Service (Hiring Domain)" {
         }
 
         class OfferEligibilityPolicy <<Domain Policy>> {
-            + CanInitiateOffer(app: JobApplication, interviews: List<InterviewSummary>): error
+            + CanInitiateOffer(app: JobApplication, interviews: List<Interview>): error
         }
 
         enum PipelineStage <<enumeration>> {
@@ -105,6 +106,22 @@ package "Component: Application Service (Hiring Domain)" {
             + EffectiveComment(): string
         }
 
+        class Interview <<Aggregate Root>> {
+            + ID: UUID
+            + ApplicationID: UUID
+            + InterviewType: InterviewType
+            + Format: MeetingFormat
+            + Status: InterviewStatus
+            + ScheduledStartTime: Timestamp
+            + ScheduledEndTime: Timestamp
+            + MeetingRoomURL: string
+            + Participants: List<Participant>
+            + Feedbacks: List<Feedback>
+            + Version: int
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+        }
+
     }
 
     ' ===================================================
@@ -121,8 +138,8 @@ package "Component: Application Service (Hiring Domain)" {
             + CanApplyVacancy(ctx: Context, actorID: UUID, vacancyID: UUID): error
             + CanManageApplication(ctx: Context, actorID: UUID, appID: UUID): error
         }
-        interface InterviewSummaryRepository <<interface>> {
-            + FindByApplicationID(ctx: Context, appID: UUID): List<InterviewSummary>
+        interface InterviewRepository <<interface>> {
+            + ListByApplicationID(ctx: Context, appID: UUID): List<Interview>
         }
         interface OutboxRepository <<interface>> {
             + Save(ctx: Context, message: Message): error
@@ -134,12 +151,21 @@ package "Component: Application Service (Hiring Domain)" {
 ' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
 ' ========================================================
 
-"Application Layer" -[hidden]down-> "Domain Layer"
+HiringApplicationService -[hidden]down-> JobApplication
+
+JobApplication -[hidden]right-> OfferEligibilityPolicy
+OfferEligibilityPolicy -[hidden]right-> Interview
+JobApplication -[hidden]down-> StageTransition
+StageTransition -[hidden]down-> RejectReason
+RejectReason -[hidden]down-> RejectCode
+StageTransition -[hidden]right-> PipelineStage
 
 HiringApplicationService -[hidden]right-> ApplicationRepository
 ApplicationRepository -[hidden]down-> AuthorizationPort
-AuthorizationPort -[hidden]down-> InterviewSummaryRepository
-InterviewSummaryRepository -[hidden]down-> OutboxRepository
+AuthorizationPort -[hidden]down-> InterviewRepository
+InterviewRepository -[hidden]down-> OutboxRepository
+
+Interview -[hidden]right-> ApplicationRepository
 
 ' ========================================================
 ' СВЯЗИ
@@ -148,12 +174,15 @@ InterviewSummaryRepository -[hidden]down-> OutboxRepository
 HiringApplicationService ..> JobApplication : commands mutation
 HiringApplicationService -right-> ApplicationRepository : uses
 HiringApplicationService --> AuthorizationPort : uses
-HiringApplicationService --> InterviewSummaryRepository : uses
+HiringApplicationService --> InterviewRepository : uses
 HiringApplicationService --> OutboxRepository : uses
 JobApplication *-- "*" StageTransition : owns
+JobApplication ..> RejectReason : uses
+InterviewRepository ..> Interview : provides
 JobApplication *-- "1" PipelineStage
-JobApplication *-- "1" RejectCode
+RejectReason *-- "1" RejectCode
 HiringApplicationService --> OfferEligibilityPolicy : executes policy
 OfferEligibilityPolicy ..> JobApplication : evaluates
+OfferEligibilityPolicy ..> Interview : evaluates
 
 @enduml

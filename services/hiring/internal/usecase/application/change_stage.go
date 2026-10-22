@@ -44,9 +44,9 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 	fromStage := app.CurrentStage
 
 	if input.TargetStage == applicationdomain.StageOfferPending {
-		interviews, err := s.interviewSum.FindByApplicationID(ctx, input.ApplicationID)
+		interviews, err := s.interviewRepo.ListByApplicationID(ctx, input.ApplicationID)
 		if err != nil {
-			return fmt.Errorf("fetch interview summaries: %w", err)
+			return fmt.Errorf("fetch interviews: %w", err)
 		}
 
 		if err := s.offerPolicy.CanInitiateOffer(app, interviews); err != nil {

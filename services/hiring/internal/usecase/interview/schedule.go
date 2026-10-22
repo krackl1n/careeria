@@ -2,6 +2,7 @@ package interview
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,13 +56,8 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 	interviewID := s.idGen.New()
 
 	roomURL := input.Location
-	if s.roomRegistry != nil {
-		strat, err := s.roomRegistry.Get(input.Format)
-		if err != nil {
-			return uuid.Nil, apperr.InvalidArgument("unsupported_format", err.Error(), err)
-		}
-
-		res, err := strat.Provision(ctx, room.ProvisionRequest{
+	if s.roomStrategy != nil {
+		res, err := s.roomStrategy.Provision(ctx, input.Format, room.ProvisionRequest{
 			InterviewID:   interviewID,
 			ApplicationID: input.ApplicationID,
 			InterviewType: input.InterviewType,
@@ -70,6 +66,9 @@ func (s *Service) ScheduleInterview(ctx context.Context, input ScheduleInterview
 			Location:      input.Location,
 		})
 		if err != nil {
+			if errors.Is(err, room.ErrUnsupportedFormat) {
+				return uuid.Nil, apperr.InvalidArgument("unsupported_format", err.Error(), err)
+			}
 			return uuid.Nil, fmt.Errorf("provision meeting room: %w", err)
 		}
 		roomURL = res.MeetingURL

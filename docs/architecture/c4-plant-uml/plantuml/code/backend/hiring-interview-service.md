@@ -42,7 +42,6 @@
 * `+Complete(now: Timestamp): error`
 * `+Cancel(reason: string, now: Timestamp): error`
 * `+SubmitFeedback(feedback: Feedback, now: Timestamp): error`
-* `+ToSummary(): InterviewSummary`
 
 ### Дочерние сущности (Entities)
 
@@ -70,6 +69,15 @@
 * `+ScheduleInterview(ctx: Context, input: ScheduleInterviewInput): UUID`
 * `+SubmitFeedback(ctx: Context, input: SubmitFeedbackInput): error`
 
+### Стратегии прикладного уровня (RoomStrategy)
+
+Для оркестрации провижининга комнат используется объект стратегии `RoomStrategy` с реестром реализаций `map[MeetingFormat]MeetingRoomStrategy`.
+
+Интерфейс стратегии `MeetingRoomStrategy` реализуют:
+
+* `OnsiteStrategy`
+* `LiveKitStrategy`
+
 ## 4. Внешние порты и контракты (Outbound Ports)
 
 ### Порт `ApplicationStageChecker`
@@ -80,6 +88,11 @@
 
 * `+CanManageInterview(ctx: Context, actorID: UUID, appID: UUID): error`
 * `+CanSubmitFeedback(ctx: Context, actorID: UUID, interviewID: UUID): error`
+
+### Порт `ConferenceClient`
+
+* `+CreateRoom(ctx: Context, roomName: string): string`
+* `+EndRoom(ctx: Context, roomName: string): error`
 
 ### Порт `InterviewRepository`
 
