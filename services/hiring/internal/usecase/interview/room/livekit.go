@@ -72,4 +72,3 @@ func (s *LiveKitStrategy) Teardown(ctx context.Context, req TeardownRequest) err
 
 	return nil
 }
-

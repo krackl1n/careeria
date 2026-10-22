@@ -4,11 +4,17 @@
 
 > Планирование и проведение собеседований, фиксация оценок и управление видео-комнатами.
 
+![Interview Service (Hiring Domain)](./hiring-interview-service.svg)
+
+<details>
+<summary>PlantUML Исходный код</summary>
+
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/code/backend/hiring-interview-service.puml
+!include hiring-interview-service.puml
 @enduml
 ```
+</details>
 
 ## 1. Архитектурные границы и принципы
 
@@ -71,7 +77,7 @@
 
 ### Стратегии прикладного уровня (RoomStrategy)
 
-Для оркестрации провижининга комнат используется объект стратегии `RoomStrategy` с реестром реализаций `map[MeetingFormat]MeetingRoomStrategy`.
+Для оркестрации стратегий используется объект стратегии `RoomStrategy`.
 
 Интерфейс стратегии `MeetingRoomStrategy` реализуют:
 

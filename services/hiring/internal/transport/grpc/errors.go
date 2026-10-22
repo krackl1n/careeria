@@ -50,4 +50,3 @@ func grpcCode(value apperr.Type) codes.Code {
 		return codes.Internal
 	}
 }
-

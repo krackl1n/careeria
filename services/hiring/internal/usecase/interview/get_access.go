@@ -81,4 +81,3 @@ func (s *Service) GetMeetingAccess(ctx context.Context, input GetMeetingAccessIn
 		Instructions: res.Instructions,
 	}, nil
 }
-

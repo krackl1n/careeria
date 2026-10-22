@@ -59,4 +59,3 @@ func (s *OnsiteStrategy) GenerateAccess(_ context.Context, req AccessRequest) (*
 func (s *OnsiteStrategy) Teardown(_ context.Context, _ TeardownRequest) error {
 	return nil
 }
-

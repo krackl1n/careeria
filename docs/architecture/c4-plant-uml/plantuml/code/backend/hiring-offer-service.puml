@@ -1,4 +1,4 @@
-@startuml hiring-offer-service-l4
+@startuml hiring-offer-service
 skinparam classAttributeIconSize 0
 skinparam roundcorner 6
 skinparam shadowing false

@@ -152,4 +152,3 @@ func normalizeCode(code string) string {
 func normalizeMessage(message string) string {
 	return strings.TrimSpace(message)
 }
-

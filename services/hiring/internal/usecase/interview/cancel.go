@@ -78,4 +78,3 @@ func (s *Service) CancelInterview(ctx context.Context, input CancelInterviewInpu
 		return nil
 	})
 }
-

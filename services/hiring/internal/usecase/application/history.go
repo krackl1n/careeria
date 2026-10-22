@@ -31,4 +31,3 @@ func (s *Service) GetPipelineHistory(ctx context.Context, appID, actorID uuid.UU
 		History:       app.History,
 	}, nil
 }
-

@@ -68,4 +68,3 @@ func (s *Service) CompleteInterview(ctx context.Context, input CompleteInterview
 		return nil
 	})
 }
-

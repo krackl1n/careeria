@@ -1,4 +1,4 @@
-@startuml hiring-interview-service-l4
+@startuml hiring-interview-service
 skinparam classAttributeIconSize 0
 skinparam roundcorner 6
 skinparam shadowing false
@@ -212,7 +212,7 @@ Interview *-- "1" InterviewStatus
 Interview *-- "1" InterviewType
 Interview *-- "1" MeetingFormat
 Participant *-- "1" ParticipantRole
-HiringInterviewService --> RoomStrategy : delegates room operations
+HiringInterviewService --> RoomStrategy : delegates operations
 RoomStrategy o-- MeetingRoomStrategy : registry
 OnsiteStrategy ..|> MeetingRoomStrategy : implements
 LiveKitStrategy ..|> MeetingRoomStrategy : implements

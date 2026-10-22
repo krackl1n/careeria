@@ -55,4 +55,3 @@ func buildDependencies(ctx context.Context) (*Dependencies, error) {
 		PostgresClient: client,
 	}, nil
 }
-

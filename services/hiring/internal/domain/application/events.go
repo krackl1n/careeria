@@ -48,4 +48,3 @@ type ApplicationWithdrawnPayload struct {
 	WithdrawnAt   time.Time     `json:"withdrawn_at"`
 	Reason        string        `json:"reason,omitempty"`
 }
-

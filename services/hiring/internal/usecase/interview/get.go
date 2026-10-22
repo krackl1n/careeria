@@ -41,4 +41,3 @@ func (s *Service) ListInterviewsByApplication(ctx context.Context, appID, actorI
 
 	return s.interviewRepo.ListByApplicationID(ctx, appID)
 }
-

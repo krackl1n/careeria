@@ -15,4 +15,3 @@ func (s *Service) PromoteToInterview(ctx context.Context, appID, actorID uuid.UU
 		Reason:        reason,
 	})
 }
-

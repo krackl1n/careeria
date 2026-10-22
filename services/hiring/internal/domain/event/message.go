@@ -86,4 +86,3 @@ func (f Factory) Create(
 		OccurredAt:   occurredAt,
 	}, nil
 }
-

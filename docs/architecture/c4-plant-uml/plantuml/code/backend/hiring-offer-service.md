@@ -4,11 +4,17 @@
 
 > Формирование, отправка и принятие предложений о работе с межагрегатной транзакционной атомарностью.
 
+![Offer Service (Hiring Domain)](./hiring-offer-service.svg)
+
+<details>
+<summary>PlantUML Исходный код</summary>
+
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/code/backend/hiring-offer-service.puml
+!include hiring-offer-service.puml
 @enduml
 ```
+</details>
 
 ## 1. Архитектурные границы и принципы
 

@@ -86,4 +86,3 @@ func (s *Service) SubmitFeedback(ctx context.Context, input SubmitFeedbackInput)
 		return nil
 	})
 }
-

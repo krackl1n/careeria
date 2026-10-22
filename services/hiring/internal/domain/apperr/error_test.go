@@ -23,4 +23,3 @@ func TestAppError(t *testing.T) {
 	differentCode := NotFound("different_code", "", nil)
 	require.False(t, err.Is(differentCode))
 }
-

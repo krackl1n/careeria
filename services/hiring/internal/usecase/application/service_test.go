@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	eventdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/event"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
 	policydomain "github.com/krackl1n/careeria/services/hiring/internal/domain/policy"
@@ -196,4 +196,3 @@ func TestApplicationService(t *testing.T) {
 	require.Equal(t, applicationdomain.StageOfferPending, history.CurrentStage)
 	require.Len(t, history.History, 4)
 }
-

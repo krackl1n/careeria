@@ -11,7 +11,7 @@ import (
 var (
 	ErrInvalidTransitionActor = errors.New("transition actor ID must not be empty")
 	ErrInvalidTransitionStage = errors.New("transition target stage is invalid")
-	ErrEmptyRejectReason       = errors.New("reject reason code or comment is required")
+	ErrEmptyRejectReason      = errors.New("reject reason code or comment is required")
 )
 
 type StageTransition struct {

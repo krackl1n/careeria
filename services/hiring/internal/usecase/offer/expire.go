@@ -62,4 +62,3 @@ func (s *Service) ExpireOffer(ctx context.Context, offerID uuid.UUID) error {
 		return nil
 	})
 }
-

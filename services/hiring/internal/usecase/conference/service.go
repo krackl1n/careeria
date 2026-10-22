@@ -42,4 +42,3 @@ func (s *Service) EndRoom(ctx context.Context, roomName string) error {
 
 	return s.client.DeleteRoom(ctx, roomName)
 }
-

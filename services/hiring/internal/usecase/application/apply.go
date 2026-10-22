@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 )
 
 type ApplyVacancyInput struct {
@@ -83,4 +83,3 @@ func (s *Service) ApplyVacancy(ctx context.Context, input ApplyVacancyInput) (uu
 
 	return appID, nil
 }
-

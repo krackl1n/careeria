@@ -2,8 +2,8 @@ package runtime_test
 
 import (
 	"context"
-	"github.com/krackl1n/careeria/runtime"
 	"errors"
+	"github.com/krackl1n/careeria/runtime"
 	"testing"
 	"time"
 

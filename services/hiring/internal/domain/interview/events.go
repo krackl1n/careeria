@@ -42,4 +42,3 @@ type FeedbackSubmittedPayload struct {
 	Score             int       `json:"score"`
 	SubmittedAt       time.Time `json:"submitted_at"`
 }
-

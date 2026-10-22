@@ -72,4 +72,3 @@ func (s *Service) SendOffer(ctx context.Context, input SendOfferInput) error {
 		return nil
 	})
 }
-

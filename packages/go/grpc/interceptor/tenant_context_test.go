@@ -63,7 +63,7 @@ func TestTenantContextRejectsMissingOrInvalidMetadata(t *testing.T) {
 				t.Fatal("handler must not be called")
 				return nil, nil
 			})
-				require.Equal(t, codes.InvalidArgument, status.Code(err))
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
 		})
 	}
 }

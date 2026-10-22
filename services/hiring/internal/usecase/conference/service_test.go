@@ -36,4 +36,3 @@ func TestConferenceService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "interview-123", mock.deleted)
 }
-

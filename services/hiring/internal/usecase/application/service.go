@@ -73,9 +73,8 @@ func NewService(
 		authPort:      authPort,
 		offerPolicy:   offerPolicy,
 		txManager:     txManager,
-		eventFactory: eventFactory,
-		clock:        clock,
-		idGen:        idGen,
+		eventFactory:  eventFactory,
+		clock:         clock,
+		idGen:         idGen,
 	}
 }
-

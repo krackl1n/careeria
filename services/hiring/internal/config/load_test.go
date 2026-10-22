@@ -68,4 +68,3 @@ func writeConfig(t *testing.T, content string) string {
 
 	return path
 }
-

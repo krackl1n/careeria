@@ -134,4 +134,3 @@ func (a *App) GRPCServer() (*grpcserver.Server, error) {
 	a.grpcServer = server
 	return a.grpcServer, nil
 }
-

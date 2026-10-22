@@ -33,4 +33,3 @@ func TestErrorResolver(t *testing.T) {
 		require.False(t, ok)
 	})
 }
-

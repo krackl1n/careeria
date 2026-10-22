@@ -4,11 +4,17 @@
 
 > Оркестрация воронки отклика, аудит переходов и межагрегатная доменная политика.
 
+![Application Service (Hiring Domain)](./hiring-application-service.svg)
+
+<details>
+<summary>PlantUML Исходный код</summary>
+
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/code/backend/hiring-application-service.puml
+!include hiring-application-service.puml
 @enduml
 ```
+</details>
 
 ## 1. Архитектурные границы и принципы
 
@@ -50,6 +56,37 @@
 * `ChangedBy: UUID`
 * `ChangedAt: Timestamp`
 * `Reason: string`
+
+### Объекты-значения (Value Objects)
+
+#### Объект-значение `RejectReason`
+
+* `Code: RejectCode`
+* `Comment: string`
+
+### Внешние агрегаты (External Aggregates)
+
+#### Агрегат `Interview`
+
+* `ID: UUID`
+* `ApplicationID: UUID`
+* `InterviewType: InterviewType`
+* `Format: MeetingFormat`
+* `Status: InterviewStatus`
+* `ScheduledStartTime: Timestamp`
+* `ScheduledEndTime: Timestamp`
+* `MeetingRoomURL: string`
+* `Participants: List<Participant>`
+* `Feedbacks: List<Feedback>`
+* `Version: int`
+* `CreatedAt: Timestamp`
+* `UpdatedAt: Timestamp`
+
+### Доменные политики (Domain Policies)
+
+#### Политика `OfferEligibilityPolicy`
+
+* `+CanInitiateOffer(app: JobApplication, interviews: List<Interview>): error`
 
 ## 3. Сценарии использования (Application Layer)
 

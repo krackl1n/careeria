@@ -48,4 +48,3 @@ func (t Type) Valid() bool {
 		return false
 	}
 }
-

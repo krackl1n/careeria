@@ -77,4 +77,3 @@ func TestOfferEligibilityPolicy(t *testing.T) {
 	err = policy.CanInitiateOffer(app, []*interview.Interview{itWithFeedback})
 	require.NoError(t, err)
 }
-

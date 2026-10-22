@@ -55,4 +55,3 @@ type OfferExpiredPayload struct {
 	OfferID   uuid.UUID `json:"offer_id"`
 	ExpiredAt time.Time `json:"expired_at"`
 }
-

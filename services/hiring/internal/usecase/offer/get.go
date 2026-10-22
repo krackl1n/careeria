@@ -45,4 +45,3 @@ func (s *Service) GetOfferByApplication(ctx context.Context, appID, actorID uuid
 
 	return s.offerRepo.GetByApplicationID(ctx, appID)
 }
-

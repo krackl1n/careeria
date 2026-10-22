@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	offerdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/offer"
 )
 
@@ -116,4 +116,3 @@ func (s *Service) CreateOffer(ctx context.Context, input CreateOfferInput) (uuid
 
 	return offerID, nil
 }
-

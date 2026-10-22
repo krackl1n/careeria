@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	policydomain "github.com/krackl1n/careeria/services/hiring/internal/domain/policy"
 )
 
@@ -103,4 +103,3 @@ func (s *Service) ChangeStage(ctx context.Context, input ChangeStageInput) error
 		return nil
 	})
 }
-

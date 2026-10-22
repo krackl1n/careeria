@@ -52,4 +52,3 @@ func TestRuntimesInitialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, runtimes, 2)
 }
-

@@ -37,4 +37,3 @@ func load(file string) (Config, error) {
 
 	return cfg, nil
 }
-

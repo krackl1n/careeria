@@ -13,4 +13,3 @@ func Specification() []byte {
 
 	return content
 }
-

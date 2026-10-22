@@ -230,4 +230,3 @@ func TestOfferService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, applicationdomain.StageInterview, app3.CurrentStage)
 }
-

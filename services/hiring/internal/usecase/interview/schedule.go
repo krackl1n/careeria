@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	"github.com/krackl1n/careeria/services/hiring/internal/domain/apperr"
+	applicationdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/application"
 	interviewdomain "github.com/krackl1n/careeria/services/hiring/internal/domain/interview"
 	"github.com/krackl1n/careeria/services/hiring/internal/usecase/interview/room"
 )
