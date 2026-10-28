@@ -1,0 +1,102 @@
+http:
+  addr: ":8080"
+  read_timeout: 5s
+  read_header_timeout: 1s
+  write_timeout: 10s
+  idle_timeout: 30s
+
+logger:
+  level: info
+  format: json
+  add_source: false
+  service: api-gateway
+  env: local
+  version: dev
+
+shutdown:
+  timeout: 15s
+
+metrics:
+  enabled: true
+  addr: ":9090"
+  namespace: careeria
+  read_header_timeout: 5s
+
+tracing:
+  enabled: false
+  service_name: api-gateway
+  service_version: dev
+  environment: local
+  exporter: grpc
+  endpoint: localhost:4317
+  insecure: true
+  sampling_ratio: 1
+  export_timeout: 5s
+  shutdown_timeout: 5s
+  batch_timeout: 5s
+  max_queue_size: 2048
+  max_export_batch_size: 512
+
+gateway:
+  base:
+    trace_operation: api-gateway.http
+    metrics:
+      namespace: careeria
+      subsystem: api_gateway
+      duration_buckets: []
+  trusted_proxies: []
+  cors:
+    allowed_origins:
+      - http://localhost:3000
+    allowed_methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    allowed_headers: [Authorization, Content-Type, X-Request-ID]
+    exposed_headers: [X-Request-ID]
+    allow_credentials: false
+    max_age: 300
+    options_passthrough: false
+    debug: false
+  rate_limit_requests: 500
+  rate_limit_window: 1m
+  body_limit: 33554432
+  compression_level: 5
+  security_headers:
+    content_security_policy: ""
+    referrer_policy: no-referrer
+    frame_options: DENY
+    hsts_max_age: 0
+    hsts_include_subdomains: false
+    hsts_preload: false
+
+swagger:
+  enabled: true
+  title: Careeria API
+  path: /swagger/
+  specification_path: /openapi/careeria.swagger.json
+
+identity_grpc:
+  target: 127.0.0.1:50052
+  insecure: true
+  tls:
+    enabled: false
+  user_agent: careeria-api-gateway
+  max_recv_message_size: 0
+  max_send_message_size: 0
+  keepalive:
+    enabled: false
+    time: 0s
+    timeout: 0s
+    permit_without_stream: false
+  tracing:
+    enabled: true
+
+authentication:
+  issuer: http://localhost:18080
+  audience: [careeria-api]
+  jwks_cache:
+    ttl: 5m
+    refresh_timeout: 2s
+    refresh_cooldown: 10s
+
+grpc_client_metrics:
+  namespace: careeria
+  subsystem: api_gateway

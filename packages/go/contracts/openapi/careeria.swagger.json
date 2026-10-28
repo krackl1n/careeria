@@ -1,0 +1,2178 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "definitions": {
+    "protobufAny": {
+      "additionalProperties": {},
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "protobufNullValue": {
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value.",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "type": "string"
+    },
+    "rpcStatus": {
+      "properties": {
+        "code": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "details": {
+          "items": {
+            "$ref": "#/definitions/protobufAny",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1APIError": {
+      "properties": {
+        "code": {
+          "description": "Стабильный snake_case код. Для доменных ошибок используется нормализованный\nдоменный код, например document_version_conflict.",
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "type": "string"
+        },
+        "details": {
+          "$ref": "#/definitions/v1ErrorDetails",
+          "description": "Дополнительные структурированные данные ошибки."
+        },
+        "message": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "v1AuthenticateWithPasswordRequest": {
+      "description": "Аутентификация по паролю с email или телефоном в качестве логина.",
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "email": {
+          "format": "email",
+          "type": "string",
+          "x-max-bytes": 320
+        },
+        "password": {
+          "type": "string",
+          "x-max-bytes": 1024,
+          "x-min-bytes": 1
+        },
+        "phoneNumber": {
+          "pattern": "^\\+[1-9][0-9]{7,14}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorizationTransactionId",
+        "password"
+      ],
+      "type": "object",
+      "x-oneof": [
+        {
+          "fields": [
+            "email",
+            "phoneNumber"
+          ],
+          "required": true
+        }
+      ]
+    },
+    "v1AuthenticateWithPasswordResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1AuthenticationContext": {
+      "description": "Данные, необходимые UI для отображения экрана входа.",
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "expiresAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/definitions/v1IdentitySummary"
+        },
+        "nextStep": {
+          "$ref": "#/definitions/v1AuthenticationStep"
+        },
+        "oauthClient": {
+          "$ref": "#/definitions/v1OAuthClientSummary"
+        },
+        "requestedScopes": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "authorizationTransactionId",
+        "oauthClient",
+        "nextStep"
+      ],
+      "type": "object"
+    },
+    "v1AuthenticationLevel": {
+      "default": "AUTHENTICATION_LEVEL_UNSPECIFIED",
+      "description": "Уровень доверия к аутентификации текущей сессии.",
+      "enum": [
+        "AUTHENTICATION_LEVEL_UNSPECIFIED",
+        "AUTHENTICATION_LEVEL_SINGLE_FACTOR",
+        "AUTHENTICATION_LEVEL_MULTI_FACTOR"
+      ],
+      "type": "string"
+    },
+    "v1AuthenticationMethod": {
+      "description": "Доступный в Authentication UI способ аутентификации.",
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_.:-]*$",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        "displayName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "displayName"
+      ],
+      "type": "object"
+    },
+    "v1AuthenticationStep": {
+      "description": "Следующий экран и допустимое действие в текущем authorization flow.",
+      "properties": {
+        "chooseAuthenticationMethod": {
+          "$ref": "#/definitions/v1ChooseAuthenticationMethodStep"
+        },
+        "consent": {
+          "$ref": "#/definitions/v1ConsentStep"
+        },
+        "emailVerification": {
+          "$ref": "#/definitions/v1EmailVerificationStep"
+        },
+        "mfa": {
+          "$ref": "#/definitions/v1MFAAuthenticationStep"
+        },
+        "mfaEnrollment": {
+          "$ref": "#/definitions/v1MFAEnrollmentStep"
+        },
+        "passwordChange": {
+          "$ref": "#/definitions/v1PasswordChangeStep"
+        },
+        "phoneVerification": {
+          "$ref": "#/definitions/v1PhoneVerificationStep"
+        },
+        "ready": {
+          "$ref": "#/definitions/v1AuthorizationReadyStep"
+        }
+      },
+      "type": "object",
+      "x-oneof": [
+        {
+          "fields": [
+            "chooseAuthenticationMethod",
+            "mfa",
+            "emailVerification",
+            "phoneVerification",
+            "passwordChange",
+            "consent",
+            "ready",
+            "mfaEnrollment"
+          ],
+          "required": true
+        }
+      ]
+    },
+    "v1AuthorizationReadyStep": {
+      "type": "object"
+    },
+    "v1AuthorizeResponse": {
+      "description": "Указывает HTTP-адаптеру выполнить 302 redirect к Authentication UI.",
+      "properties": {
+        "authorization_transaction_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "redirect_uri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        }
+      },
+      "required": [
+        "redirect_uri",
+        "authorization_transaction_id",
+        "expires_at"
+      ],
+      "type": "object"
+    },
+    "v1ChooseAuthenticationMethodStep": {
+      "properties": {
+        "availableMethods": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "type": "object"
+    },
+    "v1ConsentStep": {
+      "properties": {
+        "requestedScopes": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "type": "object"
+    },
+    "v1ContinueAuthorizationRequest": {
+      "description": "Завершает аутентифицированную authorization transaction.",
+      "properties": {
+        "authorization_transaction_id": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorization_transaction_id"
+      ],
+      "type": "object"
+    },
+    "v1ContinueAuthorizationResponse": {
+      "description": "Указывает HTTP-адаптеру выполнить 302 redirect на зарегистрированный redirect_uri клиента.",
+      "properties": {
+        "redirect_uri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 4096
+        }
+      },
+      "required": [
+        "redirect_uri"
+      ],
+      "type": "object"
+    },
+    "v1CreatePublicOAuthClientResponse": {
+      "properties": {
+        "oauthClient": {
+          "$ref": "#/definitions/v1OAuthClient",
+          "readOnly": true
+        }
+      },
+      "type": "object"
+    },
+    "v1CreateSigningKeyResponse": {
+      "properties": {
+        "signingKey": {
+          "$ref": "#/definitions/v1SigningKey",
+          "readOnly": true
+        }
+      },
+      "type": "object"
+    },
+    "v1DenyAuthorizationConsentRequest": {
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorizationTransactionId"
+      ],
+      "type": "object"
+    },
+    "v1DenyAuthorizationConsentResponse": {
+      "properties": {
+        "redirectUri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 4096
+        }
+      },
+      "required": [
+        "redirectUri"
+      ],
+      "type": "object"
+    },
+    "v1EmailVerificationStep": {
+      "properties": {
+        "challengeExpiresAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "maskedEmail": {
+          "maxLength": 320,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "maskedEmail",
+        "challengeExpiresAt"
+      ],
+      "type": "object"
+    },
+    "v1ErrorDetails": {
+      "properties": {
+        "fields": {
+          "description": "Заполняется для validation_failed.",
+          "items": {
+            "$ref": "#/definitions/v1FieldViolation",
+            "type": "object"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
+        "metadata": {
+          "description": "Метаданные доменной ошибки, если они безопасны для клиента.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "v1ErrorResponse": {
+      "description": "Единый ответ API Gateway для transport, validation и domain errors.",
+      "properties": {
+        "error": {
+          "$ref": "#/definitions/v1APIError"
+        },
+        "request_id": {
+          "maxLength": 255,
+          "type": "string"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "v1ExchangeTokenRequest": {
+      "description": "Обмен authorization code или refresh token. Поля сериализуются как form-urlencoded.",
+      "properties": {
+        "client_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string"
+        },
+        "code": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "code_verifier": {
+          "maxLength": 128,
+          "minLength": 43,
+          "pattern": "^[A-Za-z0-9._~-]+$",
+          "type": "string"
+        },
+        "grant_type": {
+          "enum": [
+            "authorization_code",
+            "refresh_token"
+          ],
+          "type": "string"
+        },
+        "redirect_uri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "refresh_token": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 4096
+        }
+      },
+      "required": [
+        "grant_type"
+      ],
+      "type": "object",
+      "x-oneof": [
+        {
+          "fields": [
+            "code",
+            "refresh_token"
+          ],
+          "required": true
+        }
+      ]
+    },
+    "v1ExchangeTokenResponse": {
+      "description": "Стандартный OAuth 2.0 token response.",
+      "properties": {
+        "access_token": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 8192
+        },
+        "expires_in": {
+          "format": "int64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "id_token": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 16384
+        },
+        "refresh_token": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 4096
+        },
+        "scope": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+( [^[:space:]]+)*$",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "token_type": {
+          "enum": [
+            "Bearer"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "access_token",
+        "token_type",
+        "expires_in",
+        "scope"
+      ],
+      "type": "object"
+    },
+    "v1FieldViolation": {
+      "properties": {
+        "code": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "type": "string"
+        },
+        "field": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "v1GetAuthenticationContextResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1GetAuthenticationMethodsResponse": {
+      "properties": {
+        "methods": {
+          "items": {
+            "$ref": "#/definitions/v1AuthenticationMethod",
+            "type": "object"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetIdentitySessionResponse": {
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1IdentitySession"
+        }
+      },
+      "required": [
+        "session"
+      ],
+      "type": "object"
+    },
+    "v1GetJSONWebKeySetResponse": {
+      "description": "RFC 7517 JSON Web Key Set. Каждый Struct обязан быть публичным JWK-объектом;\nприватные key members отсекаются доменным валидатором signingkey.PublicJWK.",
+      "properties": {
+        "keys": {
+          "items": {
+            "type": "object"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetOpenIDConfigurationResponse": {
+      "description": "OpenID Provider Configuration, публикуемая discovery endpoint.",
+      "properties": {
+        "authorization_endpoint": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "claims_supported": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "code_challenge_methods_supported": {
+          "items": {
+            "enum": [
+              "S256"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "grant_types_supported": {
+          "items": {
+            "enum": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id_token_signing_alg_values_supported": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "issuer": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "jwks_uri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "response_types_supported": {
+          "items": {
+            "enum": [
+              "code"
+            ],
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "revocation_endpoint": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "revocation_endpoint_auth_methods_supported": {
+          "items": {
+            "enum": [
+              "none",
+              "client_secret_basic"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "scopes_supported": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "subject_types_supported": {
+          "items": {
+            "enum": [
+              "public"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "token_endpoint": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        },
+        "token_endpoint_auth_methods_supported": {
+          "items": {
+            "enum": [
+              "none",
+              "client_secret_basic"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "userinfo_endpoint": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        }
+      },
+      "required": [
+        "issuer",
+        "authorization_endpoint",
+        "token_endpoint",
+        "revocation_endpoint",
+        "userinfo_endpoint",
+        "jwks_uri"
+      ],
+      "type": "object"
+    },
+    "v1GetUserInfoResponse": {
+      "description": "Поддерживаемые claims UserInfo для текущей identity.",
+      "properties": {
+        "email": {
+          "format": "email",
+          "type": "string",
+          "x-max-bytes": 320
+        },
+        "email_verified": {
+          "type": "boolean"
+        },
+        "family_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "given_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "middle_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 767,
+          "minLength": 1,
+          "type": "string"
+        },
+        "phone_number": {
+          "pattern": "^\\+[1-9][0-9]{7,14}$",
+          "type": "string"
+        },
+        "phone_number_verified": {
+          "type": "boolean"
+        },
+        "sub": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "double",
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "sub"
+      ],
+      "type": "object"
+    },
+    "v1GrantAuthorizationConsentRequest": {
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "grantedScopes": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "remember": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "authorizationTransactionId"
+      ],
+      "type": "object"
+    },
+    "v1GrantAuthorizationConsentResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1IdentityAssuranceLevel": {
+      "default": "IDENTITY_ASSURANCE_LEVEL_UNSPECIFIED",
+      "enum": [
+        "IDENTITY_ASSURANCE_LEVEL_UNSPECIFIED",
+        "IDENTITY_ASSURANCE_LEVEL_SELF_DECLARED",
+        "IDENTITY_ASSURANCE_LEVEL_ORGANIZATION_ASSERTED",
+        "IDENTITY_ASSURANCE_LEVEL_IDENTITY_VERIFIED"
+      ],
+      "type": "string"
+    },
+    "v1IdentityProfile": {
+      "properties": {
+        "assuranceLevel": {
+          "enum": [
+            "IDENTITY_ASSURANCE_LEVEL_SELF_DECLARED",
+            "IDENTITY_ASSURANCE_LEVEL_ORGANIZATION_ASSERTED",
+            "IDENTITY_ASSURANCE_LEVEL_IDENTITY_VERIFIED"
+          ],
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "familyName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "givenName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "middleName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "IDENTITY_PROFILE_SOURCE_SELF_DECLARED",
+            "IDENTITY_PROFILE_SOURCE_PROVISIONED",
+            "IDENTITY_PROFILE_SOURCE_VERIFIED"
+          ],
+          "type": "string"
+        },
+        "updatedAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "version": {
+          "format": "int64",
+          "type": "string",
+          "x-minimum": 1
+        }
+      },
+      "required": [
+        "familyName",
+        "givenName",
+        "source",
+        "assuranceLevel",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "v1IdentityProfileSource": {
+      "default": "IDENTITY_PROFILE_SOURCE_UNSPECIFIED",
+      "enum": [
+        "IDENTITY_PROFILE_SOURCE_UNSPECIFIED",
+        "IDENTITY_PROFILE_SOURCE_SELF_DECLARED",
+        "IDENTITY_PROFILE_SOURCE_PROVISIONED",
+        "IDENTITY_PROFILE_SOURCE_VERIFIED"
+      ],
+      "type": "string"
+    },
+    "v1IdentitySession": {
+      "description": "Текущая серверная identity-сессия.",
+      "properties": {
+        "absoluteExpiresAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "authenticatedAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "authenticatedMethods": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "authenticationLevel": {
+          "enum": [
+            "AUTHENTICATION_LEVEL_SINGLE_FACTOR",
+            "AUTHENTICATION_LEVEL_MULTI_FACTOR"
+          ],
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "deviceName": {
+          "maxLength": 255,
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "identity": {
+          "$ref": "#/definitions/v1IdentitySummary"
+        },
+        "idleExpiresAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "ipAddress": {
+          "format": "ip",
+          "type": "string"
+        },
+        "lastSeenAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "oauthClient": {
+          "$ref": "#/definitions/v1OAuthClientSummary"
+        },
+        "scopes": {
+          "items": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "userAgent": {
+          "type": "string",
+          "x-max-bytes": 1024
+        }
+      },
+      "required": [
+        "id",
+        "identity",
+        "oauthClient",
+        "authenticationLevel"
+      ],
+      "type": "object"
+    },
+    "v1IdentitySummary": {
+      "description": "Безопасное для клиентского приложения представление пользователя.",
+      "properties": {
+        "email": {
+          "format": "email",
+          "type": "string",
+          "x-max-bytes": 320
+        },
+        "emailVerified": {
+          "type": "boolean"
+        },
+        "phoneNumber": {
+          "pattern": "^\\+[1-9][0-9]{7,14}$",
+          "type": "string"
+        },
+        "phoneNumberVerified": {
+          "type": "boolean"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1IdentityProfile"
+        },
+        "subject": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject",
+        "profile"
+      ],
+      "type": "object"
+    },
+    "v1LogoutIdentitySessionResponse": {
+      "type": "object"
+    },
+    "v1MFAAuthenticationStep": {
+      "properties": {
+        "availableMethods": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "challengeId": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1MFAEnrollmentStep": {
+      "description": "Необязательное предложение подключить дополнительный фактор аутентификации.",
+      "properties": {
+        "availableMethods": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^[:space:]]+$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "availableMethods"
+      ],
+      "type": "object"
+    },
+    "v1OAuthClient": {
+      "properties": {
+        "clientId": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        },
+        "description": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "id": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "name": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "redirectUris": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "refreshTokensEnabled": {
+          "readOnly": true,
+          "type": "boolean"
+        },
+        "requirePkce": {
+          "readOnly": true,
+          "type": "boolean"
+        },
+        "scopes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "updatedAt": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1OAuthClientSummary": {
+      "description": "Публичные сведения OAuth-клиента, показанные пользователю.",
+      "properties": {
+        "clientId": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "clientId",
+        "name"
+      ],
+      "type": "object"
+    },
+    "v1OAuthErrorResponse": {
+      "description": "Стандартная ошибка OAuth 2.0 token/revocation endpoint.",
+      "properties": {
+        "error": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "type": "string"
+        },
+        "error_description": {
+          "type": "string",
+          "x-max-bytes": 2000
+        },
+        "error_uri": {
+          "format": "uri",
+          "type": "string",
+          "x-max-bytes": 2048
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "type": "object"
+    },
+    "v1PasswordChangeStep": {
+      "type": "object"
+    },
+    "v1PhoneVerificationStep": {
+      "properties": {
+        "challengeExpiresAt": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "maskedPhoneNumber": {
+          "maxLength": 32,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "maskedPhoneNumber",
+        "challengeExpiresAt"
+      ],
+      "type": "object"
+    },
+    "v1RegisterIdentityRequest": {
+      "description": "Создаёт pending identity внутри существующей authorization transaction.",
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "email": {
+          "format": "email",
+          "type": "string",
+          "x-max-bytes": 320
+        },
+        "password": {
+          "type": "string",
+          "x-max-bytes": 1024,
+          "x-min-bytes": 8
+        },
+        "phoneNumber": {
+          "pattern": "^\\+[1-9][0-9]{7,14}$",
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1RegistrationProfile"
+        }
+      },
+      "required": [
+        "password",
+        "authorizationTransactionId",
+        "profile"
+      ],
+      "type": "object",
+      "x-oneof": [
+        {
+          "fields": [
+            "email",
+            "phoneNumber"
+          ],
+          "required": true
+        }
+      ]
+    },
+    "v1RegisterIdentityResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1RegistrationProfile": {
+      "properties": {
+        "familyName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "givenName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "middleName": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "familyName",
+        "givenName"
+      ],
+      "type": "object"
+    },
+    "v1RevokeTokenRequest": {
+      "description": "Отзыв access token или refresh token.",
+      "properties": {
+        "client_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string"
+        },
+        "token": {
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string",
+          "x-max-bytes": 16384
+        },
+        "token_type_hint": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^[:space:]]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "type": "object"
+    },
+    "v1RevokeTokenResponse": {
+      "type": "object"
+    },
+    "v1SigningKey": {
+      "properties": {
+        "activatedAt": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        },
+        "algorithm": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        },
+        "id": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "keyId": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "notBefore": {
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string"
+        },
+        "publicJwk": {
+          "readOnly": true,
+          "type": "string"
+        },
+        "status": {
+          "readOnly": true,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SkipMFAEnrollmentRequest": {
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorizationTransactionId"
+      ],
+      "type": "object"
+    },
+    "v1SkipMFAEnrollmentResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1VerifyEmailRequest": {
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "code": {
+          "pattern": "^[0-9]{6}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorizationTransactionId",
+        "code"
+      ],
+      "type": "object"
+    },
+    "v1VerifyEmailResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    },
+    "v1VerifyPhoneRequest": {
+      "properties": {
+        "authorizationTransactionId": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "code": {
+          "pattern": "^[0-9]{6}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "authorizationTransactionId",
+        "code"
+      ],
+      "type": "object"
+    },
+    "v1VerifyPhoneResponse": {
+      "properties": {
+        "context": {
+          "$ref": "#/definitions/v1AuthenticationContext"
+        }
+      },
+      "required": [
+        "context"
+      ],
+      "type": "object"
+    }
+  },
+  "info": {
+    "description": "Общий HTTP API платформы Careeria. Контракт объединяет методы сервисов, через которые платформа и внешние системы получают и изменяют данные.",
+    "title": "Careeria API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/.well-known/jwks.json": {
+      "get": {
+        "operationId": "GetJSONWebKeySet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetJSONWebKeySetResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Получить JSON Web Key Set",
+        "tags": [
+          "Identity metadata"
+        ]
+      }
+    },
+    "/.well-known/openid-configuration": {
+      "get": {
+        "operationId": "GetOpenIDConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOpenIDConfigurationResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Получить OpenID Provider Configuration",
+        "tags": [
+          "Identity metadata"
+        ]
+      }
+    },
+    "/api/v1/authentication/consent:deny": {
+      "post": {
+        "operationId": "DenyAuthorizationConsent",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DenyAuthorizationConsentRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DenyAuthorizationConsentResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Отклонить OAuth-разрешения",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/consent:grant": {
+      "post": {
+        "operationId": "GrantAuthorizationConsent",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GrantAuthorizationConsentRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GrantAuthorizationConsentResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Подтвердить OAuth-разрешения",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/context": {
+      "get": {
+        "operationId": "GetAuthenticationContext",
+        "parameters": [
+          {
+            "format": "uuid",
+            "in": "query",
+            "name": "authorizationTransactionId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAuthenticationContextResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Получить контекст аутентификации",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/methods": {
+      "get": {
+        "operationId": "GetAuthenticationMethods",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAuthenticationMethodsResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Получить доступные способы аутентификации",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/mfa/enrollment:skip": {
+      "post": {
+        "operationId": "SkipMFAEnrollment",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SkipMFAEnrollmentRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SkipMFAEnrollmentResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Пропустить подключение MFA",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/password": {
+      "post": {
+        "description": "При неверных credentials возвращается единообразная ошибка без раскрытия существования identity.",
+        "operationId": "AuthenticateWithPassword",
+        "parameters": [
+          {
+            "description": "Аутентификация по паролю с email или телефоном в качестве логина.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AuthenticateWithPasswordRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AuthenticateWithPasswordResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Аутентифицироваться по паролю",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/verification/email": {
+      "post": {
+        "description": "Проверяет код challenge, привязанного к текущей authorization transaction, и возвращает следующий шаг.",
+        "operationId": "VerifyEmail",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyEmailRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyEmailResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Подтвердить email",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/authentication/verification/phone": {
+      "post": {
+        "description": "Проверяет код challenge, привязанного к текущей authorization transaction, и возвращает следующий шаг.",
+        "operationId": "VerifyPhone",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1VerifyPhoneRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1VerifyPhoneResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Подтвердить телефон",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/registration": {
+      "post": {
+        "description": "Создаёт pending identity, профиль, пароль и verification challenge. Возвращает AuthenticationContext той же authorization transaction. Verification token передаётся только через выбранный канал и никогда не возвращается в API.",
+        "operationId": "RegisterIdentity",
+        "parameters": [
+          {
+            "description": "Создаёт pending identity внутри существующей authorization transaction.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RegisterIdentityRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RegisterIdentityResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Создать identity в authorization flow",
+        "tags": [
+          "Authentication UI"
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "GetIdentitySession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetIdentitySessionResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "summary": "Получить текущую identity-сессию",
+        "tags": [
+          "Identity session"
+        ]
+      }
+    },
+    "/api/v1/session/logout": {
+      "post": {
+        "operationId": "LogoutIdentitySession",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LogoutIdentitySessionResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "summary": "Завершить текущую identity-сессию",
+        "tags": [
+          "Identity session"
+        ]
+      }
+    },
+    "/oauth2/authorize": {
+      "get": {
+        "description": "После создания authorization transaction HTTP-адаптер отвечает 302 Found на redirect_uri из ответа.",
+        "operationId": "Authorize",
+        "parameters": [
+          {
+            "enum": [
+              "code"
+            ],
+            "in": "query",
+            "name": "response_type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "client_id",
+            "pattern": "^[^[:space:]]+$",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "format": "uri",
+            "in": "query",
+            "name": "redirect_uri",
+            "required": true,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "query",
+            "minLength": 6,
+            "name": "scope",
+            "pattern": "^([^[:space:]]+ )*openid( [^[:space:]]+)*$",
+            "required": true,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "query",
+            "minLength": 1,
+            "name": "state",
+            "required": false,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "query",
+            "minLength": 1,
+            "name": "nonce",
+            "required": false,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "query",
+            "maxLength": 43,
+            "minLength": 43,
+            "name": "code_challenge",
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "enum": [
+              "S256"
+            ],
+            "in": "query",
+            "name": "code_challenge_method",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AuthorizeResponse"
+            }
+          },
+          "302": {
+            "description": "Переход в Authentication UI.",
+            "headers": {
+              "Location": {
+                "description": "Абсолютный URL Authentication UI.",
+                "type": "string"
+              }
+            },
+            "schema": {}
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Начать OAuth2/OIDC authorization flow",
+        "tags": [
+          "OAuth2 / OIDC"
+        ]
+      }
+    },
+    "/oauth2/authorize/continue": {
+      "post": {
+        "description": "HTTP-адаптер отвечает 302 Found на зарегистрированный redirect_uri клиента, добавляя code и исходный state.",
+        "operationId": "ContinueAuthorization",
+        "parameters": [
+          {
+            "description": "Завершает аутентифицированную authorization transaction.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ContinueAuthorizationRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ContinueAuthorizationResponse"
+            }
+          },
+          "302": {
+            "description": "Возврат в клиентское приложение.",
+            "headers": {
+              "Location": {
+                "description": "Зарегистрированный redirect URI с authorization response.",
+                "type": "string"
+              }
+            },
+            "schema": {}
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Завершить OAuth2/OIDC authorization flow",
+        "tags": [
+          "OAuth2 / OIDC"
+        ]
+      }
+    },
+    "/oauth2/revoke": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "description": "Тело запроса передаётся как application/x-www-form-urlencoded. Confidential-клиенты аутентифицируются через HTTP Basic.",
+        "operationId": "RevokeToken",
+        "parameters": [
+          {
+            "in": "formData",
+            "minLength": 1,
+            "name": "token",
+            "pattern": "^[^[:space:]]+$",
+            "required": true,
+            "type": "string",
+            "x-max-bytes": 16384
+          },
+          {
+            "in": "formData",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "token_type_hint",
+            "pattern": "^[^[:space:]]+$",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "client_id",
+            "pattern": "^[^[:space:]]+$",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Опциональная аутентификация confidential-клиента методом client_secret_basic.",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RevokeTokenResponse"
+            }
+          },
+          "400": {
+            "description": "Стандартная OAuth 2.0 protocol error.",
+            "schema": {
+              "$ref": "#/definitions/v1OAuthErrorResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Отозвать OAuth2-токен",
+        "tags": [
+          "OAuth2 / OIDC"
+        ]
+      }
+    },
+    "/oauth2/token": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "description": "Тело запроса передаётся как application/x-www-form-urlencoded. Confidential-клиенты аутентифицируются через HTTP Basic; public-клиенты передают client_id.",
+        "operationId": "ExchangeToken",
+        "parameters": [
+          {
+            "enum": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "in": "formData",
+            "name": "grant_type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "client_id",
+            "pattern": "^[^[:space:]]+$",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "minLength": 1,
+            "name": "code",
+            "pattern": "^[^[:space:]]+$",
+            "required": false,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "formData",
+            "minLength": 1,
+            "name": "refresh_token",
+            "pattern": "^[^[:space:]]+$",
+            "required": false,
+            "type": "string",
+            "x-max-bytes": 4096
+          },
+          {
+            "format": "uri",
+            "in": "formData",
+            "name": "redirect_uri",
+            "required": false,
+            "type": "string",
+            "x-max-bytes": 2048
+          },
+          {
+            "in": "formData",
+            "maxLength": 128,
+            "minLength": 43,
+            "name": "code_verifier",
+            "pattern": "^[A-Za-z0-9._~-]+$",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Опциональная аутентификация confidential-клиента методом client_secret_basic.",
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExchangeTokenResponse"
+            }
+          },
+          "400": {
+            "description": "Стандартная OAuth 2.0 protocol error.",
+            "schema": {
+              "$ref": "#/definitions/v1OAuthErrorResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Выпустить или обновить токены",
+        "tags": [
+          "OAuth2 / OIDC"
+        ],
+        "x-oneof": [
+          {
+            "fields": [
+              "code",
+              "refresh_token"
+            ],
+            "required": true
+          }
+        ]
+      }
+    },
+    "/oauth2/userinfo": {
+      "get": {
+        "operationId": "GetUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetUserInfoResponse"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/Error"
+          }
+        },
+        "summary": "Получить OIDC UserInfo",
+        "tags": [
+          "OAuth2 / OIDC"
+        ]
+      }
+    }
+  },
+  "produces": [
+    "application/json"
+  ],
+  "responses": {
+    "Error": {
+      "description": "Ошибка API Gateway.",
+      "schema": {
+        "$ref": "#/definitions/v1ErrorResponse"
+      }
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "description": "Токен доступа в формате `Bearer \u003ctoken\u003e`.",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0",
+  "tags": [
+    {
+      "description": "Authorization Code flow, выпуск и отзыв токенов и OIDC UserInfo.",
+      "name": "OAuth2 / OIDC"
+    },
+    {
+      "description": "Backend API экранов входа, работающих с authorization transaction.",
+      "name": "Authentication UI"
+    },
+    {
+      "description": "Просмотр и завершение текущей identity-сессии.",
+      "name": "Identity session"
+    },
+    {
+      "description": "OpenID Provider Configuration и публичный JSON Web Key Set.",
+      "name": "Identity metadata"
+    },
+    {
+      "description": "Самостоятельная регистрация identity и запуск подтверждения контакта.",
+      "name": "Registration"
+    }
+  ]
+}

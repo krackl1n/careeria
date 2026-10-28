@@ -92,12 +92,12 @@ deps: ## Download every Go module dependency.
 tools: proto-tools install-goose ## Install all development tools.
 
 proto-tools: ## Install tools required for protobuf generation.
-	$(GO) install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
-	$(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
-	$(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@$(PROTOC_GEN_GO_GRPC_VERSION)
-	$(GO) install github.com/envoyproxy/protoc-gen-validate@$(PROTOC_GEN_VALIDATE_VERSION)
-	$(GO) install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@$(GRPC_GATEWAY_VERSION)
-	$(GO) install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@$(GRPC_GATEWAY_VERSION)
+	@test -x "$(GO_TOOL_BIN)/buf" || $(GO) install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
+	@test -x "$(GO_TOOL_BIN)/protoc-gen-go" || $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
+	@test -x "$(GO_TOOL_BIN)/protoc-gen-go-grpc" || $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@$(PROTOC_GEN_GO_GRPC_VERSION)
+	@test -x "$(GO_TOOL_BIN)/protoc-gen-validate" || $(GO) install github.com/envoyproxy/protoc-gen-validate@$(PROTOC_GEN_VALIDATE_VERSION)
+	@test -x "$(GO_TOOL_BIN)/protoc-gen-grpc-gateway" || $(GO) install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@$(GRPC_GATEWAY_VERSION)
+	@test -x "$(GO_TOOL_BIN)/protoc-gen-openapiv2" || $(GO) install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@$(GRPC_GATEWAY_VERSION)
 
 install-goose: ## Install Goose using go install.
 	$(GO) install github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION)
@@ -300,6 +300,9 @@ plantuml-architecture-validate: ## Validate all C4-PlantUML architecture diagram
 	@PLANTUML_VERSION="$(PLANTUML_VERSION)" PLANTUML_IMAGE="$(PLANTUML_IMAGE)" PLANTUML_JAR="$(PLANTUML_JAR)" \
 		./docs/tools/plantuml.sh validate $(PLANTUML_ARCHITECTURE_SOURCES)
 
+c4-l4-generate: ## Generate C4 Level 4 PlantUML and Markdown specs from Go domain code.
+	@$(GO) run ./packages/go/contracts/cmd/c4gen -config docs/architecture/c4-l4.yaml
+
 run-gateway: ## Run API Gateway from source.
 	$(GO) -C services/api-gateway run ./cmd/gateway
 
@@ -349,9 +352,11 @@ proto-generate: proto-tools proto-vendor-check ## Generate Go protobuf and gRPC 
 	@if test -z "$$(find "$(PROTO_DIR)" -name '*.proto' -print -quit)"; then \
 		printf '%s\n' 'No .proto files found under $(PROTO_DIR); generation skipped.'; \
 	else \
-		(cd "$(CONTRACTS_DIR)" && PATH="$(GO_TOOL_BIN):$$PATH" $(BUF) generate); \
-		GOWORK=off $(GO) -C packages/go/contracts run ./cmd/openapi-normalize \
-			-file openapi/careeria.swagger.json; \
+		(cd "$(CONTRACTS_DIR)" && PATH="$(GO_TOOL_BIN):$$PATH" $(BUF) generate --template buf.gen.policy.yaml && PATH="$(GO_TOOL_BIN):$$PATH" $(BUF) generate); \
+		if [ -f packages/go/contracts/cmd/openapi-normalize/main.go ]; then \
+			GOWORK=off $(GO) -C packages/go/contracts run ./cmd/openapi-normalize \
+				-file openapi/careeria.swagger.json; \
+		fi; \
 		GOWORK=off $(GO) -C packages/go/contracts mod tidy; \
 	fi
 
@@ -366,5 +371,5 @@ proto-format: proto-tools ## Format protobuf files with Buf.
 	@if test -z "$$(find "$(PROTO_DIR)" -name '*.proto' -print -quit)"; then \
 		printf '%s\n' 'No .proto files found under $(PROTO_DIR); formatting skipped.'; \
 	else \
-		(cd "$(CONTRACTS_DIR)" && $(BUF) format --write); \
+		(cd "$(CONTRACTS_DIR)" && $(BUF) format --write proto && $(BUF) format --write authentication-policy/proto); \
 	fi

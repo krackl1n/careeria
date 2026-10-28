@@ -24,6 +24,7 @@
 |---|---|---|---|
 | **Application Service** | `Hiring Service` | FSM воронки отклика, аудит переходов (`StageTransition`), межагрегатная доменная политика (`OfferEligibilityPolicy`). | [hiring-application-service.md](backend/hiring-application-service.md) |
 | **Candidate Profile Service** | `Candidate Service` | Агрегат профиля соискателя, доменная стратегия маскирования данных для API (`MaskingStrategy`), реестр стратегий. | [candidate-profile-service.md](backend/candidate-profile-service.md) |
+| **Authentication & Registration Service** | `Identity Service` | Регистрация и подтверждение контактов, парольный агрегат с политикой блокировки, FSM транзакции авторизации, чистая политика выбора шага и OAuth-consent. | [identity-authentication-service.md](backend/identity-authentication-service.md) |
 
 ---
 

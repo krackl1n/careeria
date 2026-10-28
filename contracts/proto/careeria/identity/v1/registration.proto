@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "careeria/identity/v1/authentication.proto";
+import "google/api/field_behavior.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+message RegistrationProfile {
+  string family_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  string given_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string middle_name = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// Создаёт pending identity внутри существующей authorization transaction.
+message RegisterIdentityRequest {
+  oneof contact {
+    option (validate.required) = true;
+
+    string email = 1 [(validate.rules).string = {
+      max_bytes: 320
+      email: true
+    }];
+    string phone_number = 2 [(validate.rules).string.pattern = "^\\+[1-9][0-9]{7,14}$"];
+  }
+  string password = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_bytes: 8
+      max_bytes: 1024
+    }
+  ];
+  string authorization_transaction_id = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  RegistrationProfile profile = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message RegisterIdentityResponse {
+  reserved 1;
+  reserved "registration";
+
+  AuthenticationContext context = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
