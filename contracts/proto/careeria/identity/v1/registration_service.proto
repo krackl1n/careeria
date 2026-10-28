@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/identity/v1/registration.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Регистрация identity внутри существующего OAuth authorization flow.
+service RegistrationService {
+  // Создаёт pending identity и возвращает следующий шаг той же authorization transaction.
+  rpc RegisterIdentity(RegisterIdentityRequest) returns (RegisterIdentityResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/registration"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Создать identity в authorization flow"
+      description: "Создаёт pending identity, профиль, пароль и verification challenge. Возвращает AuthenticationContext той же authorization transaction. Verification token передаётся только через выбранный канал и никогда не возвращается в API."
+      operation_id: "RegisterIdentity"
+    };
+  }
+}

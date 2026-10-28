@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/identity/v1/session.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Управление текущей identity-сессией.
+service IdentitySessionService {
+  // Возвращает активную сессию пользователя.
+  rpc GetIdentitySession(GetIdentitySessionRequest) returns (GetIdentitySessionResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+    option (google.api.http) = {get: "/api/v1/session"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity session"
+      summary: "Получить текущую identity-сессию"
+      operation_id: "GetIdentitySession"
+    };
+  }
+
+  // Отзывает текущую сессию и связанную refresh-token family.
+  rpc LogoutIdentitySession(LogoutIdentitySessionRequest) returns (LogoutIdentitySessionResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+    option (google.api.http) = {post: "/api/v1/session/logout"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity session"
+      summary: "Завершить текущую identity-сессию"
+      operation_id: "LogoutIdentitySession"
+    };
+  }
+}

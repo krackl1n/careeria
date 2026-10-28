@@ -1,0 +1,221 @@
+@startuml hiring-interview-service
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Interview Service (Hiring Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class HiringInterviewService <<Application Service>> {
+            - interviewRepo: InterviewRepository
+            - appChecker: ApplicationStageChecker
+            - roomStrategy: RoomStrategy
+            - outboxRepo: OutboxRepository
+            - authPort: AuthorizationPort
+            - txManager: TransactionManager
+            - eventFactory: Factory
+            - clock: Clock
+            - idGen: IDGenerator
+            + CancelInterview(ctx: Context, input: CancelInterviewInput): error
+            + CompleteInterview(ctx: Context, input: CompleteInterviewInput): error
+            + GetInterview(ctx: Context, interviewID: UUID, actorID: UUID): Interview
+            + GetMeetingAccess(ctx: Context, input: GetMeetingAccessInput): MeetingAccessOutput
+            + ListInterviewsByApplication(ctx: Context, appID: UUID, actorID: UUID): List<Interview>
+            + ScheduleInterview(ctx: Context, input: ScheduleInterviewInput): UUID
+            + SubmitFeedback(ctx: Context, input: SubmitFeedbackInput): error
+        }
+
+        class RoomStrategy <<Strategy>> {
+            - registry: Map<MeetingFormat, MeetingRoomStrategy>
+            + GenerateAccess(ctx: Context, format: MeetingFormat, req: AccessRequest): AccessResult
+            + Provision(ctx: Context, format: MeetingFormat, req: ProvisionRequest): ProvisionResult
+            + Resolve(format: MeetingFormat): MeetingRoomStrategy
+            + Teardown(ctx: Context, format: MeetingFormat, req: TeardownRequest): error
+        }
+
+        interface MeetingRoomStrategy <<Strategy>> {
+            + Format(): MeetingFormat
+            + Provision(ctx: Context, req: ProvisionRequest): ProvisionResult
+            + GenerateAccess(ctx: Context, req: AccessRequest): AccessResult
+            + Teardown(ctx: Context, req: TeardownRequest): error
+        }
+
+        together {
+            class OnsiteStrategy <<Strategy>> {
+                - defaultOfficeAddress: string
+                + Format(): MeetingFormat
+                + GenerateAccess(_: Context, req: AccessRequest): AccessResult
+                + Provision(_: Context, req: ProvisionRequest): ProvisionResult
+                + Teardown(_: Context, _: TeardownRequest): error
+            }
+            class LiveKitStrategy <<Strategy>> {
+                - client: ConferenceClient
+                + Format(): MeetingFormat
+                + GenerateAccess(ctx: Context, req: AccessRequest): AccessResult
+                + Provision(ctx: Context, req: ProvisionRequest): ProvisionResult
+                + Teardown(ctx: Context, req: TeardownRequest): error
+            }
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+
+        class Interview <<Aggregate Root>> {
+            + ID: UUID
+            + ApplicationID: UUID
+            + InterviewType: InterviewType
+            + Format: MeetingFormat
+            + Status: InterviewStatus
+            + ScheduledStartTime: Timestamp
+            + ScheduledEndTime: Timestamp
+            + MeetingRoomURL: string
+            + Participants: List<Participant>
+            + Feedbacks: List<Feedback>
+            + Version: int
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+            + SetMeetingRoomURL(url: string, now: Timestamp): void
+            + Complete(now: Timestamp): error
+            + Cancel(reason: string, now: Timestamp): error
+            + SubmitFeedback(feedback: Feedback, now: Timestamp): error
+        }
+
+        class Feedback <<Entity>> {
+            + InterviewerUserID: UUID
+            + Score: int
+            + Notes: string
+            + SubmittedAt: Timestamp
+            + IsPassing(): bool
+            + IsStrongPass(): bool
+            + Validate(): error
+        }
+
+        class Participant <<Entity>> {
+            + UserID: UUID
+            + Role: ParticipantRole
+            + IsInterviewer(): bool
+        }
+
+        enum InterviewStatus <<enumeration>> {
+            SCHEDULED
+            COMPLETED
+            CANCELLED
+        }
+
+        enum InterviewType <<enumeration>> {
+            SCREENING
+            TECHNICAL
+            SYSTEM_DESIGN
+            BEHAVIORAL
+            BAR_RAISER
+            EXECUTIVE
+        }
+
+        enum MeetingFormat <<enumeration>> {
+            ONLINE_LIVEKIT
+            ONSITE
+            EXTERNAL_LINK
+        }
+
+        enum ParticipantRole <<enumeration>> {
+            LEAD_INTERVIEWER
+            INTERVIEWER
+            HIRING_MANAGER
+            RECRUITER
+            BAR_RAISER
+            OBSERVER
+            CANDIDATE
+        }
+
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface ApplicationStageChecker <<interface>> {
+            + GetStage(ctx: Context, appID: UUID): PipelineStage
+        }
+        interface AuthorizationPort <<interface>> {
+            + CanManageInterview(ctx: Context, actorID: UUID, appID: UUID): error
+            + CanSubmitFeedback(ctx: Context, actorID: UUID, interviewID: UUID): error
+        }
+        interface ConferenceClient <<interface>> {
+            + CreateRoom(ctx: Context, roomName: string): string
+            + EndRoom(ctx: Context, roomName: string): error
+        }
+        interface InterviewRepository <<interface>> {
+            + Create(ctx: Context, it: Interview): error
+            + Update(ctx: Context, it: Interview): error
+            + GetByID(ctx: Context, id: UUID): Interview
+            + ListByApplicationID(ctx: Context, appID: UUID): List<Interview>
+        }
+        interface OutboxRepository <<interface>> {
+            + Save(ctx: Context, message: Message): error
+        }
+    }
+}
+
+' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+HiringInterviewService -[hidden]down-> RoomStrategy
+RoomStrategy -[hidden]down-> MeetingRoomStrategy
+MeetingRoomStrategy -[hidden]down-> OnsiteStrategy
+OnsiteStrategy -[hidden]right-> LiveKitStrategy
+
+OnsiteStrategy -[hidden]down-> Interview
+
+Interview -[hidden]down-> Feedback
+Feedback -[hidden]right-> Participant
+Participant -[hidden]down-> ParticipantRole
+Participant -[hidden]right-> InterviewStatus
+InterviewStatus -[hidden]down-> InterviewType
+InterviewType -[hidden]down-> MeetingFormat
+
+HiringInterviewService -[hidden]right-> ApplicationStageChecker
+ApplicationStageChecker -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> ConferenceClient
+ConferenceClient -[hidden]down-> InterviewRepository
+InterviewRepository -[hidden]down-> OutboxRepository
+
+Interview -[hidden]right-> InterviewRepository
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+HiringInterviewService ..> Interview : commands mutation
+HiringInterviewService --> ApplicationStageChecker : uses
+HiringInterviewService --> AuthorizationPort : uses
+HiringInterviewService --> InterviewRepository : uses
+HiringInterviewService --> OutboxRepository : uses
+Interview *-- "*" Feedback : owns
+Interview *-- "*" Participant : owns
+Interview *-- "1" InterviewStatus
+Interview *-- "1" InterviewType
+Interview *-- "1" MeetingFormat
+Participant *-- "1" ParticipantRole
+HiringInterviewService --> RoomStrategy : delegates operations
+RoomStrategy o-- MeetingRoomStrategy : registry
+OnsiteStrategy ..|> MeetingRoomStrategy : implements
+LiveKitStrategy ..|> MeetingRoomStrategy : implements
+LiveKitStrategy -right-> ConferenceClient : uses client
+
+@enduml

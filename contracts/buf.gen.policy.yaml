@@ -1,0 +1,17 @@
+version: v2
+
+inputs:
+  - directory: authentication-policy/proto
+
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      path: authentication/policy/v1/policy.proto
+      value: github.com/krackl1n/careeria/contracts/gen/authentication/policy/v1;policyv1
+
+plugins:
+  - local: protoc-gen-go
+    out: ../packages/go/contracts/gen
+    opt:
+      - paths=source_relative

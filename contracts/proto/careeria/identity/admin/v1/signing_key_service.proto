@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package careeria.identity.admin.v1;
+
+import "careeria/identity/admin/v1/signing_key.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/admin/v1;identityadminv1";
+
+service SigningKeyAdminService {
+  rpc CreateSigningKey(CreateSigningKeyRequest) returns (CreateSigningKeyResponse);
+}

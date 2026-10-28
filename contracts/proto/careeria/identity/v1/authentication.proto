@@ -1,0 +1,333 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "careeria/identity/v1/common.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Доступный в Authentication UI способ аутентификации.
+message AuthenticationMethod {
+  string code = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 64
+      pattern: "^[a-z][a-z0-9_.:-]*$"
+    }
+  ];
+  string display_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string description = 3 [(validate.rules).string.max_len = 2000];
+}
+
+message GetAuthenticationMethodsRequest {}
+
+message GetAuthenticationMethodsResponse {
+  repeated AuthenticationMethod methods = 1 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 32
+    items: {
+      message: {required: true}
+    }
+  }];
+}
+
+// Получение состояния Authentication UI по непрозрачному идентификатору транзакции.
+message GetAuthenticationContextRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+}
+
+// Данные, необходимые UI для отображения экрана входа.
+message AuthenticationContext {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  OAuthClientSummary oauth_client = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+  repeated string requested_scopes = 3 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  reserved 4, 5;
+  reserved "available_authentication_methods", "authenticated";
+  IdentitySummary identity = 6;
+  google.protobuf.Timestamp expires_at = 7 [(validate.rules).timestamp.required = true];
+  AuthenticationStep next_step = 8 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+// Следующий экран и допустимое действие в текущем authorization flow.
+message AuthenticationStep {
+  oneof step {
+    option (validate.required) = true;
+
+    ChooseAuthenticationMethodStep choose_authentication_method = 1;
+    MFAAuthenticationStep mfa = 2;
+    EmailVerificationStep email_verification = 3;
+    PhoneVerificationStep phone_verification = 4;
+    PasswordChangeStep password_change = 5;
+    ConsentStep consent = 6;
+    AuthorizationReadyStep ready = 7;
+    MFAEnrollmentStep mfa_enrollment = 8;
+  }
+}
+
+message ChooseAuthenticationMethodStep {
+  repeated string available_methods = 1 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 16
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+}
+
+message MFAAuthenticationStep {
+  repeated string available_methods = 1 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 16
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  optional string challenge_id = 2 [(validate.rules).string.uuid = true];
+}
+
+// Необязательное предложение подключить дополнительный фактор аутентификации.
+message MFAEnrollmentStep {
+  repeated string available_methods = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 16
+      unique: true
+      items: {
+        string: {
+          min_len: 1
+          max_len: 64
+          pattern: "^[^[:space:]]+$"
+        }
+      }
+    }
+  ];
+}
+
+message EmailVerificationStep {
+  reserved 1, 3;
+  reserved "email_id", "challenge_id";
+
+  string masked_email = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 320
+    }
+  ];
+  google.protobuf.Timestamp challenge_expires_at = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true
+  ];
+}
+
+message PhoneVerificationStep {
+  reserved 1, 3;
+  reserved "phone_id", "challenge_id";
+
+  string masked_phone_number = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 32
+    }
+  ];
+  google.protobuf.Timestamp challenge_expires_at = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true
+  ];
+}
+
+message PasswordChangeStep {}
+
+message ConsentStep {
+  repeated string requested_scopes = 1 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+}
+
+message AuthorizationReadyStep {}
+
+message GetAuthenticationContextResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+// Аутентификация по паролю с email или телефоном в качестве логина.
+message AuthenticateWithPasswordRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  oneof login {
+    option (validate.required) = true;
+
+    string email = 2 [(validate.rules).string = {
+      max_bytes: 320
+      email: true
+    }];
+    string phone_number = 3 [(validate.rules).string.pattern = "^\\+[1-9][0-9]{7,14}$"];
+  }
+  string password = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_bytes: 1
+      max_bytes: 1024
+    }
+  ];
+}
+
+message AuthenticateWithPasswordResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message VerifyEmailRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  string code = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.pattern = "^[0-9]{6}$"
+  ];
+}
+
+message VerifyEmailResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message VerifyPhoneRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  string code = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.pattern = "^[0-9]{6}$"
+  ];
+}
+
+message VerifyPhoneResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message SkipMFAEnrollmentRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+}
+
+message SkipMFAEnrollmentResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message GrantAuthorizationConsentRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  repeated string granted_scopes = 2 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  bool remember = 3;
+}
+
+message GrantAuthorizationConsentResponse {
+  AuthenticationContext context = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+message DenyAuthorizationConsentRequest {
+  string authorization_transaction_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+}
+
+message DenyAuthorizationConsentResponse {
+  string redirect_uri = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 4096
+      uri: true
+    }
+  ];
+}

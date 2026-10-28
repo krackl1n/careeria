@@ -1,0 +1,49 @@
+version: v2
+
+inputs:
+  - directory: proto
+
+managed:
+  enabled: true
+  disable:
+    - path: careeria
+  override:
+    - file_option: go_package
+      path: authentication/policy/v1/policy.proto
+      value: github.com/krackl1n/careeria/contracts/gen/authentication/policy/v1;policyv1
+
+plugins:
+  - local: protoc-gen-go
+    out: ../packages/go/contracts/gen
+    opt:
+      - paths=source_relative
+  - local: protoc-gen-go-grpc
+    out: ../packages/go/contracts/gen
+    opt:
+      - paths=source_relative
+  - local:
+      - go
+      - -C
+      - authentication-policy
+      - run
+      - ./cmd/protoc-gen-authentication-policy
+    out: ../packages/go/contracts/gen
+    strategy: all
+    opt:
+      - exclude_package_segment=admin
+  - local: protoc-gen-validate
+    out: ../packages/go/contracts/gen
+    opt:
+      - lang=go
+      - paths=source_relative
+  - local: protoc-gen-grpc-gateway
+    out: ../packages/go/contracts/gen
+    opt:
+      - paths=source_relative
+  - local: protoc-gen-openapiv2
+    out: ../packages/go/contracts/openapi
+    strategy: all
+    opt:
+      - allow_merge=true
+      - disable_service_tags=true
+      - merge_file_name=careeria

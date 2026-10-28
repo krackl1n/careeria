@@ -1,0 +1,31 @@
+go 1.26.5
+
+use (
+	./contracts/authentication-policy
+	./packages/go/authz
+	./packages/go/clock
+	./packages/go/closer
+	./packages/go/config
+	./packages/go/contracts
+	./packages/go/ctxmeta
+	./packages/go/grpc
+	./packages/go/http
+	./packages/go/idgen
+	./packages/go/inbox
+	./packages/go/jwt
+	./packages/go/kafka
+	./packages/go/logger
+	./packages/go/metrics
+	./packages/go/migration
+	./packages/go/outbox
+	./packages/go/postgres
+	./packages/go/redis
+	./packages/go/retry
+	./packages/go/runtime
+	./packages/go/shutdown
+	./packages/go/tracing
+	./packages/go/txmanager
+	./services/api-gateway
+	./services/hiring
+	./services/identity
+)

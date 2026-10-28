@@ -1,0 +1,16 @@
+# Источники локально зафиксированных proto-зависимостей.
+# Обновлять только вместе с содержимым соответствующей папки vendor.
+version: v1
+modules:
+  - name: buf.build/envoyproxy/protoc-gen-validate
+    commit: daf171c6cdb54629b5f51e345a79e4dd
+    digest: b5:c745e1521879f43740230b1df673d0729f55704efefdcfc489d4a0a2d40c92a26cacfeab62813403040a8b180142d53b398c7ca784a065e43823605ee49681de
+    path: vendor/envoyproxy/protoc-gen-validate
+  - name: buf.build/googleapis/googleapis
+    commit: c17df5b2beca46928cc87d5656bd5343
+    digest: b5:648a01e0170d4512dea7d564016165decd1ed6e34bef79fe54753e51ad7e27545709ad9157d7551270147d551155c595a2fb0bf5bb33b1c83040ddbce915c604
+    path: vendor/googleapis/googleapis
+  - name: buf.build/grpc-ecosystem/grpc-gateway
+    commit: 4836b6d552304e1bbe47e66a523f0daa
+    digest: b5:c3fefd4d3dfa9b0478bbb1a4ad87d7b38146e3ce6eff4214e32f2c5834c2e4afc3be218316f0fbd53e925a001c3ed1e2fc99fb76b3121ede642989f0d0d7c71c
+    path: vendor/grpc-ecosystem/grpc-gateway

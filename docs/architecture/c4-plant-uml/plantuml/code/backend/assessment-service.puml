@@ -1,0 +1,170 @@
+@startuml assessment-service
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Assessment Service (Assessment Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class AssessmentService <<Application Service>> {
+            - sessionRepo: AssessmentSessionRepository
+            - templateRepo: AssessmentTemplateRepository
+            - scoringRegistry: ScoringStrategyRegistry
+            - lifecyclePolicy: SessionLifecyclePolicy
+            - sandboxClient: SandboxRunnerPort
+            - livekitMgr: LiveKitManagerPort
+            - authPort: AuthorizationPort
+            - outboxRepo: OutboxRepository
+            - txManager: TransactionManager
+            - clock: Clock
+            - idGen: IDGenerator
+            + CreateTemplate(ctx: Context, input: CreateTemplateInput): UUID
+            + AssignAssessment(ctx: Context, input: AssignAssessmentInput): UUID
+            + StartSession(ctx: Context, sessionID: UUID, candidateID: UUID): SessionStartOutput
+            + SubmitTaskSolution(ctx: Context, input: SubmitSolutionInput): UUID
+            + InitializeLiveCoding(ctx: Context, sessionID: UUID, actorID: UUID): LiveCodingAccessOutput
+            + FinalizeSession(ctx: Context, sessionID: UUID, candidateID: UUID): error
+            + CalculateSessionScore(ctx: Context, sessionID: UUID, actorID: UUID): EvaluationResult
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+
+        class AssessmentSession <<Aggregate Root>> {
+            + ID: UUID
+            + TemplateID: UUID
+            + CandidateID: UUID
+            + ApplicationID: UUID
+            + Status: SessionStatus
+            + ValidUntil: Timestamp
+            + StartedAt: Timestamp
+            + ExpiresAt: Timestamp
+            + SubmittedAt: Timestamp
+            + FinalScore: int
+            + IsPassed: bool
+            + Version: int
+            + Start(timeLimitMinutes: int, now: Timestamp): error
+            + Submit(now: Timestamp): error
+            + ApplyEvaluation(score: int, passed: bool, now: Timestamp): error
+            + Expire(now: Timestamp): error
+        }
+
+        class SessionLifecyclePolicy <<Domain Policy>> {
+            + CanStart(session: AssessmentSession, now: Timestamp): error
+            + CanSubmit(session: AssessmentSession, now: Timestamp): error
+            + ShouldExpire(session: AssessmentSession, now: Timestamp): bool
+        }
+
+        interface ScoringStrategy <<Domain Strategy>> {
+            + CalculateScore(session: AssessmentSession): EvaluationResult
+        }
+
+        class ScoringStrategyRegistry <<Domain Registry>> {
+            - strategies: Map<string, ScoringStrategy>
+            + Get(strategyType: string): ScoringStrategy
+        }
+
+        together {
+            class WeightedScoringStrategy <<Domain Strategy>> {
+                + CalculateScore(session: AssessmentSession): EvaluationResult
+            }
+            class StrictAutoScoringStrategy <<Domain Strategy>> {
+                + CalculateScore(session: AssessmentSession): EvaluationResult
+            }
+            class LiveCodingRubricStrategy <<Domain Strategy>> {
+                + CalculateScore(session: AssessmentSession): EvaluationResult
+            }
+        }
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface AssessmentSessionRepository <<interface>> {
+            + Create(ctx: Context, session: AssessmentSession): error
+            + Update(ctx: Context, session: AssessmentSession): error
+            + FindByID(ctx: Context, id: UUID): AssessmentSession
+        }
+
+        interface AssessmentTemplateRepository <<interface>> {
+            + FindByID(ctx: Context, id: UUID): AssessmentTemplate
+        }
+
+        interface AuthorizationPort <<interface>> {
+            + CanAccessSession(ctx: Context, actorID: UUID, sessionID: UUID): error
+        }
+
+        interface SandboxRunnerPort <<interface>> {
+            + ExecuteCode(ctx: Context, req: ExecutionRequest): ExecutionResult
+        }
+
+        interface LiveKitManagerPort <<interface>> {
+            + CreateRoom(ctx: Context, roomName: string): RoomInfo
+        }
+
+        interface OutboxRepository <<interface>> {
+            + Save(ctx: Context, message: Message): error
+        }
+    }
+}
+
+' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+AssessmentService -[hidden]down-> AssessmentSession
+AssessmentSession -[hidden]down-> SessionLifecyclePolicy
+SessionLifecyclePolicy -[hidden]down-> ScoringStrategyRegistry
+ScoringStrategyRegistry -[hidden]down-> ScoringStrategy
+ScoringStrategy -[hidden]down-> WeightedScoringStrategy
+WeightedScoringStrategy -[hidden]right-> StrictAutoScoringStrategy
+StrictAutoScoringStrategy -[hidden]right-> LiveCodingRubricStrategy
+
+AssessmentService -[hidden]right-> AssessmentSessionRepository
+AssessmentSessionRepository -[hidden]down-> AssessmentTemplateRepository
+AssessmentTemplateRepository -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> SandboxRunnerPort
+SandboxRunnerPort -[hidden]down-> LiveKitManagerPort
+LiveKitManagerPort -[hidden]down-> OutboxRepository
+
+AssessmentSession -[hidden]right-> AssessmentSessionRepository
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+AssessmentService ..> AssessmentSession : commands mutation
+AssessmentService --> SessionLifecyclePolicy : executes policy
+AssessmentService --> ScoringStrategyRegistry : resolves strategy
+AssessmentService ..> ScoringStrategy : invokes
+AssessmentService -right-> AssessmentSessionRepository : uses
+AssessmentService --> AssessmentTemplateRepository : uses
+AssessmentService --> AuthorizationPort : uses
+AssessmentService --> SandboxRunnerPort : executes code
+AssessmentService --> LiveKitManagerPort : creates rooms
+AssessmentService --> OutboxRepository : uses
+
+ScoringStrategyRegistry o-- ScoringStrategy : registers
+WeightedScoringStrategy ..|> ScoringStrategy : implements
+StrictAutoScoringStrategy ..|> ScoringStrategy : implements
+LiveCodingRubricStrategy ..|> ScoringStrategy : implements
+ScoringStrategy ..> AssessmentSession : reads
+SessionLifecyclePolicy ..> AssessmentSession : evaluates
+
+@enduml

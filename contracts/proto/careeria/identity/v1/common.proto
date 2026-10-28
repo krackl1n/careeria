@@ -1,0 +1,170 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Уровень доверия к аутентификации текущей сессии.
+enum AuthenticationLevel {
+  AUTHENTICATION_LEVEL_UNSPECIFIED = 0;
+  AUTHENTICATION_LEVEL_SINGLE_FACTOR = 1;
+  AUTHENTICATION_LEVEL_MULTI_FACTOR = 2;
+}
+
+enum IdentityProfileSource {
+  IDENTITY_PROFILE_SOURCE_UNSPECIFIED = 0;
+  IDENTITY_PROFILE_SOURCE_SELF_DECLARED = 1;
+  IDENTITY_PROFILE_SOURCE_PROVISIONED = 2;
+  IDENTITY_PROFILE_SOURCE_VERIFIED = 3;
+}
+
+enum IdentityAssuranceLevel {
+  IDENTITY_ASSURANCE_LEVEL_UNSPECIFIED = 0;
+  IDENTITY_ASSURANCE_LEVEL_SELF_DECLARED = 1;
+  IDENTITY_ASSURANCE_LEVEL_ORGANIZATION_ASSERTED = 2;
+  IDENTITY_ASSURANCE_LEVEL_IDENTITY_VERIFIED = 3;
+}
+
+message IdentityProfile {
+  string family_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  string given_name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string middle_name = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  IdentityProfileSource source = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).enum = {
+      defined_only: true
+      not_in: 0
+    }
+  ];
+  IdentityAssuranceLevel assurance_level = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).enum = {
+      defined_only: true
+      not_in: 0
+    }
+  ];
+  int64 version = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).int64.gte = 1
+  ];
+  google.protobuf.Timestamp created_at = 7 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true
+  ];
+  google.protobuf.Timestamp updated_at = 8 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true
+  ];
+}
+
+// Безопасное для клиентского приложения представление пользователя.
+message IdentitySummary {
+  string subject = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  optional string email = 2 [(validate.rules).string = {
+    max_bytes: 320
+    email: true
+  }];
+  optional bool email_verified = 3;
+  optional string phone_number = 4 [(validate.rules).string = {pattern: "^\\+[1-9][0-9]{7,14}$"}];
+  optional bool phone_number_verified = 5;
+  IdentityProfile profile = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+}
+
+// Публичные сведения OAuth-клиента, показанные пользователю.
+message OAuthClientSummary {
+  string client_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string description = 3 [(validate.rules).string.max_len = 2000];
+}
+
+// Текущая серверная identity-сессия.
+message IdentitySession {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  IdentitySummary identity = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+  OAuthClientSummary oauth_client = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).message.required = true
+  ];
+  AuthenticationLevel authentication_level = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).enum = {
+      defined_only: true
+      not_in: 0
+    }
+  ];
+  repeated string authenticated_methods = 5 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 16
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 64
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  repeated string scopes = 6 [(validate.rules).repeated = {
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  optional string ip_address = 7 [(validate.rules).string.ip = true];
+  optional string user_agent = 8 [(validate.rules).string.max_bytes = 1024];
+  optional string device_name = 9 [(validate.rules).string.max_len = 255];
+  google.protobuf.Timestamp created_at = 10 [(validate.rules).timestamp.required = true];
+  google.protobuf.Timestamp authenticated_at = 11 [(validate.rules).timestamp.required = true];
+  google.protobuf.Timestamp idle_expires_at = 12 [(validate.rules).timestamp.required = true];
+  google.protobuf.Timestamp absolute_expires_at = 13 [(validate.rules).timestamp.required = true];
+  optional google.protobuf.Timestamp last_seen_at = 14;
+}
