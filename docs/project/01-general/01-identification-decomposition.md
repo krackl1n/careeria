@@ -39,17 +39,17 @@
 
 | Сущность | Назначение в предметной области | Сервис-владелец |
 |---|---|---|
-| Профиль кандидата | Цифровой профиль соискателя: контактные данные, опыт работы, образование, навыки, языки и карьерные предпочтения | [Candidate Service](../02-business-services/01-candidate-company.md) |
-| Резюме | Метаданные и физические файлы версий резюме кандидата в объектном хранилище | [Candidate Service](../02-business-services/01-candidate-company.md), [File Service](../03-platform-services/03-files-notifications-integrations.md) |
-| Компания | Профиль организации-работодателя, реквизиты, настройки бренда и корпоративные политики | [Company Service](../02-business-services/01-candidate-company.md) |
-| Участник компании | Связь пользователя с компанией и назначение роли (владелец, администратор, рекрутер, нанимающий руководитель) | [Company Service](../02-business-services/01-candidate-company.md) |
-| Вакансия | Описание вакантной должности, квалификационные требования, график, условия и вилка заработной платы | [Vacancy Service](../02-business-services/02-vacancy-hiring.md) |
-| Отклик | Экземпляр отклика конкретного кандидата на определённую вакансию компании, центральный агрегат воронки | [Hiring Service](../02-business-services/02-vacancy-hiring.md) |
-| Воронка и этапы отбора | Конфигурация этапов отбора для конкретной вакансии (скрининг, оценка, интервью, оффер) | [Hiring Service](../02-business-services/02-vacancy-hiring.md) |
-| Переход по воронке | Неизменяемая запись журнала аудита о переводе кандидата между этапами с указанием автора, причины и времени | [Hiring Service](../02-business-services/02-vacancy-hiring.md) |
-| Оценка и задание | Шаблоны тестов, алгоритмические задания, сессии совместного программирования и критерии проверки | [Assessment Service](../02-business-services/03-assessment-communication.md) |
-| Собеседование и комната | Назначенная сессия собеседования, участники, WebRTC-комната медиапотоков и текстовый чат встречи | [Hiring Service](../02-business-services/02-vacancy-hiring.md), [LiveKit / Centrifugo](../03-platform-services/02-edge-realtime-media.md) |
-| Оффер и отказ | Итоговые решения по кандидату: параметры предложения о работе либо структурированная причина отказа | [Hiring Service](../02-business-services/02-vacancy-hiring.md) |
+| Профиль кандидата | Цифровой профиль соискателя: контактные данные, опыт работы, образование, навыки, языки и карьерные предпочтения | [Candidate Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/candidate-service%28L3%29/index.md) |
+| Резюме | Метаданные и физические файлы версий резюме кандидата в объектном хранилище | [Candidate Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/candidate-service%28L3%29/index.md), [File Service](../../architecture/c4/plantuml/members/member4/context%28L1%29/containers%28L2%29/index.md) |
+| Компания | Профиль организации-работодателя, реквизиты, настройки бренда и корпоративные политики | [Company Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/company-service%28L3%29/index.md) |
+| Участник компании | Связь пользователя с компанией и назначение роли (владелец, администратор, рекрутер, нанимающий руководитель) | [Company Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/company-service%28L3%29/index.md) |
+| Вакансия | Описание вакантной должности, квалификационные требования, график, условия и вилка заработной платы | [Vacancy Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/vacancy-service%28L3%29/index.md) |
+| Отклик | Экземпляр отклика конкретного кандидата на определённую вакансию компании, центральный агрегат воронки | [Hiring Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/hiring-service%28L3%29/index.md) |
+| Воронка и этапы отбора | Конфигурация этапов отбора для конкретной вакансии (скрининг, оценка, интервью, оффер) | [Hiring Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/hiring-service%28L3%29/index.md) |
+| Переход по воронке | Неизменяемая запись журнала аудита о переводе кандидата между этапами с указанием автора, причины и времени | [Hiring Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/hiring-service%28L3%29/index.md) |
+| Оценка и задание | Шаблоны тестов, алгоритмические задания, сессии совместного программирования и критерии проверки | [Assessment Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/assessment-service%28L3%29/index.md) |
+| Собеседование и комната | Назначенная сессия собеседования, участники, WebRTC-комната медиапотоков и текстовый чат встречи | [Hiring Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/hiring-service%28L3%29/index.md), [LiveKit / Centrifugo](../../architecture/c4/plantuml/communication%28L2%29/index.md) |
+| Оффер и отказ | Итоговые решения по кандидату: параметры предложения о работе либо структурированная причина отказа | [Hiring Service](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/hiring-service%28L3%29/index.md) |
 
 #### 1.2.3. Формально-математическое и графовое описание воронки найма
 
@@ -367,4 +367,4 @@ rectangle "Функциональные области автоматизаци�
 - [1.4. SMART-анализ целей](04-smart-analysis.md): исследование данных, преимущества и недостатки цели, формулировка по SMART.
 - [1.5. Анализ аналогов ПО](05-analogs-analysis.md): качественный и количественный сравнительный анализ по модели FURPS+.
 - [2.3. Разработка концептуальной модели ПО "как должно быть"](../02-business-services/03-to-be.md): изменения в работе участников найма.
-- [Системный контекст C4 L1](../../architecture/c4-plant-uml/plantuml/context/system-context.md): диаграмма системного контекста Careeria.
+- [Системный контекст C4 L1](../../architecture/c4/plantuml/system-context%28L1%29/index.md): диаграмма системного контекста Careeria.

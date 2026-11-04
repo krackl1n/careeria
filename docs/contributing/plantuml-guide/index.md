@@ -6,7 +6,7 @@ PlantUML строит архитектурные диаграммы из `.puml`
 
 ## Где находятся схемы
 
-Исходники лежат в `docs/architecture/c4-plant-uml/plantuml/`. Выбирайте каталог по смыслу схемы:
+Исходники лежат в `docs/architecture/c4/plantuml/`. Выбирайте каталог по смыслу схемы:
 
 | Каталог | Что описывает |
 | --- | --- |
@@ -27,12 +27,12 @@ PlantUML строит архитектурные диаграммы из `.puml`
 ````markdown
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/context/system-context.puml
+!include architecture/c4/plantuml/system-context(L1)/system-context.puml
 @enduml
 ```
 ````
 
-Рабочий пример — [системный контекст](../../architecture/c4-plant-uml/plantuml/context/system-context.md). Внутри самой схемы её собственные `!include` могут быть относительными к `.puml`-файлу. Пишите пояснение до и после блока: для чего нужен вид, что входит в его границу и куда идти за деталями.
+Рабочий пример — [системный контекст](../../architecture/c4/plantuml/system-context%28L1%29/index.md). Внутри самой схемы её собственные `!include` могут быть относительными к `.puml`-файлу. Пишите пояснение до и после блока: для чего нужен вид, что входит в его границу и куда идти за деталями.
 
 Расширение `plantuml-markdown` из `mkdocs.yml` создаёт встроенный SVG. Это сохраняет кликабельные ссылки элементов; CSS в `docs/theme/diagrams.css` подстраивает ширину схемы под страницу.
 
@@ -50,7 +50,7 @@ PlantUML строит архитектурные диаграммы из `.puml`
 ````markdown
 ```plantuml
 @startuml
-!includesub architecture/c4-plant-uml/plantuml/example.puml!L2
+!includesub architecture/c4/plantuml/example.puml!L2
 @enduml
 ```
 ````
@@ -59,7 +59,7 @@ PlantUML строит архитектурные диаграммы из `.puml`
 
 ## Переходы между уровнями
 
-Для перехода с элемента диаграммы на страницу другого уровня укажите `$link` в объявлении C4. Например, элемент Careeria в [исходнике системного контекста](../../architecture/c4-plant-uml/plantuml/context/system-context.puml) ведёт на `/architecture/c4-plant-uml/plantuml/container/full-system/`. Ссылка на `.md` в тексте страницы ведёт к той же цели без необходимости нажимать на SVG.
+Для перехода с элемента диаграммы на страницу другого уровня укажите `$link` в объявлении C4. Например, элемент Careeria в [исходнике системного контекста](../../architecture/c4/plantuml/system-context%28L1%29/system-context.puml) ведёт на `/architecture/c4/plantuml/system-context(L1)/full-system(L2)/`. Ссылка на `.md` в тексте страницы ведёт к той же цели без необходимости нажимать на SVG.
 
 Адрес `$link`, начинающийся с `/`, рассчитан на размещение сайта в корне домена. При публикации в подкаталоге проверьте эти ссылки и адаптируйте их к базовому пути.
 

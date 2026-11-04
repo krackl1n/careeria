@@ -1,0 +1,49 @@
+@startuml Careeria-Kubernetes-Autoscaling
+title Careeria — процесс масштабирования Pod и worker nodes (Activity diagram)
+skinparam shadowing false
+skinparam activityBackgroundColor #EFF6FF
+skinparam activityBorderColor #475569
+
+start
+partition "HPA controller" {
+    :Получить resource / custom metrics\nчерез Metrics API;
+    :Рассчитать желаемое число replicas\nв пределах min/max и scaling policies;
+    if (Нужно изменить replicas?) then (да)
+        :Обновить scale subresource\nцелевого Deployment;
+    else (нет)
+        :Сохранить текущее число replicas;
+        stop
+    endif
+}
+partition "Deployment / ReplicaSet controller" {
+    :Согласовать фактическое число Pod\nс желаемым replicas;
+}
+partition "Scheduler" {
+    if (Есть новые Pending Pod?) then (да)
+        if (Есть подходящая ёмкость?) then (да)
+            :Назначить Pod на worker nodes;
+        else (нет)
+            :Отметить Pod как unschedulable;
+            partition "Node Autoscaler + инфраструктура" {
+                if (Provisioning поддерживается\nи лимиты пула позволяют рост?) then (да)
+                    :Запросить подходящие worker nodes;
+                    :Дождаться регистрации\nи готовности узлов;
+                else (нет)
+                    :Pod остаются Pending;\nтребуется изменение ёмкости/ограничений;
+                    stop
+                endif
+            }
+            :Повторить планирование Pod;
+        endif
+    else (нет)
+        :Снижение числа реплик или\nизменение уже согласовано;
+        stop
+    endif
+}
+partition "Kubelet / приложение" {
+    :Запустить контейнеры;
+    :Дождаться readiness;
+    :Ready endpoints включаются\nв маршрутизацию Kubernetes Service;
+}
+stop
+@enduml

@@ -8,7 +8,7 @@ case "$mode" in
     *) printf '%s\n' 'Expected render, validate or pipe' >&2; exit 2 ;;
 esac
 project_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-architecture_dir="$project_root/docs/architecture/c4-plant-uml"
+architecture_dir="$project_root/docs/architecture/c4"
 version=${PLANTUML_VERSION:-1.2026.8}
 image=${PLANTUML_IMAGE:-plantuml/plantuml:$version}
 
@@ -20,7 +20,7 @@ if [ -z "${PLANTUML_JAR:-}" ] && command -v docker >/dev/null 2>&1 && docker inf
         exec docker run --rm -v "$project_root:/workspace:ro" -w /workspace "$image" -failfast2 -checkonly "$@"
     fi
     exec docker run --rm -v "$project_root:/workspace" -w /workspace "$image" \
-        -failfast2 -tsvg -o /workspace/docs/architecture/c4-plant-uml/images/generated "$@"
+        -failfast2 -tsvg -o /workspace/docs/architecture/c4/images/generated "$@"
 fi
 
 if ! command -v java >/dev/null 2>&1; then

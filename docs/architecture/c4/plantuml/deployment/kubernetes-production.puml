@@ -1,0 +1,103 @@
+@startuml Careeria-Kubernetes-Production
+!include <C4/C4_Deployment>
+!include ../common/styles.puml
+SetDefaultLegendEntries("container\nnode\nboundary")
+AddNodeTag("infrastructure", $bgColor="#E2E8F0", $borderColor="#64748B", $legendText="Infrastructure node")
+
+title Careeria — Deployment diagram · production · application workloads
+LAYOUT_TOP_DOWN()
+
+' Multiplicity denotes runtime instances, not a new logical container.
+!unquoted procedure ApiPod($podAlias, $alias, $label)
+Deployment_Node($podAlias, $label, "Kubernetes Pod × 2..10") {
+    Container($alias, $label, "Go / gRPC", "Экземпляр контейнера L2")
+}
+!endprocedure
+
+Deployment_Node(clientDevice, "Устройство пользователя", "Desktop / mobile") {
+    Deployment_Node(browser, "Web browser", "Среда исполнения клиента") {
+        Container(client, "Клиентский интерфейс Web Application", "JavaScript / React", "Клиентская часть Web Application из L2")
+    }
+}
+Node(publicLb, "Public Load Balancer", "L4 / TCP 443", "Передаёт HTTPS/WSS на Ingress", $tags="infrastructure")
+
+Deployment_Node(cluster, "Kubernetes cluster · production", "Целевая среда развёртывания") {
+    Deployment_Node(appNodes, "Application worker nodes × 3..N", "Worker VM / Linux / container runtime") {
+        Boundary(edgeNamespace, "careeria-edge", "Kubernetes namespace") {
+            Deployment_Node(ingressPods, "Ingress controller Pods × 2", "Kubernetes Pod") {
+                Node(ingress, "Ingress controller instance", "TLS / HTTP / WebSocket proxy", $tags="infrastructure")
+            }
+        }
+        Boundary(appNamespace, "careeria-apps", "Kubernetes namespace") {
+            Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Pod") {
+                Container(web, "Web Application", "Next.js / Node.js", "Серверная часть Web Application из L2")
+            }
+            Deployment_Node(bffPods, "BFF Pods × 2..10", "Kubernetes Pod") {
+                Container(bff, "BFF", "Go / HTTP", "Экземпляр контейнера L2")
+            }
+            Deployment_Node(gatewayPods, "API Gateway Pods × 2..10", "Kubernetes Pod") {
+                Container(apiGateway, "API Gateway", "Go / grpc-gateway", "Экземпляр контейнера L2")
+            }
+            ApiPod(candidatePods, candidateService, "Candidate Service")
+            ApiPod(companyPods, companyService, "Company Service")
+            ApiPod(vacancyPods, vacancyService, "Vacancy Service")
+            ApiPod(hiringPods, hiringService, "Hiring Service")
+            ApiPod(assessmentPods, assessmentService, "Assessment Service")
+            ApiPod(communicationPods, communicationService, "Communication Service")
+            ApiPod(identityPods, identityService, "Identity Service")
+            ApiPod(integrationPods, integrationService, "Integration Service")
+            ApiPod(filePods, fileService, "File Service")
+            ApiPod(notificationPods, notificationService, "Notification Service")
+            Deployment_Node(publisherPods, "Realtime Publisher Pods × 2..8", "Kubernetes Pod") {
+                Container(realtimePublisher, "Realtime Publisher", "Go / Kafka consumer", "Экземпляр контейнера L2")
+            }
+            Deployment_Node(authzPods, "AuthZ Sync Pods × 2..8", "Kubernetes Pod") {
+                Container(authzProjection, "AuthZ Synchronization Service", "Go / Kafka consumer", "Экземпляр контейнера L2")
+            }
+            Deployment_Node(centrifugoPods, "Centrifugo Pods × 2..N", "Kubernetes Pod") {
+                Container(centrifugo, "Centrifugo", "Centrifugo", "Экземпляр контейнера L2")
+            }
+        }
+    }
+    Deployment_Node(mediaNodes, "Media worker nodes × 2..N", "Worker VM / Linux / host network") {
+        Boundary(mediaNamespace, "careeria-media", "Kubernetes namespace") {
+            Deployment_Node(mediaPods, "LiveKit Pods × 2..N", "Kubernetes Pod · один на worker node") {
+                Container(livekit, "LiveKit", "LiveKit / WebRTC", "Экземпляр контейнера L2; graceful drain")
+            }
+        }
+    }
+}
+
+Rel_D(client, publicLb, "Запросы и WebSocket", "HTTPS / WSS")
+Rel_D(publicLb, ingress, "Передаёт TLS-соединение", "TCP / 443")
+Rel_D(ingress, web, "Маршрут Web Application", "HTTP / Service")
+Rel(web, bff, "Вызывает API", "HTTP / Service")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTP / gRPC Service")
+Rel(apiGateway, hiringService, "Пример вызова прикладного API", "gRPC / Service")
+Rel(ingress, centrifugo, "Маршрут realtime", "WebSocket / Service")
+Rel(ingress, livekit, "Сигнализация", "HTTP / WSS")
+Rel(client, livekit, "Прямой медиатрафик", "WebRTC / TURN · UDP/TCP")
+
+Lay_D(candidatePods, companyPods)
+Lay_D(companyPods, vacancyPods)
+Lay_D(vacancyPods, hiringPods)
+Lay_D(assessmentPods, communicationPods)
+Lay_D(communicationPods, identityPods)
+Lay_D(identityPods, integrationPods)
+Lay_D(filePods, notificationPods)
+Lay_D(notificationPods, publisherPods)
+Lay_D(publisherPods, authzPods)
+Lay_R(candidatePods, assessmentPods)
+Lay_R(assessmentPods, filePods)
+
+note right of cluster
+  × N — кратность экземпляров; Pods распределяются
+  между worker nodes, не по N на каждом узле.
+  Каждый API: отдельный Deployment, Service и HPA.
+  Deployment / Service / HPA — Kubernetes-объекты,
+  а не дополнительные C4 software containers.
+  Связи показаны выборочно; полный граф — на L2.
+  Размещение платформы и данных — на отдельном виде.
+end note
+SHOW_LEGEND()
+@enduml

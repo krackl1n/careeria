@@ -277,4 +277,4 @@ Phase2 -down-> Phase3
 - [1.4. SMART-анализ целей разработки](04-smart-analysis.md): исследование данных, формулировка целей по критериям SMART.
 - [1.5. Анализ аналогов ПО](05-analogs-analysis.md): качественный и количественный сравнительный анализ по модели FURPS+.
 - [2.1. Выбор методологии и технологии концептуального моделирования](../02-business-services/01-choice-methodology-technology.md): анализ методологий и нотаций моделирования на основе FURPS+.
-- [Системный контекст C4 L1](../../architecture/c4-plant-uml/plantuml/context/system-context.md): архитектурная диаграмма системного контекста Careeria.
+- [Системный контекст C4 L1](../../architecture/c4/plantuml/system-context%28L1%29/index.md): архитектурная диаграмма системного контекста Careeria.

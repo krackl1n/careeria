@@ -9,7 +9,7 @@ import (
 
 // RenderSVG generates an SVG file from a PlantUML (.puml) file using the cached JAR or Docker fallback.
 func RenderSVG(pumlPath string) error {
-	jarPath := "docs/architecture/c4-plant-uml/.cache/plantuml-1.2026.8.jar"
+	jarPath := "docs/architecture/c4/.cache/plantuml-1.2026.8.jar"
 	if customJar := os.Getenv("PLANTUML_JAR"); customJar != "" {
 		jarPath = customJar
 	}
@@ -61,7 +61,7 @@ func GenerateComponent(comp ComponentConfig) error {
 	}
 
 	mdContent := GenerateMarkdown(model)
-	mdPath := filepath.Join(comp.OutputDir, comp.Slug+".md")
+	mdPath := filepath.Join(comp.OutputDir, "index.md")
 	if err := os.WriteFile(mdPath, []byte(mdContent), 0644); err != nil {
 		return fmt.Errorf("write md file: %w", err)
 	}
@@ -87,4 +87,3 @@ func GenerateFromConfig(configPath string) error {
 	fmt.Println("Done generating C4 L4 specifications!")
 	return nil
 }
-

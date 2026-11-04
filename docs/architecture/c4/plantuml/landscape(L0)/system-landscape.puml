@@ -1,0 +1,33 @@
+@startuml Careeria-SystemLandscape-L0
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Экосистема подбора и кадрового учёта — System Landscape (L0)
+LAYOUT_TOP_DOWN()
+
+CandidateActor()
+Person(employerTeam, "Команда работодателя", "Рекрутеры, нанимающие руководители и администраторы компании.")
+
+Enterprise_Boundary(careeriaScope, "Контур Careeria") {
+    System(platform, "Careeria", "Поиск работы, вакансии, отклики, оценивание, коммуникации и процесс найма.", $link="/architecture/c4/plantuml/system-context(L1)/")
+}
+
+Enterprise_Boundary(employerScope, "Контур работодателя") {
+    EmployerHrSystem()
+}
+
+Boundary(supportingServices, "Внешние сервисы", "Независимые поставщики") {
+    IdentityProviderSystem()
+    NotificationProvidersSystem()
+}
+
+Rel_D(candidate, platform, "Ищет работу и проходит отбор")
+Rel_D(employerTeam, platform, "Публикует вакансии и ведёт найм")
+Rel_D(employerTeam, employerHrSystem, "Работает с кадровым учётом")
+Rel_R(platform, employerHrSystem, "Передаёт результаты найма")
+Rel_L(employerHrSystem, platform, "Передаёт изменения кадровых данных")
+Rel_D(platform, identityProvider, "Использует внешнюю аутентификацию")
+Rel_D(platform, notificationProviders, "Передаёт уведомления для доставки")
+
+ShowArchitectureLegend()
+@enduml

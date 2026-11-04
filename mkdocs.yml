@@ -12,8 +12,6 @@ theme:
   language: ru
   font: false
   features:
-    - navigation.expand
-    - navigation.sections
     - navigation.indexes
     - navigation.top
     - content.code.copy
@@ -35,6 +33,8 @@ validation:
     omitted_files: info
   links:
     not_found: warn
+extra_javascript:
+  - theme/navigation-state.js
 extra_css:
   - theme/diagrams.css
 extra:
@@ -50,7 +50,7 @@ extra:
       - readme.md
     titles:
       architecture: Архитектура
-      c4-plant-uml: C4 в PlantUML
+      c4: C4
       plantuml: Диаграммы и модели
       backend: Backend-сервисы
       project: Описание проекта
@@ -60,11 +60,10 @@ extra:
       security: Безопасность и доступ
 exclude_docs: |
   tools/idef0-svg/
-  architecture/c4-plant-uml/node_modules/
-  architecture/c4-plant-uml/.c4builder/
-  architecture/c4-plant-uml/.cache/
-  architecture/c4-plant-uml/out/
-  architecture/c4/.structurizr/
+  architecture/c4/node_modules/
+  architecture/c4/.c4builder/
+  architecture/c4/.cache/
+  architecture/c4/out/
 
 # Navigation is inferred from the files that currently exist in docs/.
 # A removed diagram page therefore disappears from the menu instead of preventing MkDocs from starting.
