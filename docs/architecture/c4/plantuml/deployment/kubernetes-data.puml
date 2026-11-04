@@ -1,82 +1,92 @@
 @startuml Careeria-Kubernetes-Data
 !include <C4/C4_Deployment>
 !include ../common/styles.puml
-!include ../model/elements.puml
+!include ../model/infrastructure-elements.puml
 !include ../model/identity-elements.puml
-SetDefaultLegendEntries("container\nnode")
-AddNodeTag("infrastructure", $bgColor="#E2E8F0", $borderColor="#64748B", $legendText="Infrastructure node")
+SetDefaultLegendEntries("container\nnode\nboundary")
 
-title Careeria — Deployment diagram · production · platform and data
-LAYOUT_TOP_DOWN()
+title Careeria — Диаграмма развёртывания: общая СУБД и платформенная инфраструктура
+LAYOUT_LANDSCAPE()
+skinparam ranksep 30
+skinparam nodesep 25
 
-Deployment_Node(cluster, "Kubernetes cluster · production", "Та же среда, что на application-виде") {
-    Deployment_Node(appNodes, "Application worker nodes", "Worker VM / Linux / container runtime") {
-        Deployment_Node(openfgaPods, "OpenFGA Pods × 2", "Kubernetes Pod") {
-            OpenFgaContainer("authorization")
-        }
-        Deployment_Node(registryPods, "Registry Pods × 2", "Kubernetes Pod") {
-            Container(schemaRegistry, "Schema Registry", "Apicurio Registry", "Экземпляр контейнера L2")
-        }
-        Deployment_Node(connectPods, "Kafka Connect Pods × 2", "Kubernetes Pod") {
-            Container(debezium, "Debezium", "Kafka Connect / Debezium", "Экземпляры worker; распределение connector tasks")
+Deployment_Node(cluster, "Инфраструктура Careeria", "Production Kubernetes Cluster") {
+    Deployment_Node(appNodes, "Пул узлов приложений × 3..N", "Linux / container runtime") {
+        Boundary(appNamespace, "Приватный контур приложений — careeria-apps", "Kubernetes namespace") {
+            Deployment_Node(openfgaPods, "OpenFGA Pods × 2", "Kubernetes Pod") {
+                OpenFgaContainer("")
+            }
+            Deployment_Node(registryPods, "Schema Registry Pods × 2", "Kubernetes Pod") {
+                Container(schemaRegistry, "Schema Registry", "Apicurio Registry / Avro", "Хранение и версионирование схем доменных событий в общей СУБД PostgreSQL.")
+            }
+            Deployment_Node(connectPods, "Kafka Connect Pods × 2", "Kubernetes Pod / distributed workers") {
+                DebeziumContainer("")
+            }
+            Container(identityService, "Identity Service", "Go / gRPC · Pods × 2..10", "Учётные данные и сессии в PostgreSQL; одноразовые коды и шаги входа в Redis.")
+            Container(notificationService, "Notification Service", "Go / Kafka consumer · Pods × 2..10", "Обработка событий уведомлений, шаблоны, delivery jobs и пользовательский Inbox.")
+            Container(fileService, "File Service", "Go / gRPC / MinIO SDK · Pods × 2..10", "Проверка доступа к файлам и работа с объектами через S3 API.")
+            Container(centrifugo, "Centrifugo", "Centrifugo / WebSocket · Pods × 2..N", "Доставка realtime-сообщений; отдельный Redis для broker и presence.")
+            Container(hiringService, "Hiring Service", "Go / gRPC · Pods × 2..10", "Процесс найма, потребление доменных событий и управление комнатами интервью LiveKit.")
+            Container(realtimePublisher, "Realtime Publisher", "Go / Kafka consumer · Pods × 2..8", "Преобразует доменные события Kafka в сообщения каналов Centrifugo.")
         }
     }
-    Deployment_Node(dataNodes, "Data worker nodes × 3..N", "Worker VM / Linux / container runtime") {
-        Deployment_Node(pgPods, "PostgreSQL Pods × 3", "Primary + 2 replicas; PVC у каждого Pod") {
-            Deployment_Node(pgServer, "PostgreSQL server", "СУБД; набор БД присутствует на primary и replicas") {
-                CandidateDatabase("storage")
-                ContainerDb(companyDb, "Company DB", "PostgreSQL database", "Данные Company Service")
-                VacancyDatabase("storage")
-                HiringDatabase("storage")
-                ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL database", "Данные Assessment Service")
-                ContainerDb(communicationDb, "Communication DB", "PostgreSQL database", "Данные Communication Service")
-                IdentityDatabase("storage")
-                IntegrationDatabase("storage")
-                ContainerDb(notificationDb, "Notification DB", "PostgreSQL database", "Данные Notification Service")
-                Node(openfgaDb, "OpenFGA database", "PostgreSQL database", "Поддерживающая БД OpenFGA", $tags="infrastructure")
-                Node(registryDb, "Registry database", "PostgreSQL database", "Поддерживающая БД Registry", $tags="infrastructure")
+    Deployment_Node(mediaNodes, "Медиа-узлы × 2..N", "Linux / host networking") {
+        Boundary(mediaNamespace, "Медиа-контур — careeria-media", "Kubernetes namespace") {
+            Deployment_Node(mediaPods, "LiveKit Pods × 2..N", "Kubernetes Pod / один Pod на узел") {
+                Container(livekit, "LiveKit", "LiveKit / WebRTC SFU", "Комнаты интервью и координация media-узлов через отдельный Redis.")
             }
         }
-        Deployment_Node(kafkaPods, "Kafka Pods × 3", "Kubernetes Pod; PVC на экземпляр") {
-            ContainerQueue(kafka, "Kafka", "Kafka / KRaft", "Экземпляры брокеров; replication factor 3")
-        }
-        Deployment_Node(identityRedisPods, "Identity Redis Pods", "Kubernetes Pod + PVC; HA topology") {
-            IdentityRedis("storage")
-        }
-        Deployment_Node(realtimeRedisPods, "Centrifugo Redis Pods", "Kubernetes Pod + PVC; HA topology") {
-            Node(realtimeRedis, "Redis для Centrifugo", "Redis instances", "Broker / presence", $tags="infrastructure")
-        }
-        Deployment_Node(mediaRedisPods, "LiveKit Redis Pods", "Kubernetes Pod + PVC; HA topology") {
-            Node(mediaRedis, "Redis для LiveKit", "Redis instances", "Координация media-узлов", $tags="infrastructure")
-        }
-        Deployment_Node(minioPods, "MinIO Pods × N", "Kubernetes Pod + PVC; топология уточняется") {
-            ObjectStorageContainer("storage")
+    }
+    Deployment_Node(dataNodes, "Узлы данных × 3..N", "Linux / persistent volumes") {
+        Boundary(dataNamespace, "Изолированный контур данных — careeria-data", "Kubernetes namespace") {
+            Deployment_Node(pgCluster, "Общий PostgreSQL-кластер", "Kubernetes StatefulSet / primary + 2 replicas / PVC") {
+                ContainerDb(postgresql, "PostgreSQL", "PostgreSQL", "Общая СУБД прикладных и платформенных сервисов; постоянные данные и transactional outbox. Порт 5432.")
+            }
+            Deployment_Node(kafkaPods, "Kafka Pods × 3", "Kubernetes Pod / StatefulSet / PVC на экземпляр") {
+                ContainerQueue(kafka, "Kafka", "Apache Kafka / KRaft", "Доменные события; replication factor 3, min.insync.replicas 2; порт 9092.")
+            }
+            Deployment_Node(identityRedisPods, "Identity Redis Pods", "Kubernetes Pod / HA topology / PVC") {
+                IdentityRedis("")
+            }
+            Deployment_Node(realtimeRedisPods, "Centrifugo Redis Pods", "Kubernetes Pod / HA topology / PVC") {
+                ContainerDb(realtimeRedis, "Centrifugo Redis", "Redis", "Broker сообщений и presence; отдельный контур от Identity и LiveKit.")
+            }
+            Deployment_Node(mediaRedisPods, "LiveKit Redis Pods", "Kubernetes Pod / HA topology / PVC") {
+                ContainerDb(mediaRedis, "LiveKit Redis", "Redis", "Общая координация комнат и media-узлов LiveKit.")
+            }
+            Deployment_Node(minioPods, "MinIO Pods × N", "Kubernetes Pod / erasure coding / PVC на диск") {
+                ObjectStorageContainer("")
+            }
         }
     }
 }
-Node(storage, "Постоянные диски / storage backend", "CSI-supported storage", "PVC привязаны к PV; тома каждого экземпляра независимы", $tags="infrastructure")
 
-Rel(candidateDb, debezium, "Пример outbox-источника", "PostgreSQL WAL")
-Rel(debezium, kafka, "Публикует изменения", "Kafka API")
-Rel(openFga, openfgaDb, "Собственная БД", "SQL")
-Rel(schemaRegistry, registryDb, "Собственная БД", "SQL")
-Rel(dataNodes, storage, "Привязка постоянных томов", "PVC / PV / CSI")
+Rel(debezium, postgresql, "Читает WAL и transactional outbox", "PostgreSQL logical replication, порт 5432")
+Rel(debezium, kafka, "Публикует доменные события", "Kafka / Avro, порт 9092")
+Rel(debezium, schemaRegistry, "Получает схемы сериализации", "HTTPS / Registry API")
+Rel(openFga, postgresql, "Читает модели и сохраняет отношения", "SQL / TCP, порт 5432")
+Rel(schemaRegistry, postgresql, "Хранит схемы и версии", "SQL / TCP, порт 5432")
+Rel(identityService, postgresql, "Хранит пользователей и сессии", "SQL / TCP, порт 5432")
+Rel(identityService, identityRedis, "Хранит одноразовые коды и шаги входа", "Redis / TCP, порт 6379")
+Rel(notificationService, postgresql, "Хранит шаблоны, delivery jobs и Inbox", "SQL / TCP, порт 5432")
+Rel_Back(notificationService, kafka, "Доставляет события уведомлений", "Kafka / Avro, порт 9092")
+Rel(notificationService, schemaRegistry, "Получает схемы событий", "HTTPS / Registry API")
+Rel(fileService, openFga, "Проверяет доступ к файлам", "OpenFGA API")
+Rel(fileService, objectStorage, "Читает и записывает файлы", "HTTPS / S3 API")
+Rel(centrifugo, realtimeRedis, "Обменивается сообщениями и presence", "Redis / TCP, порт 6379")
+Rel(livekit, mediaRedis, "Координирует media-узлы и комнаты", "Redis / TCP, порт 6379")
+Rel(hiringService, postgresql, "Хранит отклики, интервью и офферы", "SQL / TCP, порт 5432")
+Rel(hiringService, openFga, "Проверяет доступ к найму", "OpenFGA API")
+Rel(hiringService, livekit, "Создаёт комнаты интервью", "HTTPS / LiveKit API")
+Rel_Back(hiringService, kafka, "Доставляет события найма", "Kafka / Avro, порт 9092")
+Rel(hiringService, schemaRegistry, "Получает схемы событий", "HTTPS / Registry API")
+Rel_Back(realtimePublisher, kafka, "Доставляет события для realtime", "Kafka / Avro, порт 9092")
+Rel(realtimePublisher, schemaRegistry, "Получает схемы событий", "HTTPS / Registry API")
+Rel(realtimePublisher, centrifugo, "Публикует сообщения каналов", "HTTP API")
 
-Lay_D(candidateDb, companyDb)
-Lay_D(companyDb, vacancyDb)
-Lay_D(hiringDb, assessmentDb)
-Lay_D(assessmentDb, communicationDb)
-Lay_D(identityDb, integrationDb)
-Lay_D(integrationDb, notificationDb)
-Lay_R(candidateDb, hiringDb)
-Lay_R(hiringDb, identityDb)
-note right of cluster
-  Каждый Container / ContainerDb / ContainerQueue —
-  экземпляр именованного контейнера из L2.
-  Инфраструктурные узлы выделены в легенде.
-  Стрелки показывают выборочные runtime-связи.
-  Репликация PostgreSQL/Kafka и HA Redis управляются
-  соответствующими операторами; HPA не применяется.
-end note
-SHOW_LEGEND()
+Lay_R(identityRedisPods, realtimeRedisPods)
+Lay_D(identityRedisPods, mediaRedisPods)
+Lay_D(realtimeRedisPods, minioPods)
+
+ShowArchitectureLegend()
 @enduml

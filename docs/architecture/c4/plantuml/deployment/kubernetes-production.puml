@@ -2,102 +2,132 @@
 !include <C4/C4_Deployment>
 !include ../common/styles.puml
 SetDefaultLegendEntries("container\nnode\nboundary")
-AddNodeTag("infrastructure", $bgColor="#E2E8F0", $borderColor="#64748B", $legendText="Infrastructure node")
 
-title Careeria — Deployment diagram · production · application workloads
-LAYOUT_TOP_DOWN()
+title Careeria — Диаграмма развёртывания: приложения и общая СУБД в production
+LAYOUT_LANDSCAPE()
+skinparam ranksep 30
+skinparam nodesep 25
 
-' Multiplicity denotes runtime instances, not a new logical container.
-!unquoted procedure ApiPod($podAlias, $alias, $label)
-Deployment_Node($podAlias, $label, "Kubernetes Pod × 2..10") {
-    Container($alias, $label, "Go / gRPC", "Экземпляр контейнера L2")
-}
+' Один блок — экземпляры одного контейнера L2, распределённые по пулу.
+!unquoted procedure ApiInstance($alias, $label, $description)
+    Container($alias, $label, "Go / gRPC · Pods × 2..10", $description)
 !endprocedure
 
-Deployment_Node(clientDevice, "Устройство пользователя", "Desktop / mobile") {
-    Deployment_Node(browser, "Web browser", "Среда исполнения клиента") {
-        Container(client, "Клиентский интерфейс Web Application", "JavaScript / React", "Клиентская часть Web Application из L2")
+Deployment_Node(clientNode, "Устройство пользователя", "Workstation / Smart Device") {
+    Node(browser, "Браузер пользователя", "Web browser", "Загружает интерфейс Careeria из кластера и выполняет клиентский JavaScript.")
+}
+Node(publicLb, "Публичный балансировщик", "L4 / TCP", "Передаёт HTTPS и WSS на Ingress; порт 443.")
+
+Deployment_Node(cluster, "Инфраструктура Careeria", "Production Kubernetes Cluster") {
+    Deployment_Node(appNodes, "Пул узлов приложений × 3..N", "Linux / container runtime") {
+        Boundary(edgeNamespace, "Периметральный контур — careeria-edge", "Kubernetes namespace") {
+            Deployment_Node(ingressPods, "Ingress Controller Pods × 2", "Kubernetes Pod / Nginx или Envoy") {
+                Container(ingress, "Ingress Controller", "HTTP / WebSocket Reverse Proxy", "TLS-терминация, балансировка и маршрутизация; порт 443.")
+            }
+        }
+        Boundary(appNamespace, "Приватный контур приложений — careeria-apps", "Kubernetes namespace") {
+            Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Pod / Node.js") {
+                Container(web, "Web Application", "Next.js / React / TypeScript", "Веб-приложение Careeria: SSR/CSR, доставка интерфейса пользователям и обращения к BFF.")
+            }
+            Container(bff, "BFF", "Go / HTTP / gRPC · Pods × 2..10", "HttpOnly-сессии, CSRF-защита и агрегация ответов для веб-клиента.")
+            Container(apiGateway, "API Gateway", "Go / grpc-gateway · Pods × 2..10", "Маршрутизация REST и gRPC, rate limiting и доверенный identity context.")
+            ApiInstance(candidateService, "Candidate Service", "Профили кандидатов, резюме и карьерные предпочтения.")
+            ApiInstance(companyService, "Company Service", "Работодатели, участники компаний и корпоративные роли.")
+            ApiInstance(vacancyService, "Vacancy Service", "Публикация вакансий, требования и поиск предложений.")
+            ApiInstance(hiringService, "Hiring Service", "Воронка откликов, собеседования, обратная связь и офферы.")
+            ApiInstance(assessmentService, "Assessment Service", "Тесты, практические задания и результаты оценки.")
+            ApiInstance(communicationService, "Communication Service", "Диалоги, сообщения, вложения и отметки о прочтении.")
+            ApiInstance(identityService, "Identity Service", "Учётные данные, сессии, проверка токенов и федеративный вход.")
+            ApiInstance(integrationService, "Integration Service", "Входящие и исходящие webhooks, подписи, inbox и повторы доставки.")
+            ApiInstance(fileService, "File Service", "Метаданные файлов, multipart upload и presigned S3 URL.")
+            ApiInstance(notificationService, "Notification Service", "Шаблоны, Inbox и доставка уведомлений по событиям Kafka.")
+            Container(realtimePublisher, "Realtime Publisher", "Go / Kafka consumer · Pods × 2..8", "Преобразует доменные события в сообщения пользовательских каналов.")
+            Container(authzProjection, "AuthZ Synchronization Service", "Go / OpenFGA SDK · Pods × 2..8", "Обновляет отношения доступа по событиям компаний и доменов.")
+            Container(centrifugo, "Centrifugo", "Centrifugo / WebSocket · Pods × 2..N", "Подписки, presence и доставка realtime-сообщений.")
+            Container(openFga, "OpenFGA", "OpenFGA Engine · Pods × 2", "Проверка ReBAC-полномочий и хранение отношений доступа.")
+        }
+    }
+    Deployment_Node(mediaNodes, "Медиа-узлы × 2..N", "Linux / host networking") {
+        Boundary(mediaNamespace, "Медиа-контур — careeria-media", "Kubernetes namespace") {
+            Deployment_Node(mediaPods, "LiveKit Pods × 2..N", "Kubernetes Pod / один Pod на узел") {
+                Container(livekit, "LiveKit", "LiveKit / WebRTC SFU", "Комнаты онлайн-интервью; сигнализация HTTPS/WSS и медиатрафик WebRTC.")
+            }
+        }
+    }
+    Deployment_Node(dataNodes, "Узлы данных × 3..N", "Linux / persistent volumes") {
+        Boundary(dataNamespace, "Контур данных — careeria-data", "Kubernetes namespace") {
+            Deployment_Node(pgCluster, "Общий PostgreSQL-кластер", "Kubernetes StatefulSet / primary + 2 replicas / PVC") {
+                ContainerDb(postgresql, "PostgreSQL", "PostgreSQL", "Общая СУБД прикладных и платформенных сервисов; постоянные данные и transactional outbox. Порт 5432.")
+            }
+            Deployment_Node(kafkaPods, "Kafka Pods × 3", "Kubernetes Pod / StatefulSet / PVC") {
+                ContainerQueue(kafka, "Kafka", "Apache Kafka / KRaft", "Доставка доменных событий; replication factor 3, порт 9092.")
+            }
+        }
     }
 }
-Node(publicLb, "Public Load Balancer", "L4 / TCP 443", "Передаёт HTTPS/WSS на Ingress", $tags="infrastructure")
 
-Deployment_Node(cluster, "Kubernetes cluster · production", "Целевая среда развёртывания") {
-    Deployment_Node(appNodes, "Application worker nodes × 3..N", "Worker VM / Linux / container runtime") {
-        Boundary(edgeNamespace, "careeria-edge", "Kubernetes namespace") {
-            Deployment_Node(ingressPods, "Ingress controller Pods × 2", "Kubernetes Pod") {
-                Node(ingress, "Ingress controller instance", "TLS / HTTP / WebSocket proxy", $tags="infrastructure")
-            }
-        }
-        Boundary(appNamespace, "careeria-apps", "Kubernetes namespace") {
-            Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Pod") {
-                Container(web, "Web Application", "Next.js / Node.js", "Серверная часть Web Application из L2")
-            }
-            Deployment_Node(bffPods, "BFF Pods × 2..10", "Kubernetes Pod") {
-                Container(bff, "BFF", "Go / HTTP", "Экземпляр контейнера L2")
-            }
-            Deployment_Node(gatewayPods, "API Gateway Pods × 2..10", "Kubernetes Pod") {
-                Container(apiGateway, "API Gateway", "Go / grpc-gateway", "Экземпляр контейнера L2")
-            }
-            ApiPod(candidatePods, candidateService, "Candidate Service")
-            ApiPod(companyPods, companyService, "Company Service")
-            ApiPod(vacancyPods, vacancyService, "Vacancy Service")
-            ApiPod(hiringPods, hiringService, "Hiring Service")
-            ApiPod(assessmentPods, assessmentService, "Assessment Service")
-            ApiPod(communicationPods, communicationService, "Communication Service")
-            ApiPod(identityPods, identityService, "Identity Service")
-            ApiPod(integrationPods, integrationService, "Integration Service")
-            ApiPod(filePods, fileService, "File Service")
-            ApiPod(notificationPods, notificationService, "Notification Service")
-            Deployment_Node(publisherPods, "Realtime Publisher Pods × 2..8", "Kubernetes Pod") {
-                Container(realtimePublisher, "Realtime Publisher", "Go / Kafka consumer", "Экземпляр контейнера L2")
-            }
-            Deployment_Node(authzPods, "AuthZ Sync Pods × 2..8", "Kubernetes Pod") {
-                Container(authzProjection, "AuthZ Synchronization Service", "Go / Kafka consumer", "Экземпляр контейнера L2")
-            }
-            Deployment_Node(centrifugoPods, "Centrifugo Pods × 2..N", "Kubernetes Pod") {
-                Container(centrifugo, "Centrifugo", "Centrifugo", "Экземпляр контейнера L2")
-            }
-        }
-    }
-    Deployment_Node(mediaNodes, "Media worker nodes × 2..N", "Worker VM / Linux / host network") {
-        Boundary(mediaNamespace, "careeria-media", "Kubernetes namespace") {
-            Deployment_Node(mediaPods, "LiveKit Pods × 2..N", "Kubernetes Pod · один на worker node") {
-                Container(livekit, "LiveKit", "LiveKit / WebRTC", "Экземпляр контейнера L2; graceful drain")
-            }
-        }
-    }
-}
+Rel(browser, publicLb, "Загружает интерфейс и вызывает API", "HTTPS / WSS, порт 443")
+Rel(publicLb, ingress, "Передаёт TLS-соединения", "TCP, порт 443")
+Rel(ingress, web, "Маршрутизирует страницы и ресурсы", "HTTP")
+Rel(ingress, bff, "Маршрутизирует запросы браузера к API", "HTTP")
+Rel(web, bff, "Получает данные для SSR", "HTTP / JSON")
+Rel(bff, apiGateway, "Вызывает внутренний API", "HTTP / gRPC")
+Rel(apiGateway, candidateService, "Профили кандидатов", "gRPC / HTTP2")
+Rel(apiGateway, companyService, "Компании и корпоративные роли", "gRPC / HTTP2")
+Rel(apiGateway, vacancyService, "Вакансии и поиск предложений", "gRPC / HTTP2")
+Rel(apiGateway, hiringService, "Отклики, интервью и офферы", "gRPC / HTTP2")
+Rel(apiGateway, assessmentService, "Задания и результаты оценки", "gRPC / HTTP2")
+Rel(apiGateway, communicationService, "Диалоги и сообщения", "gRPC / HTTP2")
+Rel(apiGateway, identityService, "Проверка пользователя и сессии", "gRPC / HTTP2")
+Rel(apiGateway, integrationService, "Webhooks и настройки интеграций", "HTTP / gRPC")
+Rel(apiGateway, fileService, "Загрузка и получение файлов", "gRPC / HTTP2")
+Rel(apiGateway, notificationService, "Inbox и настройки уведомлений", "gRPC / HTTP2")
+Rel(candidateService, fileService, "Загружает и связывает резюме", "gRPC / HTTP2")
+Rel_Back(hiringService, kafka, "Доставляет события найма", "Kafka / Avro, порт 9092")
+Rel_Back(notificationService, kafka, "Доставляет события уведомлений", "Kafka / Avro, порт 9092")
+Rel_Back(integrationService, kafka, "Доставляет события для webhooks", "Kafka / Avro, порт 9092")
+Rel_Back(realtimePublisher, kafka, "Доставляет события для realtime", "Kafka / Avro, порт 9092")
+Rel_Back(authzProjection, kafka, "Доставляет изменения ролей", "Kafka / Avro, порт 9092")
+Rel(authzProjection, openFga, "Обновляет отношения доступа", "OpenFGA API")
+Rel(candidateService, openFga, "Проверяет доступ к профилям", "OpenFGA API")
+Rel(companyService, openFga, "Проверяет корпоративные роли", "OpenFGA API")
+Rel(vacancyService, openFga, "Проверяет доступ к вакансиям", "OpenFGA API")
+Rel(hiringService, openFga, "Проверяет доступ к найму", "OpenFGA API")
+Rel(assessmentService, openFga, "Проверяет доступ к оцениванию", "OpenFGA API")
+Rel(communicationService, openFga, "Проверяет доступ к диалогам", "OpenFGA API")
+Rel(fileService, openFga, "Проверяет доступ к файлам", "OpenFGA API")
+Rel(integrationService, openFga, "Проверяет управление интеграциями", "OpenFGA API")
+Rel(realtimePublisher, centrifugo, "Публикует сообщения каналов", "HTTP API")
+Rel(ingress, centrifugo, "Проксирует realtime-соединения", "WebSocket")
+Rel(ingress, livekit, "Проксирует сигнализацию интервью", "HTTPS / WSS")
+Rel(browser, livekit, "Передаёт аудио и видео интервью", "WebRTC / ICE / TURN, UDP/TCP")
+Rel(hiringService, livekit, "Создаёт комнаты интервью", "HTTPS / API")
+Rel(ingress, apiGateway, "Маршрутизирует HR-webhooks", "HTTP / JSON")
 
-Rel_D(client, publicLb, "Запросы и WebSocket", "HTTPS / WSS")
-Rel_D(publicLb, ingress, "Передаёт TLS-соединение", "TCP / 443")
-Rel_D(ingress, web, "Маршрут Web Application", "HTTP / Service")
-Rel(web, bff, "Вызывает API", "HTTP / Service")
-Rel(bff, apiGateway, "Вызывает внутренний API", "HTTP / gRPC Service")
-Rel(apiGateway, hiringService, "Пример вызова прикладного API", "gRPC / Service")
-Rel(ingress, centrifugo, "Маршрут realtime", "WebSocket / Service")
-Rel(ingress, livekit, "Сигнализация", "HTTP / WSS")
-Rel(client, livekit, "Прямой медиатрафик", "WebRTC / TURN · UDP/TCP")
+' Все SQL-клиенты подключаются к одному развёртыванию СУБД.
+Rel(candidateService, postgresql, "Читает и сохраняет профили", "SQL / TCP, порт 5432")
+Rel(companyService, postgresql, "Читает и сохраняет компании и роли", "SQL / TCP, порт 5432")
+Rel(vacancyService, postgresql, "Читает и сохраняет вакансии", "SQL / TCP, порт 5432")
+Rel(hiringService, postgresql, "Читает и сохраняет отклики, интервью и офферы", "SQL / TCP, порт 5432")
+Rel(assessmentService, postgresql, "Читает и сохраняет задания и оценки", "SQL / TCP, порт 5432")
+Rel(communicationService, postgresql, "Читает и сохраняет диалоги и сообщения", "SQL / TCP, порт 5432")
+Rel(identityService, postgresql, "Читает и сохраняет пользователей и сессии", "SQL / TCP, порт 5432")
+Rel(integrationService, postgresql, "Читает и сохраняет inbox, outbox и доставки", "SQL / TCP, порт 5432")
+Rel(notificationService, postgresql, "Читает и сохраняет шаблоны и Inbox", "SQL / TCP, порт 5432")
+Rel(openFga, postgresql, "Хранит модели и отношения доступа", "SQL / TCP, порт 5432")
 
-Lay_D(candidatePods, companyPods)
-Lay_D(companyPods, vacancyPods)
-Lay_D(vacancyPods, hiringPods)
-Lay_D(assessmentPods, communicationPods)
-Lay_D(communicationPods, identityPods)
-Lay_D(identityPods, integrationPods)
-Lay_D(filePods, notificationPods)
-Lay_D(notificationPods, publisherPods)
-Lay_D(publisherPods, authzPods)
-Lay_R(candidatePods, assessmentPods)
-Lay_R(assessmentPods, filePods)
+' Компактная сетка экземпляров; скрытые связи задают только размещение.
+Lay_D(candidateService, companyService)
+Lay_D(companyService, vacancyService)
+Lay_D(vacancyService, assessmentService)
+Lay_D(assessmentService, communicationService)
+Lay_D(communicationService, fileService)
+Lay_D(identityService, hiringService)
+Lay_D(hiringService, integrationService)
+Lay_D(integrationService, notificationService)
+Lay_D(notificationService, realtimePublisher)
+Lay_D(realtimePublisher, authzProjection)
+Lay_R(candidateService, identityService)
 
-note right of cluster
-  × N — кратность экземпляров; Pods распределяются
-  между worker nodes, не по N на каждом узле.
-  Каждый API: отдельный Deployment, Service и HPA.
-  Deployment / Service / HPA — Kubernetes-объекты,
-  а не дополнительные C4 software containers.
-  Связи показаны выборочно; полный граф — на L2.
-  Размещение платформы и данных — на отдельном виде.
-end note
-SHOW_LEGEND()
+ShowArchitectureLegend()
 @enduml
