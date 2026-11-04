@@ -279,4 +279,4 @@ end note
 
 ---
 
-[Ландшафт L0](member2-l0-landscape.md) · [Контекст L1](member2-l1-context.md) · [Контейнеры L2](member2-l2-containers.md) · [Развёртывание](member2-deployment.md)
+[Ландшафт L0](../members/member2/landscape/member2-l0-landscape.md) · [Контекст L1](../members/member2/context%28L1%29/index.md) · [Контейнеры L2](../members/member2/context%28L1%29/containers%28L2%29/index.md) · [Развёртывание](../members/member2/deployment/member2-deployment.md) · [Раздел Member 2](../members/member2/README.md)

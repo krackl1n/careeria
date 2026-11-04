@@ -11,6 +11,7 @@ Person(companyAdmin, "Администратор компании", "Управ�
 
 Enterprise_Boundary(enterprise, "Корпоративная среда работодателя / HR-экосистема") {
     System(careeriaHiring, "Careeria: Подсистема найма (Hiring Domain)", "Сквозное управление воронкой отбора кандидатов (FSM), организация собеседований, скоринг, подготовка и согласование предложений о работе (Job Offers).")
+    System(livekitMedia, "Медиа-сервер видеосвязи (LiveKit / WebRTC)", "Внутренний кластерный сервер видеоконференций для проведения онлайн-собеседований с аудио, видео и демонстрацией экрана.")
     
     System(hrSystem, "Корпоративная HR-система / HCM (1С:ЗУП / Workday)", "Учёт организационной структуры, штатного расписания, профилей сотрудников и официальных статусов приёма на работу.")
     System(iamSystem, "Корпоративная служба IAM (Keycloak / OpenFGA)", "Единая точка входа (SSO), федеративная аутентификация сотрудников и вычисление гранулярных прав ReBAC.")
@@ -19,12 +20,15 @@ Enterprise_Boundary(enterprise, "Корпоративная среда рабо�
 
 System_Ext(payrollGateway, "Внешняя финансовая система (Payroll Gateway)", "Проверка доступных бюджетов ФОТ, проведение компенсационных выплат, расчёт бонусов за подбор и корпоративный эквайринг.")
 System_Ext(notificationProviders, "Внешние провайдеры уведомлений (SendGrid / FCM / SMSC)", "Мультиканальная доставка уведомлений кандидатам и сотрудникам по каналам Email, Push и SMS.")
-System_Ext(livekitMedia, "Платформа видеоконференций (LiveKit Cloud / WebRTC)", "Обеспечение виртуальных переговорных комнат для проведения онлайн-собеседований с аудио, видео и демонстрацией экрана.")
 
-Rel(candidate, careeriaHiring, "Подача откликов, прохождение интервью, акцепт оффера", "HTTPS / TLS 1.3")
+Rel(candidate, careeriaHiring, "Подача откликов, отслеживание воронки, акцепт оффера", "HTTPS / TLS 1.3")
 Rel(recruiter, careeriaHiring, "Ведение воронки найма, планирование встреч, формирование офферов", "HTTPS / TLS 1.3")
-Rel(hiringManager, careeriaHiring, "Проведение интервью, оценка кандидатов, утверждение офферов", "HTTPS / TLS 1.3")
+Rel(hiringManager, careeriaHiring, "Оценка кандидатов, утверждение офферов", "HTTPS / TLS 1.3")
 Rel(companyAdmin, careeriaHiring, "Настройка корпоративных правил и состава рекрутеров", "HTTPS / TLS 1.3")
+
+Rel(candidate, livekitMedia, "Аудио/видео поток онлайн-собеседования", "WebRTC / UDP")
+Rel(hiringManager, livekitMedia, "Проведение видеособеседования", "WebRTC / UDP")
+Rel(careeriaHiring, livekitMedia, "Инициализация и управление комнатами видеоинтервью", "HTTP / REST API")
 
 Rel(careeriaHiring, iamSystem, "Аутентификация пользователей и валидация JWT-токенов", "OAuth 2.0 / OIDC")
 Rel(careeriaHiring, iamSystem, "Проверка гранулярных ReBAC-полномочий", "gRPC / mTLS")
@@ -35,8 +39,6 @@ Rel(kedoSystem, careeriaHiring, "Уведомление о факте подпи
 
 Rel(careeriaHiring, payrollGateway, "Верификация лимитов ФОТ и фиксация компенсационных пакетов", "HTTPS / REST API")
 Rel(careeriaHiring, notificationProviders, "Отправка сервисных сообщений и оповещений", "HTTPS / REST API")
-Rel(careeriaHiring, livekitMedia, "Инициализация и управление комнатами видеоинтервью", "HTTPS / REST API")
 
 ShowArchitectureLegend()
 @enduml
-
