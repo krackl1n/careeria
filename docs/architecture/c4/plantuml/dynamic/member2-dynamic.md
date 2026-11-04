@@ -213,66 +213,7 @@
 
 ---
 
-## 4. Сквозная диаграмма последовательности (Sequence Diagram)
-
-Полная сквозная диаграмма наглядно демонстрирует обе фазы — завершённый цикл синхронного ответа клиенту и параллельную фоновую доставку событий:
-
-```plantuml
-@startuml
-autonumber "<b>[00]</b>"
-
-actor "Нанимающий менеджер" as User
-participant "Web App\n(Next.js)" as Web
-participant "BFF\n(Go)" as BFF
-participant "API Gateway\n(Go)" as GW
-participant "Hiring Service\n(Go 1.23)" as HS
-participant "OpenFGA\n(ReBAC)" as FGA
-database "Hiring DB\n(PostgreSQL)" as DB
-participant "Debezium\n(CDC)" as CDC
-queue "Apache Kafka\n(hiring.events)" as Kafka
-participant "Notification\nService" as NS
-participant "Integration\nService" as IS
-entity "Notification\nProviders" as NP
-entity "Employer HR\n(1С:ЗУП)" as HR
-
-== Фаза 1: Синхронная обработка и возврат ответа (Request-Response) ==
-
-User -> Web: 1. Отправляет оценку и комментарий
-Web -> BFF: 2. POST /api/hiring/interviews/{id}/feedback (Кука сессии)
-BFF -> GW: 3. RouteHiringCall(SubmitFeedbackRequest) [User/Tenant metadata]
-GW -> HS: 4. gRPC SubmitFeedbackRequest
-HS -> FGA: 5. Check(user, "can_evaluate", interview)
-FGA --> HS: 5.1. Allowed: true
-
-group Физическая транзакция PostgreSQL
-  HS -> DB: 6.1. INSERT interview_feedbacks
-  HS -> DB: 6.2. UPDATE applications SET stage = 'OFFER_PENDING'
-  HS -> DB: 6.3. INSERT stage_transitions
-  HS -> DB: 6.4. INSERT outbox (CandidateEvaluatedEvent)
-  HS -> DB: 6.5. COMMIT
-end
-DB --> HS: 6.6. Transaction Committed
-
-HS --> GW: 7. SubmitFeedbackResponse (Status OK, stage=OFFER_PENDING)
-GW --> BFF: 8. gRPC Response forward
-BFF --> Web: 9. HTTP 200 OK (JSON: success=true)
-Web --> User: 10. Обновление UI: кандидат в колонке "Подготовка оффера"
-
-== Фаза 2: Асинхронный Transactional Outbox и интеграции (Event-Driven) ==
-
-DB -> CDC: 11. Потоковое чтение WAL (pgoutput CDC)
-CDC -> Kafka: 12. ProduceRecord(topic='hiring.events', Avro payload)
-Kafka -> NS: 13. Consume CandidateEvaluatedEvent
-NS -> NP: 14. Отправка письма и Push кандидату
-Kafka -> IS: 15. Consume CandidateEvaluatedEvent
-IS -> HR: 16. POST /webhooks/careeria/status (HMAC SHA-256)
-
-@enduml
-```
-
----
-
-## 5. Граничные сценарии и матрица обработки ошибок
+## 4. Граничные сценарии и матрица обработки ошибок
 
 | Возникающая исключительная ситуация | Слой обнаружения | Доменная ошибка | HTTP / gRPC код ответа | Архитектурная реакция и компенсация |
 |---|---|---|---|---|
