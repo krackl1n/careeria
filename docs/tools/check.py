@@ -52,7 +52,7 @@ for source in docs.rglob('*.md'):
     if not diagrams:
         continue
     relative = source.relative_to(docs)
-    target = site / relative.parent / 'index.html' if relative.name == 'index.md' else site / relative.with_suffix('') / 'index.html'
+    target = site / relative.parent / 'index.html' if relative.name in ('index.md', 'README.md') else site / relative.with_suffix('') / 'index.html'
     if not target.exists():
         errors.append(f'Missing diagram page: {relative}')
         continue

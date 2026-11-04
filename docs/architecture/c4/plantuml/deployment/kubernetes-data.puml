@@ -1,0 +1,82 @@
+@startuml Careeria-Kubernetes-Data
+!include <C4/C4_Deployment>
+!include ../common/styles.puml
+!include ../model/elements.puml
+!include ../model/identity-elements.puml
+SetDefaultLegendEntries("container\nnode")
+AddNodeTag("infrastructure", $bgColor="#E2E8F0", $borderColor="#64748B", $legendText="Infrastructure node")
+
+title Careeria — Deployment diagram · production · platform and data
+LAYOUT_TOP_DOWN()
+
+Deployment_Node(cluster, "Kubernetes cluster · production", "Та же среда, что на application-виде") {
+    Deployment_Node(appNodes, "Application worker nodes", "Worker VM / Linux / container runtime") {
+        Deployment_Node(openfgaPods, "OpenFGA Pods × 2", "Kubernetes Pod") {
+            OpenFgaContainer("authorization")
+        }
+        Deployment_Node(registryPods, "Registry Pods × 2", "Kubernetes Pod") {
+            Container(schemaRegistry, "Schema Registry", "Apicurio Registry", "Экземпляр контейнера L2")
+        }
+        Deployment_Node(connectPods, "Kafka Connect Pods × 2", "Kubernetes Pod") {
+            Container(debezium, "Debezium", "Kafka Connect / Debezium", "Экземпляры worker; распределение connector tasks")
+        }
+    }
+    Deployment_Node(dataNodes, "Data worker nodes × 3..N", "Worker VM / Linux / container runtime") {
+        Deployment_Node(pgPods, "PostgreSQL Pods × 3", "Primary + 2 replicas; PVC у каждого Pod") {
+            Deployment_Node(pgServer, "PostgreSQL server", "СУБД; набор БД присутствует на primary и replicas") {
+                CandidateDatabase("storage")
+                ContainerDb(companyDb, "Company DB", "PostgreSQL database", "Данные Company Service")
+                VacancyDatabase("storage")
+                HiringDatabase("storage")
+                ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL database", "Данные Assessment Service")
+                ContainerDb(communicationDb, "Communication DB", "PostgreSQL database", "Данные Communication Service")
+                IdentityDatabase("storage")
+                IntegrationDatabase("storage")
+                ContainerDb(notificationDb, "Notification DB", "PostgreSQL database", "Данные Notification Service")
+                Node(openfgaDb, "OpenFGA database", "PostgreSQL database", "Поддерживающая БД OpenFGA", $tags="infrastructure")
+                Node(registryDb, "Registry database", "PostgreSQL database", "Поддерживающая БД Registry", $tags="infrastructure")
+            }
+        }
+        Deployment_Node(kafkaPods, "Kafka Pods × 3", "Kubernetes Pod; PVC на экземпляр") {
+            ContainerQueue(kafka, "Kafka", "Kafka / KRaft", "Экземпляры брокеров; replication factor 3")
+        }
+        Deployment_Node(identityRedisPods, "Identity Redis Pods", "Kubernetes Pod + PVC; HA topology") {
+            IdentityRedis("storage")
+        }
+        Deployment_Node(realtimeRedisPods, "Centrifugo Redis Pods", "Kubernetes Pod + PVC; HA topology") {
+            Node(realtimeRedis, "Redis для Centrifugo", "Redis instances", "Broker / presence", $tags="infrastructure")
+        }
+        Deployment_Node(mediaRedisPods, "LiveKit Redis Pods", "Kubernetes Pod + PVC; HA topology") {
+            Node(mediaRedis, "Redis для LiveKit", "Redis instances", "Координация media-узлов", $tags="infrastructure")
+        }
+        Deployment_Node(minioPods, "MinIO Pods × N", "Kubernetes Pod + PVC; топология уточняется") {
+            ObjectStorageContainer("storage")
+        }
+    }
+}
+Node(storage, "Постоянные диски / storage backend", "CSI-supported storage", "PVC привязаны к PV; тома каждого экземпляра независимы", $tags="infrastructure")
+
+Rel(candidateDb, debezium, "Пример outbox-источника", "PostgreSQL WAL")
+Rel(debezium, kafka, "Публикует изменения", "Kafka API")
+Rel(openFga, openfgaDb, "Собственная БД", "SQL")
+Rel(schemaRegistry, registryDb, "Собственная БД", "SQL")
+Rel(dataNodes, storage, "Привязка постоянных томов", "PVC / PV / CSI")
+
+Lay_D(candidateDb, companyDb)
+Lay_D(companyDb, vacancyDb)
+Lay_D(hiringDb, assessmentDb)
+Lay_D(assessmentDb, communicationDb)
+Lay_D(identityDb, integrationDb)
+Lay_D(integrationDb, notificationDb)
+Lay_R(candidateDb, hiringDb)
+Lay_R(hiringDb, identityDb)
+note right of cluster
+  Каждый Container / ContainerDb / ContainerQueue —
+  экземпляр именованного контейнера из L2.
+  Инфраструктурные узлы выделены в легенде.
+  Стрелки показывают выборочные runtime-связи.
+  Репликация PostgreSQL/Kafka и HA Redis управляются
+  соответствующими операторами; HPA не применяется.
+end note
+SHOW_LEGEND()
+@enduml

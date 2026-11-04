@@ -42,7 +42,7 @@ c4/
 
 Для ландшафта систем (L0), динамических диаграмм и развёртывания используются отдельные папки `landscape/`, `dynamic/` и `deployment/`. Общие фрагменты находятся в `common/` и `model/`.
 
-Компонентные диаграммы Company Service, Notification Service, Hiring Service, Vacancy Service, Candidate Service и Integration Service находятся в `system-context/full-system/<сервис>/`. Их [описания L3](plantuml/system-context%28L1%29/full-system%28L2%29/index.md#components) содержат таблицы элементов, каталоги юзкейсов, правила выполнения и открытые архитектурные вопросы. Остальные L3-представления и deployment-модель будут добавляться по мере уточнения реализации. Контейнерные срезы не следует выдавать за компоненты L3, а `production` требует согласованной схемы инфраструктуры.
+Компонентные диаграммы Company Service, Notification Service, Hiring Service, Vacancy Service, Candidate Service и Integration Service находятся в `system-context/full-system/<сервис>/`. Их [описания L3](plantuml/system-context%28L1%29/full-system%28L2%29/index.md#components) содержат таблицы элементов, каталоги юзкейсов, правила выполнения и открытые архитектурные вопросы. Целевое размещение описано в [диаграммах Kubernetes](plantuml/deployment/README.md); манифесты развёртывания ещё предстоит реализовать. Контейнерные срезы не следует выдавать за компоненты L3, а параметры `production` требуют проверки на выбранной инфраструктуре.
 
 ### Правила сопровождения
 
