@@ -1,0 +1,300 @@
+@startuml identity-authentication-service
+title Identity Service — Authentication & Registration Service (C4 L4)
+
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 55
+skinparam nodesep 40
+skinparam packagePadding 15
+hide empty members
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+' Ручная выборочная детализация существующего L3-компонента.
+' Названия с префиксом пакета соответствуют Go-коду.
+' Технические зависимости и межагрегатные ссылки по ID опущены.
+package "Component: Authentication & Registration Service" {
+
+    package "Application Layer" as ApplicationLayer {
+        class "authentication.Service" as AuthenticationService <<Application Service>> {
+            - authorizationTransactions: AuthorizationTransactionRepository
+            - oauthClients: OAuthClientRepository
+            - authorizationGrants: AuthorizationGrantRepository
+            - identities: IdentityRepository
+            - identityProfiles: IdentityProfileRepository
+            - passwords: PasswordRepository
+            - authenticationFlowFacts: AuthenticationFlowFactsReader
+            - contactVerifications: ContactVerificationService
+            - passwordFailurePolicy: password.FailurePolicy
+            + RegisterIdentity(ctx: Context, input: RegisterIdentityInput): (RegisterIdentityOutput, error)
+            + AuthenticateWithPassword(ctx: Context, input: AuthenticateWithPasswordInput)\n  : (AuthenticateWithPasswordOutput, error)
+            + VerifyEmail(ctx: Context, input: VerifyEmailInput): (VerifyEmailOutput, error)
+            + VerifyPhone(ctx: Context, input: VerifyPhoneInput): (VerifyPhoneOutput, error)
+            + SkipMFAEnrollment(ctx: Context, input: SkipMFAEnrollmentInput): (SkipMFAEnrollmentOutput, error)
+            + GrantConsent(ctx: Context, input: GrantConsentInput): (GrantConsentOutput, error)
+            + DenyConsent(ctx: Context, input: DenyConsentInput): (DenyConsentOutput, error)
+            + GetContext(ctx: Context, input: GetContextInput): (ContextOutput, error)
+            + LoadContext(ctx: Context, transaction: AuthorizationTransaction*)\n  : (ContextOutput, error)
+        }
+    }
+
+    package "Domain Layer" as DomainLayer {
+        package "Identity & Registration" as IdentityDomain {
+            class "identity.Identity" as Identity <<Aggregate Root>> {
+                + ID: identity.ID
+                + Status: identity.Status
+                + Emails: List<Email>
+                + Phones: List<Phone>
+                + CreatedAt: Timestamp
+                + UpdatedAt: Timestamp
+                + VerifyEmail(id: EmailID, now: Timestamp): error
+                + VerifyPhone(id: PhoneID, now: Timestamp): error
+                + Activate(now: Timestamp): error
+            }
+
+            class "identity.Email" as Email <<Entity>> {
+                + ID: EmailID
+                + Address: EmailAddress
+                + IsPrimary: bool
+                + VerifiedAt: Timestamp*
+                + DeletedAt: Timestamp*
+                + Verify(now: Timestamp): error
+                + IsUsable(): bool
+            }
+
+            class "identity.Phone" as Phone <<Entity>> {
+                + ID: PhoneID
+                + Number: PhoneNumber
+                + IsPrimary: bool
+                + VerifiedAt: Timestamp*
+                + DeletedAt: Timestamp*
+                + Verify(now: Timestamp): error
+                + IsUsable(): bool
+            }
+
+            class "identityprofile.Profile" as Profile <<Aggregate Root>> {
+                + IdentityID: identity.ID
+                + FamilyName: string
+                + GivenName: string
+                + MiddleName: string*
+                + Version: int64
+            }
+        }
+
+        package "Password Authentication" as PasswordDomain {
+            class "password.Password" as Password <<Aggregate Root>> {
+                + IdentityID: identity.ID
+                + Credential: Credential
+                + AuthState: AuthState
+                + RecordFailedAttempt(policy: FailurePolicy, now: Timestamp): (bool, error)
+                + RecordSuccessfulAuthentication(now: Timestamp): error
+            }
+
+            class "password.Credential" as Credential <<Value Object>> {
+                + Hash: password.Hash
+                + MustChange: bool
+                + ExpiresAt: Timestamp*
+                + CompromisedAt: Timestamp*
+                + ValidateForAuthentication(now: Timestamp): error
+            }
+
+            class "password.AuthState" as AuthState <<Value Object>> {
+                + FailedAttempts: int
+                + LockedUntil: Timestamp*
+                + LockReason: LockReason*
+                + RecordFailedAttempt(policy: FailurePolicy, now: Timestamp): (bool, error)
+                + ValidateForAuthentication(now: Timestamp): error
+                + Reset(now: Timestamp): void
+            }
+
+            class "password.FailurePolicy" as FailurePolicy <<Domain Policy>> {
+                + MaxAttempts: int
+                + LockDuration: Duration
+                + Validate(): error
+            }
+        }
+
+        package "Authentication Flow & Consent" as FlowDomain {
+            class "authorizationtransaction.AuthorizationTransaction" as AuthorizationTransaction <<Aggregate Root>> {
+                + ID: authorizationtransaction.ID
+                + OAuthClientID: oauthclient.ID
+                + IdentityID: identity.ID*
+                + Status: authorizationtransaction.Status
+                + NextStep: NextStep
+                + RequestedScopes: List<Scope>
+                + GrantedScopes: List<Scope>
+                + AuthenticatedMethods: List<Method>
+                + AuthenticationLevel: Level*
+                + Verification: VerificationReference*
+                + ExpiresAt: Timestamp
+                + BeginPasswordRegistration(identityID: identity.ID, verificationStep: NextStep, now: Timestamp): error
+                + CompletePrimaryAuthentication(identityID: identity.ID, method: Method,\n  nextStep: NextStep, now: Timestamp): error
+                + CompleteEmailVerification(nextStep: NextStep, now: Timestamp): error
+                + CompletePhoneVerification(nextStep: NextStep, now: Timestamp): error
+                + SkipMFAEnrollment(now: Timestamp): error
+                + AuthorizeScopes(grantedScopes: List<Scope>, source: AuthorizationSource, now: Timestamp): error
+                + Deny(now: Timestamp): error
+            }
+
+            enum "authorizationtransaction.NextStep" as NextStep {
+                choose_authentication_method
+                password_change
+                email_verification
+                phone_verification
+                mfa_enrollment
+                mfa
+                consent
+                ready
+                --
+                + CanTransitionTo(next: NextStep): bool
+            }
+
+            class "authorizationtransaction.VerificationReference" as VerificationReference <<Value Object>> {
+                + Channel: VerificationChannel
+                + ContactID: UUID
+                + ChallengeID: UUID
+                + ExpiresAt: Timestamp
+            }
+
+            class "authenticationflow" as FlowPolicy <<Go package / Domain Policy>> {
+                {static} + ResolveNextStep(input: authenticationflow.Input): (authenticationflow.Decision, error)
+            }
+
+            class "authenticationflow.Facts" as Facts <<Domain Projection>> {
+                - availableMFAMethods: List<Method>
+                - consentMode: ConsentMode
+                - rememberedGrantCovers: bool
+                + HasUsableMFA(): bool
+                + AvailableMFAMethods(): List<Method>
+                + ConsentMode(): ConsentMode
+                + RememberedGrantCovers(): bool
+            }
+
+            class "authorizationgrant.AuthorizationGrant" as AuthorizationGrant <<Aggregate Root>> {
+                + ID: authorizationgrant.ID
+                + IdentityID: identity.ID
+                + OAuthClientID: oauthclient.ID
+                + Scopes: List<Scope>
+                + ExpiresAt: Timestamp*
+                + RevokedAt: Timestamp*
+                + Replace(source: Source, scopes: List<Scope>,\n  expiresAt: Timestamp*, now: Timestamp): error
+            }
+        }
+    }
+
+    package "External Contracts (Ports & Repositories)" as ExternalContracts {
+        package "Repositories" as RepositoryPorts {
+            interface IdentityRepository {
+                + Create(ctx: Context, identity: Identity*): error
+                + Get(ctx: Context, id: identity.ID): (Identity*, error)
+                + GetByEmail(ctx: Context, email: EmailAddress): (Identity*, error)
+                + GetByPhone(ctx: Context, phone: PhoneNumber): (Identity*, error)
+                + Update(ctx: Context, identity: Identity*): error
+            }
+
+            interface IdentityProfileRepository {
+                + Create(ctx: Context, profile: Profile*): error
+                + Get(ctx: Context, id: identity.ID): (Profile*, error)
+            }
+
+            interface PasswordRepository {
+                + Create(ctx: Context, password: Password*): error
+                + Get(ctx: Context, id: identity.ID): (Password*, error)
+                + Update(ctx: Context, password: Password*): error
+            }
+
+            interface AuthorizationTransactionRepository {
+                + Get(ctx: Context, id: authorizationtransaction.ID): (AuthorizationTransaction*, error)
+                + Update(ctx: Context, transaction: AuthorizationTransaction*): error
+            }
+
+            interface OAuthClientRepository {
+                + Get(ctx: Context, id: oauthclient.ID): (oauthclient.OAuthClient*, error)
+            }
+
+            interface AuthorizationGrantRepository {
+                + Get(ctx: Context, identityID: identity.ID, clientID: oauthclient.ID): (AuthorizationGrant*, error)
+                + Create(ctx: Context, grant: AuthorizationGrant*): error
+                + Update(ctx: Context, grant: AuthorizationGrant*): error
+            }
+
+        }
+
+        package "Business Services" as ServicePorts {
+            interface AuthenticationFlowFactsReader {
+                + Get(ctx: Context, identityID: identity.ID, clientID: oauthclient.ID,\n  scopes: List<Scope>, now: Timestamp): (Facts, error)
+            }
+
+            interface ContactVerificationService {
+                + StartEmail(ctx: Context, transaction: AuthorizationTransaction*,\n  email: Email, ip: IPAddress*, now: Timestamp): error
+                + StartPhone(ctx: Context, transaction: AuthorizationTransaction*,\n  phone: Phone, ip: IPAddress*, now: Timestamp): error
+                + VerifyEmail(ctx: Context, transaction: AuthorizationTransaction*,\n  code: string, ip: IPAddress*, now: Timestamp): (EmailID, error)
+                + VerifyPhone(ctx: Context, transaction: AuthorizationTransaction*,\n  code: string, ip: IPAddress*, now: Timestamp): (PhoneID, error)
+            }
+
+        }
+    }
+}
+
+' Композиция — только для частей, которыми владеет агрегат.
+Identity "1" *-- "0..*" Email
+Identity "1" *-- "0..*" Phone
+Password "1" *-- "1" Credential
+Password "1" *-- "1" AuthState
+AuthorizationTransaction "1" *-- "0..1" VerificationReference
+
+' Ссылки между самостоятельными агрегатами отражены только полями ID.
+
+AuthState ..> FailurePolicy : applies
+AuthorizationTransaction --> NextStep : validates transitions
+FlowPolicy ..> NextStep : selects allowed step
+FlowPolicy ..> Facts : reads
+
+AuthenticationService ..> Identity : creates / verifies / activates
+AuthenticationService ..> Profile : creates / reads
+AuthenticationService ..> Password : records authentication
+AuthenticationService ..> AuthorizationTransaction : advances flow
+AuthenticationService ..> AuthorizationGrant : remembers consent
+AuthenticationService .[norank].> FlowPolicy : resolves next step
+AuthenticationService -[norank]-> FailurePolicy : passwordFailurePolicy
+
+AuthenticationService -right-> IdentityRepository
+AuthenticationService --> IdentityProfileRepository
+AuthenticationService --> PasswordRepository
+AuthenticationService --> AuthorizationTransactionRepository
+AuthenticationService --> OAuthClientRepository
+AuthenticationService --> AuthorizationGrantRepository
+AuthenticationService --> AuthenticationFlowFactsReader
+AuthenticationService --> ContactVerificationService
+
+' Выравнивание не добавляет семантических связей.
+AuthenticationService -[hidden]down-> Identity
+Identity -[hidden]right-> Password
+Phone -[hidden]down-> Profile
+Profile -[hidden]down-> AuthorizationTransaction
+FailurePolicy -[hidden]down-> AuthorizationTransaction
+AuthorizationTransaction -[hidden]down-> FlowPolicy
+FlowPolicy -[hidden]right-> AuthorizationGrant
+IdentityRepository -[hidden]right-> AuthenticationFlowFactsReader
+IdentityRepository -[hidden]down-> IdentityProfileRepository
+IdentityProfileRepository -[hidden]down-> PasswordRepository
+PasswordRepository -[hidden]down-> AuthorizationTransactionRepository
+AuthorizationTransactionRepository -[hidden]down-> OAuthClientRepository
+OAuthClientRepository -[hidden]down-> AuthorizationGrantRepository
+AuthenticationFlowFactsReader -[hidden]down-> ContactVerificationService
+
+legend bottom left
+  + public; - private (видимость в Go)
+  T* — указатель на T; List<T> — срез []T
+  *-- композиция; --> ассоциация; ..> зависимость
+  Показаны поля и операции, значимые для выбранных сценариев.
+  Межагрегатные ссылки по ID и технические зависимости опущены.
+  authenticationflow — пакет с функцией, не Go-структура.
+endlegend
+
+@enduml
