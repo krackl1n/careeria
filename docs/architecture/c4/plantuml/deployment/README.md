@@ -12,9 +12,11 @@
 @enduml
 ```
 
-На deployment-виде вложенность означает место исполнения: кластер → worker nodes → Pod → экземпляр приложения. `Container` — именованный логический контейнер L2 (например, Hiring Service), а не Kubernetes Pod или группа сервисов. Pod обозначен `Deployment_Node`; Kubernetes namespace — границей `Boundary`. Кратность `× N` показывает число экземпляров на весь пул, а не на каждый узел.
+Оформление повторяет deployment участника Member 2: направление слева направо, синие блоки приложений, отдельные узлы исполнения, общий узел СУБД и подписанные связи. Вложенность показывает размещение экземпляров приложений на worker nodes production-кластера. `Container` — экземпляр именованного логического контейнера L2 (например, Hiring Service), а не Kubernetes Pod или группа сервисов. Для прикладных сервисов кратность Pod указана в технической подписи блока; для Web Application, Ingress, LiveKit и stateful workloads Pod дополнительно раскрыт через `Deployment_Node`. Kubernetes namespace обозначен границей `Boundary`. Кратность `× N` показывает число экземпляров на весь пул, а не на каждый узел.
 
-На application-виде каждый сервис показан отдельно. Для Web Application различены сервер Next.js в кластере и клиентская часть React в браузере. Infrastructure nodes обозначают Load Balancer и proxy, а не произвольные группы программ. Kubernetes Deployment, Service и HPA описываются как управляющие объекты и аннотации: они не являются новыми software containers C4. Стрелки выборочные; полный граф взаимодействий остаётся на L2.
+На application-виде каждый сервис показан отдельно. **Web Application разворачивается внутри Kubernetes**, в `careeria-apps`, как Next.js-приложение в `Web Application Pods × 2..10`. Оно обслуживает страницы, доставляет клиентский JavaScript и обращается к BFF. На устройстве пользователя показан браузер (`Node`), который загружает интерфейс из кластера. Ingress Controller показан как исполняемый proxy-контейнер внутри Pod, публичный Load Balancer — как инфраструктурный `Node`.
+
+API Gateway связан со всеми десятью прикладными API: Candidate, Company, Vacancy, Hiring, Assessment, Communication, Identity, Integration, File и Notification Service. Candidate Service обращается к File Service для работы с резюме. Восемь сервисов, выполняющих проверки доступа к ресурсам, связаны с OpenFGA; AuthZ Synchronization Service обновляет отношения доступа по событиям Kafka. Kafka также связан с остальными потребителями событий, а Realtime Publisher — с Centrifugo. Сигнализация LiveKit отделена от прямого медиатрафика браузера. Kubernetes Deployment, Service и HPA остаются управляющими объектами и аннотациями. На основной схеме в контуре данных развёрнут один общий PostgreSQL-кластер: к нему показаны SQL-подключения девяти прикладных сервисов и OpenFGA. File Service использует MinIO; его связь с объектным хранилищем раскрыта на следующем виде. Внешние системы показаны на L0/L1.
 
 ### Платформенные сервисы и постоянные данные
 
@@ -24,7 +26,11 @@
 @enduml
 ```
 
-Это второй deployment-вид того же production-окружения. Он показывает экземпляры OpenFGA, Registry и Debezium в Pod, а также размещение отдельных логических БД внутри экземпляров PostgreSQL. БД сервисов сохраняют имена и владельцев из L2. Дополнительные БД платформы и Redis broker/coordinator показаны как поддерживающая инфраструктура. PVC указаны как привязки постоянного хранения; Kubernetes-объект PVC не изображён как приложение.
+Это второй deployment-вид того же production-окружения. PostgreSQL показан как **одна развёрнутая СУБД** — общий PostgreSQL-кластер в namespace `careeria-data`. В обеих схемах изображено одно и то же развёртывание. Прикладные и платформенные сервисы подключаются к нему по SQL/TCP, порт 5432. Логическое владение данными и разделение доступа раскрываются в L2.
+
+На этом виде OpenFGA, Schema Registry, Identity, Hiring и Notification Service подключены к общему PostgreSQL. Identity Service также использует Identity Redis, File Service — OpenFGA и MinIO. Hiring Service управляет комнатами LiveKit; Realtime Publisher получает события Kafka и передаёт сообщения Centrifugo. Centrifugo и LiveKit используют каждый свой Redis-контур.
+
+Debezium подключается к общей СУБД и читает WAL/outbox доменных данных, получает Avro-схемы из Registry и публикует события в Kafka. На уровне развёртывания это связь CDC-коннекторов с PostgreSQL; восемь логических outbox-источников описаны на [событийном представлении L2](../event-driven%28L2%29/index.md). PVC указаны в узлах stateful workloads. Три PostgreSQL Pod — primary и две replicas одного общего кластера СУБД, у каждого Pod собственный постоянный том.
 
 Нотация соответствует назначению [C4 Deployment](https://c4model.com/diagrams/deployment): размещению экземпляров software systems/containers на вложенных deployment nodes с дополнительными infrastructure nodes.
 
@@ -48,7 +54,7 @@
 | Прикладные API | Candidate, Company, Vacancy, Hiring, Assessment, Communication, Identity, Integration, Notification и File Service | 10 независимых Deployments и 10 Service. Для существующих L3 детали доступны через [каталог компонентов](../system-context%28L1%29/full-system%28L2%29/index.md#components); File Service пока раскрыт на L2. |
 | Фоновые обработчики | Notification Service, Realtime Publisher, AuthZ Synchronization Service | Отдельные workloads. API и consumer одного сервиса при необходимости запускаются разными workload-профилями, сохраняя владельца данных. Число Kafka consumers ограничивается числом partitions и поведением consumer group. |
 | Realtime | Centrifugo | Deployment и Service; состояние каналов/presence вынесено в Redis broker. Долгоживущие соединения требуют отдельного профиля масштабирования и drain. |
-| Авторизация и события | OpenFGA, Apicurio Registry, Debezium / Kafka Connect | Отдельные платформенные Deployments и Service. OpenFGA и Registry используют собственные БД/роли PostgreSQL; Debezium читает WAL/outbox и публикует события в Kafka. |
+| Авторизация и события | OpenFGA, Apicurio Registry, Debezium / Kafka Connect | Отдельные платформенные Deployments и Service. OpenFGA и Registry подключаются к общей СУБД PostgreSQL со своими ролями; Debezium читает WAL/outbox и публикует события в Kafka. |
 | Медиа | LiveKit | Отдельный Deployment на media pool. Сигнализация идёт через HTTPS/WSS, медиатрафик — отдельным маршрутом WebRTC/TURN. |
 
 Распределённые сессии BFF и несколько реплик Next.js требуют общей стратегии хранения сессий, согласованных ключей и политики кэширования. Масштабирование не должно зависеть от локальной памяти конкретного Pod. Точный session backend BFF ещё предстоит выбрать; таблица не назначает ему Identity Redis автоматически.
@@ -92,7 +98,7 @@
 
 | Система | Размещение и хранение |
 |---|---|
-| PostgreSQL | Оператор управляет primary и двумя replicas. Каждый экземпляр имеет свой PVC; у сервисов отдельные БД и роли, а не общие таблицы. Для Identity, OpenFGA и Registry также выделяются соответствующие БД. Политика синхронной репликации и RPO/RTO выбирается отдельно. |
+| PostgreSQL | Один общий кластер СУБД для прикладных и платформенных сервисов. Оператор управляет primary и двумя replicas; каждый Pod имеет свой PVC. Доступ сервисов разделяется ролями внутри общей СУБД. Политика синхронной репликации и RPO/RTO выбирается отдельно. |
 | Kafka | Стартовая топология — 3 узла с KRaft quorum, постоянными томами, replication factor 3 и `min.insync.replicas: 2` для критичных топиков. Выделение controller-узлов и размер partitions определяются при выборе оператора и замерах. |
 | Redis | Раздельные инсталляции/контуры для Identity, Centrifugo и LiveKit, собственные PVC и подходящая HA-топология. Требования к долговечности Identity и к transient realtime-состоянию различаются. |
 | MinIO | Распределённое S3-хранилище с erasure coding и отдельными PVC для дисков. Количество экземпляров, дисков и StorageClass нельзя выводить из числа application replicas: топология подбирается отдельно. |
