@@ -42,7 +42,7 @@ Deployment_Node(media_tier, "Медиа-контур (Media Subnet)", "careeria-
     Container(livekit_svc, "LiveKit Media Server Pod × 2..N", "LiveKit / WebRTC", "Видеоинтервью и аудио-конференции (WSS 7880, WebRTC 7881)")
 }
 
-Deployment_Node(data_tier, "Изолированный контур данных (Storage & Data Subnet)", "careeria-data") {
+Deployment_Node(data_tier, "Изолированный контур данных (Data Subnet)", "careeria-data") {
     Deployment_Node(pg_set, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
         ContainerDb(db_hiring, "Hiring DB", "PostgreSQL 16", "Транзакции найма и outbox (порт 5432)")
     }
@@ -79,7 +79,7 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 | **Контур приложений: Debezium** | Kubernetes Pod | K8s Worker Node (2 vCPU, 4 GB RAM) | `debezium-connector` | Потоковый агент Change Data Capture (CDC), непрерывно считывающий журнал упреждающей записи СУБД. |
 | **Медиа-контур: LiveKit** | Kubernetes Pod | Media Worker Nodes (Host Network, 4 vCPU, 8 GB RAM) | `livekit-server` (Pods × 2..N) | Внутренний кластерный медиа-сервер WebRTC для организации онлайн-собеседований (без использования внешнего SaaS). |
 | **Контур данных: PostgreSQL (StatefulSet)** | Kubernetes StatefulSet | High-IOPS Worker Nodes (8 vCPU, 32 GB RAM) | `Hiring DB (PostgreSQL 16)` | База данных сервиса найма в StatefulSet. Без межсерверной репликации (Single-Instance). |
-| **Контур данных: Apache Kafka Cluster** | Kubernetes StatefulSet | Storage Nodes (3 Pods, 4 vCPU, 16 GB RAM) | `Kafka Brokers (KRaft)` | Отказоустойчивый распределённый журнал доменных событий. Хранение топика `hiring.events` в StatefulSet. |
+| **Контур данных: Apache Kafka Cluster** | Kubernetes StatefulSet | Worker Nodes (3 Pods, 4 vCPU, 16 GB RAM) | `Kafka Brokers (KRaft)` | Отказоустойчивый распределённый журнал доменных событий. Хранение топика `hiring.events` в StatefulSet. |
 | **Корпоративная HR-система** | Корпоративный контур | On-Premise Enterprise VM / Private Cloud | `1С:ЗУП 8.3 / Workday HCM` | Главная система кадрового учёта компании-работодателя. |
 
 ---

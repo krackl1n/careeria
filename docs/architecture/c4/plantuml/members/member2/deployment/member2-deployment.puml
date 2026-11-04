@@ -31,7 +31,7 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
         }
     }
     
-    Deployment_Node(data_subnet, "Изолированный контур данных (Storage & Data Subnet)", "careeria-data namespace") {
+    Deployment_Node(data_subnet, "Изолированный контур данных (Data Subnet)", "careeria-data namespace") {
         Deployment_Node(pg_statefulset, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
             ContainerDb(hiring_db, "Hiring DB", "PostgreSQL 16", "Хранение агрегатов найма и таблицы transactional outbox. Без репликации. Порт 5432.")
         }
