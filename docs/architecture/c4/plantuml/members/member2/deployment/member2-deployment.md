@@ -16,8 +16,9 @@
 
 | Узел инфраструктуры | Тип среды выполнения | Хостовая платформа / Ресурсы | Размещённые контейнеры и поды | Служебная роль и зона ответственности |
 |---|---|---|---|---|
-| **Рабочее место пользователя** | Физическое устройство | Windows / macOS / Linux / iOS / Android | `Web Client (Next.js SPA)` | Интерактивный интерфейс браузера соискателя и сотрудников нанимающей команды. |
+| **Рабочее место пользователя** | Физическое устройство | Windows / macOS / Linux / iOS / Android | `Web Client (Browser Runtime)` | Графический интерфейс соискателя и сотрудников нанимающей команды, выполнение клиентского кода React, гидратация DOM-дерева. |
 | **Периметральный шлюз (DMZ)** | Виртуальный шлюз | Linux VM / K8s Edge Ingress (2 vCPU, 4 GB RAM) | `Ingress Controller (Nginx / Envoy)` | Фронтальный обратный прокси, SSL-терминация сертификатов, защита от DDoS, маршрутизация HTTP(S). |
+| **Контур приложений: Web App** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `web-app` (Pods × 2..10, Node.js 20 / Next.js 14) | Серверный рендеринг веб-страниц (SSR), начальная генерация HTML, раздача скомпилированных JS/CSS-бандлов и статических ассетов платформы. Масштабируется через HPA по утилизации CPU. |
 | **Контур приложений: BFF** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `bff` (Pods × 2..10, Go 1.23) | Управление сессиями, CSRF-защита, валидация cookie `__Host-Careeria-Session`, маршрутизация gRPC к API Gateway. |
 | **Контур приложений: API Gateway** | Kubernetes Pod | K8s Worker Node (cgroups v2, 2 vCPU, 2 GB RAM) | `api-gateway` (Go 1.23) | Трансляция внешних REST-запросов в gRPC-вызовы микросервисов, инжекция трассировки OpenTelemetry. |
 | **Контур приложений: Hiring Service** | Kubernetes Deployment | K8s Worker Nodes (High CPU, 4 vCPU, 4 GB RAM per pod) | `hiring-service` (Pods × 2..10) | Горизонтально масштабируемый инстанс бизнес-логики найма. Обработка RPC, FSM, фоновые воркеры. Количество реплик масштабируется HPA. |
@@ -34,9 +35,10 @@
 
 | Исходный узел | Целевой узел | Описание сетевого взаимодействия | Протокол взаимодействия | Сетевой порт | Зона безопасности / Сегмент | Требования к шифрованию |
 |---|---|---|---|:---:|---|---|
-| Браузер пользователя | Ingress Controller | Доставка статики фронтенда, REST-запросы к API платформы | HTTPS / TLS 1.3 | 443 | Глобальная сеть (Internet) | TLS 1.3, шифр-сьюты ECDHE-RSA-AES256-GCM, HSTS |
+| Браузер пользователя | Ingress Controller | Доставка веб-страниц, статики и вызовы API платформы | HTTPS / TLS 1.3 | 443 | Глобальная сеть (Internet) | TLS 1.3, шифр-сьюты ECDHE-RSA-AES256-GCM, HSTS |
 | Браузер пользователя | LiveKit Media Server | Аудио- и видеопотоки собеседования, демонстрация экрана | WebRTC / UDP | 7881 | Публичная сеть / Host Network | DTLS-SRTP шифрование медиатрафика |
-| Ingress Controller | BFF Pod | Проксирование клиентских веб-запросов | HTTP / 1.1 | 8080 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
+| Ingress Controller | Web App Pod | Проксирование запросов за страницами и статической сборкой (SSR) | HTTP / 1.1 | 3000 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
+| Ingress Controller | BFF Pod | Проксирование клиентских запросов к API платформы (/api/*) | HTTP / 1.1 | 8080 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
 | BFF Pod | API Gateway Pod | Авторизованные межсервисные RPC-вызовы | gRPC / HTTP2 | 50051 | Приватная сеть K8s Cluster | Внутрикластерный mTLS / ClusterIP |
 | Ingress Controller | LiveKit Media Server | Сигнализация сессий видеоинтервью | WSS / HTTPS | 7880 | careeria-media namespace | Внутренний трафик кластера |
 | API Gateway Pod | Hiring Service Pod | Вызовы RPC-методов домена найма (`SubmitFeedback`, `ChangeStage` и др.) | gRPC / HTTP2 | 50053 | K8s Service Mesh / Overlay | Балансировка Round-Robin, mTLS |
@@ -51,11 +53,10 @@
 
 ## 3. Архитектура развёртывания и отказоустойчивости
 
-### 3.1. Развёртывание приложений (Hiring Service Deployment)
-* Контейнер `Hiring Service` развёрнут как стандартный Kubernetes Deployment.
-* На диаграмме экземпляр сервиса отображается однократно с указанием кратности (`Pods × 2..10`).
-* Масштабирование регулируется через **Horizontal Pod Autoscaler (HPA)** по метрикам CPU и задержки RPC-запросов.
-* Балансировка входящего трафика между подами обеспечивается стандартным объектом `Kubernetes Service` (ClusterIP).
+### 3.1. Развёртывание приложений (Application Deployments)
+* Контейнеры бизнес-логики `Hiring Service`, а также сервисы уровня представления (`Web App` и `BFF`) разворачиваются как stateless Kubernetes Deployments с горизонтальным автомасштабированием через **Horizontal Pod Autoscaler (HPA)** по метрикам утилизации CPU и задержки ответов (Pods × 2..10).
+* На диаграмме каждый экземпляр сервиса отображается однократно с указанием диапазона реплик (`Pods × 2..10`).
+* Балансировка входящего трафика между подами обеспечивается стандартными объектами `Kubernetes Service` (ClusterIP).
 
 ### 3.2. Контур данных в StatefulSet (PostgreSQL)
 * База данных `Hiring DB` развёрнута в **Kubernetes StatefulSet**.

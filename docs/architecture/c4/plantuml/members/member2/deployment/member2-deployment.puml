@@ -6,7 +6,7 @@ title Careeria — Диаграмма развертывания подсист�
 LAYOUT_LEFT_RIGHT()
 
 Deployment_Node(client_node, "Рабочее место пользователя", "Workstation / Smart Device") {
-    Container(browser, "Браузер клиента (Web Client)", "React / Next.js SPA", "Обеспечивает графический интерфейс для соискателей и рекрутеров.")
+    Container(browser, "Браузер пользователя (Web Client)", "Chromium / WebKit / Gecko Engine", "Выполнение клиентского JS-кода, отображение UI, захват медиапотоков.")
 }
 
 Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)", "Production Kubernetes") {
@@ -15,6 +15,7 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
     }
     
     Deployment_Node(app_subnet, "Приватный контур приложений (Application Subnet)", "careeria-apps namespace") {
+        Container(web_app_pod, "Web App Pod × 2..10", "Node.js 20 / Next.js 14", "SSR-рендеринг страниц, раздача статических JS/CSS бандлов. Порт 3000 (HTTP).")
         Container(bff_pod, "BFF Pod × 2..10", "Go 1.23 / net/http, grpc-go", "Сессионный фасад, валидация HttpOnly кук, CSRF защита. Входящий порт 8080 (HTTP), исходящий gRPC порт 50051.")
         Container(api_gateway, "API Gateway Pod × 2..10", "Go 1.23 / grpc-gateway", "Трансляция REST в gRPC, проверка сессий, трассировка OpenTelemetry. Порт 8080 (HTTP), 50051 (gRPC).")
         
@@ -47,9 +48,10 @@ Deployment_Node(external_infra, "Внешние корпоративные си�
     Container(hr_corp_server, "Корпоративная HR-система", "1С:ЗУП / Workday", "Кадровый учет и штатное расписание. Порт 443 (HTTPS).")
 }
 
-Rel(browser, ingress, "HTTPS-запросы к веб-интерфейсу", "HTTPS / TLS 1.3, порт 443")
+Rel(browser, ingress, "HTTPS-запросы (страницы, статика, API)", "HTTPS / TLS 1.3, порт 443")
 Rel(browser, livekit, "Прямой медиатрафик видеоинтервью", "WebRTC / UDP, порт 7881")
-Rel(ingress, bff_pod, "Проксирование клиентских веб-запросов", "HTTP/1.1, порт 8080")
+Rel(ingress, web_app_pod, "Маршрутизация веб-страниц и статики (SSR)", "HTTP/1.1, порт 3000")
+Rel(ingress, bff_pod, "Проксирование API-запросов (/api/*)", "HTTP/1.1, порт 8080")
 Rel(ingress, livekit, "Сигнализация сессий интервью", "WSS / HTTPS, порт 7880")
 Rel(bff_pod, api_gateway, "Авторизованные межсервисные RPC-вызовы", "gRPC / HTTP2, порт 50051")
 Rel(api_gateway, hiring_svc, "gRPC-вызовы к сервису найма", "gRPC / HTTP2, порт 50053")
