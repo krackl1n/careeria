@@ -1,0 +1,51 @@
+logger:
+  level: info
+  format: json
+  add_source: false
+  service: hiring
+  env: local
+  version: dev
+
+grpc_server:
+  addr: :50053
+  enable_health: true
+  enable_reflection: true
+  connection_timeout: 5s
+  max_recv_msg_size: 4194304
+  max_send_msg_size: 4194304
+
+metrics:
+  enabled: true
+  addr: :9091
+  namespace: careeria_hiring
+  read_header_timeout: 5s
+
+tracing:
+  enabled: false
+  service_name: hiring
+  endpoint: localhost:4317
+  sampler_ratio: 1.0
+
+shutdown:
+  timeout: 15s
+
+postgres:
+  connection:
+    host: localhost
+    port: 5432
+    database: hiring
+    user: postgres
+    ssl_mode: disable
+  max_conns: 10
+  min_conns: 1
+  max_conn_lifetime: 1h
+  max_conn_idle_time: 30m
+  health_check_period: 1m
+
+hiring_topic: hiring.events
+
+outbox:
+  batch_size: 100
+  poll_interval: 1s
+  publish_timeout: 5s
+

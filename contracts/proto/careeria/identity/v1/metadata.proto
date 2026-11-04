@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+message GetOpenIDConfigurationRequest {}
+
+// OpenID Provider Configuration, публикуемая discovery endpoint.
+message GetOpenIDConfigurationResponse {
+  string issuer = 1 [
+    json_name = "issuer",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string authorization_endpoint = 2 [
+    json_name = "authorization_endpoint",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string token_endpoint = 3 [
+    json_name = "token_endpoint",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string revocation_endpoint = 4 [
+    json_name = "revocation_endpoint",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string userinfo_endpoint = 5 [
+    json_name = "userinfo_endpoint",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string jwks_uri = 6 [
+    json_name = "jwks_uri",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  repeated string response_types_supported = 7 [
+    json_name = "response_types_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 16
+      unique: true
+      items: {
+        string: {const: "code"}
+      }
+    }
+  ];
+  repeated string subject_types_supported = 8 [
+    json_name = "subject_types_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 4
+      unique: true
+      items: {
+        string: {const: "public"}
+      }
+    }
+  ];
+  repeated string id_token_signing_alg_values_supported = 9 [
+    json_name = "id_token_signing_alg_values_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 16
+      unique: true
+      items: {
+        string: {
+          min_len: 1
+          max_len: 64
+          pattern: "^[^[:space:]]+$"
+        }
+      }
+    }
+  ];
+  repeated string scopes_supported = 10 [
+    json_name = "scopes_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 100
+      unique: true
+      items: {
+        string: {
+          min_len: 1
+          max_len: 255
+          pattern: "^[^[:space:]]+$"
+        }
+      }
+    }
+  ];
+  repeated string claims_supported = 11 [
+    json_name = "claims_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 100
+      unique: true
+      items: {
+        string: {
+          min_len: 1
+          max_len: 255
+          pattern: "^[^[:space:]]+$"
+        }
+      }
+    }
+  ];
+  repeated string grant_types_supported = 12 [
+    json_name = "grant_types_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 8
+      unique: true
+      items: {
+        string: {
+          in: "authorization_code"
+          in: "refresh_token"
+        }
+      }
+    }
+  ];
+  repeated string token_endpoint_auth_methods_supported = 13 [
+    json_name = "token_endpoint_auth_methods_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 8
+      unique: true
+      items: {
+        string: {
+          in: "none"
+          in: "client_secret_basic"
+        }
+      }
+    }
+  ];
+  repeated string revocation_endpoint_auth_methods_supported = 14 [
+    json_name = "revocation_endpoint_auth_methods_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 8
+      unique: true
+      items: {
+        string: {
+          in: "none"
+          in: "client_secret_basic"
+        }
+      }
+    }
+  ];
+  repeated string code_challenge_methods_supported = 15 [
+    json_name = "code_challenge_methods_supported",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 4
+      unique: true
+      items: {
+        string: {const: "S256"}
+      }
+    }
+  ];
+}
+
+message GetJSONWebKeySetRequest {}
+
+// RFC 7517 JSON Web Key Set. Каждый Struct обязан быть публичным JWK-объектом;
+// приватные key members отсекаются доменным валидатором signingkey.PublicJWK.
+message GetJSONWebKeySetResponse {
+  repeated google.protobuf.Struct keys = 1 [
+    json_name = "keys",
+    (validate.rules).repeated = {
+      min_items: 1
+      max_items: 32
+      items: {
+        message: {required: true}
+      }
+    }
+  ];
+}

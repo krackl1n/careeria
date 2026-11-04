@@ -1,0 +1,329 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Запрос Authorization Code flow. HTTP-поля соответствуют OAuth 2.0/OIDC и PKCE.
+message AuthorizeRequest {
+  string response_type = 1 [
+    json_name = "response_type",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.const = "code"
+  ];
+  string client_id = 2 [
+    json_name = "client_id",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string redirect_uri = 3 [
+    json_name = "redirect_uri",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string scope = 4 [
+    json_name = "scope",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 6
+      max_bytes: 2048
+      pattern: "^([^[:space:]]+ )*openid( [^[:space:]]+)*$"
+    }
+  ];
+  optional string state = 5 [
+    json_name = "state",
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 2048
+    }
+  ];
+  optional string nonce = 6 [
+    json_name = "nonce",
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 2048
+    }
+  ];
+  optional string code_challenge = 7 [
+    json_name = "code_challenge",
+    (validate.rules).string = {
+      len: 43
+      pattern: "^[A-Za-z0-9_-]{43}$"
+    }
+  ];
+  optional string code_challenge_method = 8 [
+    json_name = "code_challenge_method",
+    (validate.rules).string.const = "S256"
+  ];
+}
+
+// Указывает HTTP-адаптеру выполнить 302 redirect к Authentication UI.
+message AuthorizeResponse {
+  string redirect_uri = 1 [
+    json_name = "redirect_uri",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  string authorization_transaction_id = 2 [
+    json_name = "authorization_transaction_id",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  google.protobuf.Timestamp expires_at = 3 [
+    json_name = "expires_at",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).timestamp.required = true
+  ];
+}
+
+// Завершает аутентифицированную authorization transaction.
+message ContinueAuthorizationRequest {
+  string authorization_transaction_id = 1 [
+    json_name = "authorization_transaction_id",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+}
+
+// Указывает HTTP-адаптеру выполнить 302 redirect на зарегистрированный redirect_uri клиента.
+message ContinueAuthorizationResponse {
+  string redirect_uri = 1 [
+    json_name = "redirect_uri",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      max_bytes: 4096
+      uri: true
+    }
+  ];
+}
+
+// Обмен authorization code или refresh token. Поля сериализуются как form-urlencoded.
+message ExchangeTokenRequest {
+  reserved 7;
+  reserved "scope";
+
+  string grant_type = 1 [
+    json_name = "grant_type",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      in: "authorization_code"
+      in: "refresh_token"
+    }
+  ];
+  optional string client_id = 2 [
+    json_name = "client_id",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  oneof grant_credential {
+    option (validate.required) = true;
+
+    string code = 3 [
+      json_name = "code",
+      (validate.rules).string = {
+        min_len: 1
+        max_bytes: 2048
+        pattern: "^[^[:space:]]+$"
+      }
+    ];
+    string refresh_token = 6 [
+      json_name = "refresh_token",
+      (validate.rules).string = {
+        min_len: 1
+        max_bytes: 4096
+        pattern: "^[^[:space:]]+$"
+      }
+    ];
+  }
+  optional string redirect_uri = 4 [
+    json_name = "redirect_uri",
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+  optional string code_verifier = 5 [
+    json_name = "code_verifier",
+    (validate.rules).string = {
+      min_len: 43
+      max_len: 128
+      pattern: "^[A-Za-z0-9._~-]+$"
+    }
+  ];
+}
+
+// Стандартный OAuth 2.0 token response.
+message ExchangeTokenResponse {
+  string access_token = 1 [
+    json_name = "access_token",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 8192
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string token_type = 2 [
+    json_name = "token_type",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.const = "Bearer"
+  ];
+  uint32 expires_in = 3 [
+    json_name = "expires_in",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).uint32.gte = 1
+  ];
+  optional string refresh_token = 4 [
+    json_name = "refresh_token",
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 4096
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  optional string id_token = 5 [
+    json_name = "id_token",
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 16384
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string scope = 6 [
+    json_name = "scope",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 2048
+      pattern: "^[^[:space:]]+( [^[:space:]]+)*$"
+    }
+  ];
+}
+
+// Отзыв access token или refresh token.
+message RevokeTokenRequest {
+  string token = 1 [
+    json_name = "token",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_bytes: 16384
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  optional string token_type_hint = 2 [
+    json_name = "token_type_hint",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  optional string client_id = 3 [
+    json_name = "client_id",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+}
+
+message RevokeTokenResponse {}
+
+message GetUserInfoRequest {}
+
+// Поддерживаемые claims UserInfo для текущей identity.
+message GetUserInfoResponse {
+  string subject = 1 [
+    json_name = "sub",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.uuid = true
+  ];
+  optional string email = 2 [
+    json_name = "email",
+    (validate.rules).string = {
+      max_bytes: 320
+      email: true
+    }
+  ];
+  optional bool email_verified = 3 [json_name = "email_verified"];
+  optional string phone_number = 4 [
+    json_name = "phone_number",
+    (validate.rules).string.pattern = "^\\+[1-9][0-9]{7,14}$"
+  ];
+  optional bool phone_number_verified = 5 [json_name = "phone_number_verified"];
+  optional double updated_at = 6 [
+    json_name = "updated_at",
+    (validate.rules).double.gte = 0
+  ];
+  optional string name = 7 [
+    json_name = "name",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 767
+    }
+  ];
+  optional string family_name = 8 [
+    json_name = "family_name",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string given_name = 9 [
+    json_name = "given_name",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string middle_name = 10 [
+    json_name = "middle_name",
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+}
+
+// Стандартная ошибка OAuth 2.0 token/revocation endpoint.
+message OAuthErrorResponse {
+  string error = 1 [
+    json_name = "error",
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+      pattern: "^[a-z][a-z0-9_]*$"
+    }
+  ];
+  optional string error_description = 2 [
+    json_name = "error_description",
+    (validate.rules).string.max_bytes = 2000
+  ];
+  optional string error_uri = 3 [
+    json_name = "error_uri",
+    (validate.rules).string = {
+      max_bytes: 2048
+      uri: true
+    }
+  ];
+}

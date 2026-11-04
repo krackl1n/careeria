@@ -1,4 +1,4 @@
-@startuml candidate-profile-service-l4
+@startuml candidate-profile-service
 skinparam classAttributeIconSize 0
 skinparam roundcorner 6
 skinparam shadowing false

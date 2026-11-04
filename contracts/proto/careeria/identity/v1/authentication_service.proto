@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/identity/v1/authentication.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Backend API для собственного Authentication UI.
+service AuthenticationService {
+  // Возвращает включённые способы входа, которые Authentication UI может показать пользователю.
+  rpc GetAuthenticationMethods(GetAuthenticationMethodsRequest) returns (GetAuthenticationMethodsResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {get: "/api/v1/authentication/methods"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Получить доступные способы аутентификации"
+      operation_id: "GetAuthenticationMethods"
+    };
+  }
+
+  // Возвращает OAuth-клиента, scopes и текущее состояние authorization transaction.
+  rpc GetAuthenticationContext(GetAuthenticationContextRequest) returns (GetAuthenticationContextResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {get: "/api/v1/authentication/context"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Получить контекст аутентификации"
+      operation_id: "GetAuthenticationContext"
+    };
+  }
+
+  // Проверяет пароль и связывает identity с authorization transaction.
+  rpc AuthenticateWithPassword(AuthenticateWithPasswordRequest) returns (AuthenticateWithPasswordResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/password"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Аутентифицироваться по паролю"
+      description: "При неверных credentials возвращается единообразная ошибка без раскрытия существования identity."
+      operation_id: "AuthenticateWithPassword"
+    };
+  }
+
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/verification/email"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Подтвердить email"
+      description: "Проверяет код challenge, привязанного к текущей authorization transaction, и возвращает следующий шаг."
+      operation_id: "VerifyEmail"
+    };
+  }
+
+  rpc VerifyPhone(VerifyPhoneRequest) returns (VerifyPhoneResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/verification/phone"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Подтвердить телефон"
+      description: "Проверяет код challenge, привязанного к текущей authorization transaction, и возвращает следующий шаг."
+      operation_id: "VerifyPhone"
+    };
+  }
+
+  rpc SkipMFAEnrollment(SkipMFAEnrollmentRequest) returns (SkipMFAEnrollmentResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/mfa/enrollment:skip"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Пропустить подключение MFA"
+      operation_id: "SkipMFAEnrollment"
+    };
+  }
+
+  // Подтверждает передачу выбранных scopes OAuth-клиенту.
+  rpc GrantAuthorizationConsent(GrantAuthorizationConsentRequest) returns (GrantAuthorizationConsentResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/consent:grant"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Подтвердить OAuth-разрешения"
+      operation_id: "GrantAuthorizationConsent"
+    };
+  }
+
+  // Отклоняет передачу scopes и завершает authorization flow ошибкой access_denied.
+  rpc DenyAuthorizationConsent(DenyAuthorizationConsentRequest) returns (DenyAuthorizationConsentResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/api/v1/authentication/consent:deny"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Authentication UI"
+      summary: "Отклонить OAuth-разрешения"
+      operation_id: "DenyAuthorizationConsent"
+    };
+  }
+}

@@ -1,0 +1,30 @@
+version: v2
+
+modules:
+  - path: proto
+  - path: authentication-policy/proto
+  - path: vendor/envoyproxy/protoc-gen-validate
+    lint:
+      use:
+        - MINIMAL
+  - path: vendor/googleapis/googleapis
+    lint:
+      use:
+        - MINIMAL
+  - path: vendor/grpc-ecosystem/grpc-gateway
+    lint:
+      use:
+        - MINIMAL
+      except:
+        - PACKAGE_DIRECTORY_MATCH
+
+lint:
+  use:
+    - STANDARD
+  ignore_only:
+    IMPORT_USED:
+      - proto/careeria/api/v1/openapi.proto
+
+breaking:
+  use:
+    - FILE

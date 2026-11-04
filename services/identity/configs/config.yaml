@@ -1,0 +1,86 @@
+logger:
+  level: info
+  format: json
+  add_source: false
+  service: identity
+  env: local
+  version: dev
+
+grpc_server:
+  addr: :50052
+  enable_health: true
+  enable_reflection: true
+  connection_timeout: 5s
+  max_recv_msg_size: 4194304
+  max_send_msg_size: 4194304
+
+shutdown:
+  timeout: 15s
+
+redis:
+  url: redis://localhost:6379/0
+
+authentication_redirect_uri: http://localhost:3000/login
+
+postgres:
+  connection:
+    host: localhost
+    port: 5432
+    database: identity
+    user: postgres
+    ssl_mode: disable
+  max_conns: 10
+  min_conns: 1
+  max_conn_lifetime: 1h
+  max_conn_idle_time: 30m
+  health_check_period: 1m
+
+identity_topic: identity.events
+
+outbox:
+  batch_size: 100
+  poll_interval: 1s
+  publish_timeout: 5s
+
+kafka_producer:
+  connection:
+    brokers: [localhost:19092]
+    client_id: identity-service-producer
+    version: 3.9.0
+    dial_timeout: 10s
+    read_timeout: 10s
+    write_timeout: 10s
+  compression: zstd
+  retry_max: 5
+  retry_backoff: 200ms
+  ack_timeout: 10s
+  max_message_bytes: 33554432
+
+access_token:
+  issuer: http://localhost:8080
+  audience:
+    - careeria-api
+  algorithm: EdDSA
+  lifetime: 15m
+
+id_token:
+  issuer: http://localhost:8080
+  algorithm: EdDSA
+  lifetime: 15m
+
+contact_verification:
+  lifetime: 10m
+  max_attempts: 5
+
+jwt_signer:
+  key_id: identity-local-1
+  private_key_ref: local://access-token-signing-key
+  key_file: configs/access-token-signing-key.pem
+
+oauth:
+  authorization_lifetime: 10m
+  code_lifetime: 2m
+  session_idle_lifetime: 24h
+  session_lifetime: 720h
+  refresh_token_lifetime: 24h
+  refresh_family_lifetime: 720h

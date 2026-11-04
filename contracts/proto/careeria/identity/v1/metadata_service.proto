@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/identity/v1/metadata.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Публичные metadata endpoints OpenID Provider.
+service IdentityMetadataService {
+  // Возвращает OpenID Provider Configuration.
+  rpc GetOpenIDConfiguration(GetOpenIDConfigurationRequest) returns (GetOpenIDConfigurationResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {get: "/.well-known/openid-configuration"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity metadata"
+      summary: "Получить OpenID Provider Configuration"
+      operation_id: "GetOpenIDConfiguration"
+    };
+  }
+
+  // Возвращает публичные active и retiring signing keys.
+  rpc GetJSONWebKeySet(GetJSONWebKeySetRequest) returns (GetJSONWebKeySetResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {get: "/.well-known/jwks.json"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Identity metadata"
+      summary: "Получить JSON Web Key Set"
+      operation_id: "GetJSONWebKeySet"
+    };
+  }
+}

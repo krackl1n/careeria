@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package careeria.identity.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/identity/v1/oauth.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/v1;identityv1";
+
+// Публичные OAuth 2.0 и OpenID Connect endpoints Identity Service.
+service OAuthService {
+  // Валидирует authorization request, создаёт транзакцию и начинает Authentication UI flow.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {get: "/oauth2/authorize"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth2 / OIDC"
+      summary: "Начать OAuth2/OIDC authorization flow"
+      description: "После создания authorization transaction HTTP-адаптер отвечает 302 Found на redirect_uri из ответа."
+      operation_id: "Authorize"
+      responses: {
+        key: "302"
+        value: {
+          description: "Переход в Authentication UI."
+          headers: {
+            key: "Location"
+            value: {
+              description: "Абсолютный URL Authentication UI."
+              type: "string"
+            }
+          }
+        }
+      }
+    };
+  }
+
+  // Выпускает authorization code после успешной аутентификации и возвращает пользователя клиенту.
+  rpc ContinueAuthorization(ContinueAuthorizationRequest) returns (ContinueAuthorizationResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/oauth2/authorize/continue"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth2 / OIDC"
+      summary: "Завершить OAuth2/OIDC authorization flow"
+      description: "HTTP-адаптер отвечает 302 Found на зарегистрированный redirect_uri клиента, добавляя code и исходный state."
+      operation_id: "ContinueAuthorization"
+      responses: {
+        key: "302"
+        value: {
+          description: "Возврат в клиентское приложение."
+          headers: {
+            key: "Location"
+            value: {
+              description: "Зарегистрированный redirect URI с authorization response."
+              type: "string"
+            }
+          }
+        }
+      }
+    };
+  }
+
+  // Обменивает одноразовый authorization code или ротирует refresh token.
+  rpc ExchangeToken(ExchangeTokenRequest) returns (ExchangeTokenResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/oauth2/token"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth2 / OIDC"
+      summary: "Выпустить или обновить токены"
+      description: "Тело запроса передаётся как application/x-www-form-urlencoded. Confidential-клиенты аутентифицируются через HTTP Basic; public-клиенты передают client_id."
+      operation_id: "ExchangeToken"
+      consumes: "application/x-www-form-urlencoded"
+      parameters: {
+        headers: {
+          name: "Authorization"
+          description: "Опциональная аутентификация confidential-клиента методом client_secret_basic."
+          type: STRING
+        }
+      }
+      responses: {
+        key: "400"
+        value: {
+          description: "Стандартная OAuth 2.0 protocol error."
+          schema: {
+            json_schema: {ref: ".careeria.identity.v1.OAuthErrorResponse"}
+          }
+        }
+      }
+    };
+  }
+
+  // Отзывает токен; неизвестный или уже отозванный токен также даёт успешный ответ.
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+    option (google.api.http) = {
+      post: "/oauth2/revoke"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth2 / OIDC"
+      summary: "Отозвать OAuth2-токен"
+      description: "Тело запроса передаётся как application/x-www-form-urlencoded. Confidential-клиенты аутентифицируются через HTTP Basic."
+      operation_id: "RevokeToken"
+      consumes: "application/x-www-form-urlencoded"
+      parameters: {
+        headers: {
+          name: "Authorization"
+          description: "Опциональная аутентификация confidential-клиента методом client_secret_basic."
+          type: STRING
+        }
+      }
+      responses: {
+        key: "400"
+        value: {
+          description: "Стандартная OAuth 2.0 protocol error."
+          schema: {
+            json_schema: {ref: ".careeria.identity.v1.OAuthErrorResponse"}
+          }
+        }
+      }
+    };
+  }
+
+  // Возвращает claims, разрешённые scopes текущего access token.
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+    option (google.api.http) = {get: "/oauth2/userinfo"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "OAuth2 / OIDC"
+      summary: "Получить OIDC UserInfo"
+      operation_id: "GetUserInfo"
+    };
+  }
+}

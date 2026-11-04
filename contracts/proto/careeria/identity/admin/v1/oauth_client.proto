@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package careeria.identity.admin.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/identity/admin/v1;identityadminv1";
+
+message OAuthClient {
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string.uuid = true
+  ];
+  string client_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string name = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string description = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string.max_len = 2000
+  ];
+  repeated string redirect_uris = 5 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 32
+    unique: true
+    items: {
+      string: {
+        max_bytes: 2048
+        uri: true
+      }
+    }
+  }];
+  repeated string scopes = 6 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  bool refresh_tokens_enabled = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+  bool require_pkce = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp created_at = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp updated_at = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message CreatePublicOAuthClientRequest {
+  string client_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+      pattern: "^[^[:space:]]+$"
+    }
+  ];
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  optional string description = 3 [(validate.rules).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+  repeated string redirect_uris = 4 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 32
+    unique: true
+    items: {
+      string: {
+        max_bytes: 2048
+        uri: true
+      }
+    }
+  }];
+  repeated string scopes = 5 [(validate.rules).repeated = {
+    min_items: 1
+    max_items: 100
+    unique: true
+    items: {
+      string: {
+        min_len: 1
+        max_len: 255
+        pattern: "^[^[:space:]]+$"
+      }
+    }
+  }];
+  bool enable_refresh_tokens = 6;
+}
+
+message CreatePublicOAuthClientResponse {
+  OAuthClient oauth_client = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}

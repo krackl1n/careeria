@@ -4,11 +4,17 @@
 
 Диаграмма детализирует реализацию компонента на уровне кода (C4 Level 4), раскрывая устройство агрегата `CandidateProfile`, паттерн Стратегия для маскирования персональных данных под разные роли и контракты с внешними компонентами.
 
+![Candidate Profile Service](./candidate-profile-service.svg)
+
+<details>
+<summary>PlantUML Исходный код</summary>
+
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/code/backend/candidate-profile-service.puml
+!include candidate-profile-service.puml
 @enduml
 ```
+</details>
 
 ## Архитектурные принципы компонента
 

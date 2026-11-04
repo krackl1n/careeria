@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package authentication.policy.v1;
+
+import "google/protobuf/descriptor.proto";
+
+// AuthenticationPolicy states whether an RPC requires an authenticated caller.
+enum AuthenticationPolicy {
+  AUTHENTICATION_POLICY_UNSPECIFIED = 0;
+  AUTHENTICATION_POLICY_REQUIRED = 1;
+  AUTHENTICATION_POLICY_PUBLIC = 2;
+}
+
+extend google.protobuf.MethodOptions {
+  AuthenticationPolicy authentication = 50001;
+}

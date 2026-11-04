@@ -1,0 +1,206 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        ansiColor('xterm')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        SERVICE_NAME = 'identity'
+        SERVICE_PATH = 'services/identity'
+
+        DEV_VALUES_PATH = 'apps/identity/dev/values.yaml'
+        PROD_VALUES_PATH = 'apps/identity/prod/values.yaml'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Prepare') {
+            steps {
+                script {
+                    env.COMMIT_SHA = sh(
+                        script: 'git rev-parse --short=8 HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    env.IMAGE = "${env.DOCKER_REGISTRY}/${env.SERVICE_NAME}"
+
+                    if (env.BRANCH_NAME == 'dev') {
+                        env.IMAGE_TAG = "dev-${env.COMMIT_SHA}"
+                        env.DEPLOY_VALUES_PATH = env.DEV_VALUES_PATH
+                    } else if (env.TAG_NAME ==~ /^v\\d+\\.\\d+\\.\\d+.*$/) {
+                        env.IMAGE_TAG = env.TAG_NAME
+                        env.DEPLOY_VALUES_PATH = env.PROD_VALUES_PATH
+                    } else {
+                        env.IMAGE_TAG = "check-${env.COMMIT_SHA}"
+                    }
+
+                    echo "SERVICE_NAME=${env.SERVICE_NAME}"
+                    echo "SERVICE_PATH=${env.SERVICE_PATH}"
+                    echo "BRANCH_NAME=${env.BRANCH_NAME}"
+                    echo "TAG_NAME=${env.TAG_NAME}"
+                    echo "COMMIT_SHA=${env.COMMIT_SHA}"
+                    echo "IMAGE=${env.IMAGE}"
+                    echo "IMAGE_TAG=${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Dependencies') {
+            steps {
+                dir(env.SERVICE_PATH) {
+                    sh '''
+                        go mod download
+                        go mod verify
+                    '''
+                }
+            }
+        }
+
+        stage('Linters') {
+            steps {
+                dir(env.SERVICE_PATH) {
+                    sh '''
+                        unformatted=$(gofmt -l .)
+
+                        if [ -n "$unformatted" ]; then
+                            echo "Files are not formatted:"
+                            echo "$unformatted"
+                            exit 1
+                        fi
+
+                        go vet ./...
+                        golangci-lint run ./...
+                    '''
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                dir(env.SERVICE_PATH) {
+                    sh '''
+                        go test ./... -race -coverprofile=coverage.out
+                    '''
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: "${SERVICE_PATH}/coverage.out", allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Integration Tests') {
+            when {
+                anyOf {
+                    changeRequest target: 'dev'
+                    branch 'dev'
+                    tag pattern: "v*", comparator: "GLOB"
+                }
+            }
+            steps {
+                dir(env.SERVICE_PATH) {
+                    sh '''
+                        docker compose -f docker-compose.test.yml up -d
+                        go test ./... -tags=integration -count=1
+                    '''
+                }
+            }
+            post {
+                always {
+                    dir(env.SERVICE_PATH) {
+                        sh '''
+                            docker compose -f docker-compose.test.yml down -v
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    docker build \
+                        -t ${IMAGE}:${IMAGE_TAG} \
+                        -f ${SERVICE_PATH}/Dockerfile \
+                        ${SERVICE_PATH}
+                '''
+            }
+        }
+
+        stage('Docker Push') {
+            when {
+                anyOf {
+                    branch 'dev'
+                    tag pattern: "v*", comparator: "GLOB"
+                }
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "${env.REGISTRY_CREDENTIALS_ID}",
+                    usernameVariable: 'REGISTRY_USER',
+                    passwordVariable: 'REGISTRY_PASSWORD'
+                )]) {
+                    sh '''
+                        echo "$REGISTRY_PASSWORD" | docker login ${DOCKER_REGISTRY} -u "$REGISTRY_USER" --password-stdin
+                        docker push ${IMAGE}:${IMAGE_TAG}
+                        docker logout ${DOCKER_REGISTRY}
+                    '''
+                }
+            }
+        }
+
+        stage('Update GitOps Repo') {
+            when {
+                anyOf {
+                    branch 'dev'
+                    tag pattern: "v*", comparator: "GLOB"
+                }
+            }
+            steps {
+                sshagent(credentials: ["${env.GITOPS_CREDENTIALS_ID}"]) {
+                    sh '''
+                        rm -rf gitops-repo
+                        git clone ${GITOPS_REPO_URL} gitops-repo
+
+                        cd gitops-repo
+
+                        yq -i ".image.repository = \\"${IMAGE}\\"" ${DEPLOY_VALUES_PATH}
+                        yq -i ".image.tag = \\"${IMAGE_TAG}\\"" ${DEPLOY_VALUES_PATH}
+
+                        git config user.email "jenkins@example.com"
+                        git config user.name "jenkins"
+
+                        git add ${DEPLOY_VALUES_PATH}
+                        git commit -m "Update ${SERVICE_NAME} image to ${IMAGE_TAG}" || echo "No changes to commit"
+                        git push
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+
+        success {
+            echo "Identity Service pipeline finished successfully"
+        }
+
+        failure {
+            echo "Identity Service pipeline failed"
+        }
+    }
+}
