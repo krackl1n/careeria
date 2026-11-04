@@ -12,68 +12,7 @@
 
 ---
 
-## 1. Архитектура инфраструктурных зон и сетевой периметр
-
-Инфраструктура платформы разделена на изолированные зоны безопасности (**Security Zones**) с детерминированными правилами сетевой фильтрации (Kubernetes `NetworkPolicies` и Cloud Security Groups):
-
-```plantuml
-@startuml
-!include <C4/C4_Deployment>
-
-title Зонирование сетевой безопасности и инфраструктурные контуры
-
-Deployment_Node(client_tier, "Рабочее место пользователя", "Workstation / Browser") {
-    Container(browser, "Браузер клиента", "Next.js SPA", "Пользовательский интерфейс")
-}
-
-Deployment_Node(dmz_tier, "Периметральный контур (DMZ / Edge Subnet)", "careeria-edge") {
-    Container(ingress_ctrl, "Ingress Controller & Reverse Proxy", "Nginx / Envoy", "SSL/TLS 1.3 Termination, HSTS, Rate Limiting (порт 443)")
-}
-
-Deployment_Node(app_tier, "Приватный контур приложений (Application Subnet)", "careeria-apps") {
-    Container(bff_pod, "BFF Pod × 2..10", "Go 1.23 / net/http, grpc-go", "Сессионный фасад, валидация HttpOnly кук, CSRF-защита (порт 8080)")
-    Container(api_gw, "API Gateway Pod × 2..10", "Go / grpc-gateway", "Маршрутизация REST/gRPC (порт 8080, 50051)")
-    Container(hiring_svc, "Hiring Service Pod × 2..10", "Go 1.23+ / K8s Deployment", "Бизнес-логика найма и FSM (порт 50053)")
-    Container(openfga_svc, "OpenFGA Server Pod × 2", "OpenFGA Server", "Вычисление ReBAC-графов (порт 8081)")
-    Container(debezium_svc, "Debezium Connector Pod × 2", "Kafka Connect / CDC", "Захват изменений таблицы outbox")
-}
-
-Deployment_Node(media_tier, "Медиа-контур (Media Subnet)", "careeria-media") {
-    Container(livekit_svc, "LiveKit Media Server Pod × 2..N", "LiveKit / WebRTC", "Видеоинтервью и аудио-конференции (WSS 7880, WebRTC 7881)")
-}
-
-Deployment_Node(data_tier, "Изолированный контур данных (Data Subnet)", "careeria-data") {
-    Deployment_Node(pg_set, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
-        ContainerDb(db_hiring, "Hiring DB", "PostgreSQL 16", "Транзакции найма и outbox (порт 5432)")
-    }
-    Deployment_Node(kafka_set, "Kafka Cluster (StatefulSet)", "Kubernetes StatefulSet") {
-        ContainerQueue(kafka_clu, "Apache Kafka Cluster", "3 Brokers (KRaft)", "Шина доменных событий hiring.events (порт 9092)")
-    }
-}
-
-Deployment_Node(external_infra, "Внешние корпоративные системы", "External Enterprise Systems") {
-    Container(hr_corp_server, "Корпоративная HR-система", "1С:ЗУП / Workday", "Кадровый учет и штатное расписание. Порт 443 (HTTPS)")
-}
-
-Rel(browser, ingress_ctrl, "Входящие пользовательские запросы", "HTTPS / TLS 1.3 (порт 443)")
-Rel(browser, livekit_svc, "Прямой медиатрафик собеседований", "WebRTC / UDP (порт 7881)")
-Rel(ingress_ctrl, bff_pod, "Проксирование клиентских веб-запросов", "HTTP/1.1 (порт 8080)")
-Rel(ingress_ctrl, livekit_svc, "Сигнализация сессий", "WSS / HTTPS (порт 7880)")
-Rel(bff_pod, api_gw, "Авторизованные межсервисные RPC-вызовы", "gRPC / HTTP2 (порт 50051)")
-Rel(api_gw, hiring_svc, "gRPC-вызовы к методам найма", "gRPC / HTTP2 (порт 50053)")
-Rel(hiring_svc, openfga_svc, "Проверка прав ReBAC", "gRPC / mTLS (порт 8081)")
-Rel(hiring_svc, livekit_svc, "Управление переговорными комнатами", "HTTP / REST API (порт 7880)")
-Rel(hiring_svc, db_hiring, "Транзакции записи и чтения", "SQL / TCP (порт 5432)")
-Rel(db_hiring, debezium_svc, "Логическая репликация outbox", "pgoutput WAL (порт 5432)")
-Rel(debezium_svc, kafka_clu, "Публикация доменных событий", "Kafka Protocol (порт 9092)")
-Rel(api_gw, hr_corp_server, "Интеграционные вызовы и вебхуки", "HTTPS / TLS 1.3 (порт 443)")
-
-@enduml
-```
-
----
-
-## 2. Спецификация вычислительных узлов и сред выполнения (Deployment Nodes)
+## 1. Спецификация вычислительных узлов и сред выполнения (Deployment Nodes)
 
 | Узел инфраструктуры | Тип среды выполнения | Хостовая платформа / Ресурсы | Размещённые контейнеры и поды | Служебная роль и зона ответственности |
 |---|---|---|---|---|
@@ -91,7 +30,7 @@ Rel(api_gw, hr_corp_server, "Интеграционные вызовы и веб
 
 ---
 
-## 3. Спецификация сетевых интерфейсов, портов и протоколов безопасности
+## 2. Спецификация сетевых интерфейсов, портов и протоколов безопасности
 
 | Исходный узел | Целевой узел | Описание сетевого взаимодействия | Протокол взаимодействия | Сетевой порт | Зона безопасности / Сегмент | Требования к шифрованию |
 |---|---|---|---|:---:|---|---|
@@ -110,23 +49,23 @@ Rel(api_gw, hr_corp_server, "Интеграционные вызовы и веб
 
 ---
 
-## 4. Архитектура развёртывания и отказоустойчивости
+## 3. Архитектура развёртывания и отказоустойчивости
 
-### 4.1. Развёртывание приложений (Hiring Service Deployment)
+### 3.1. Развёртывание приложений (Hiring Service Deployment)
 * Контейнер `Hiring Service` развёрнут как стандартный Kubernetes Deployment.
 * На диаграмме экземпляр сервиса отображается однократно с указанием кратности (`Pods × 2..10`).
 * Масштабирование регулируется через **Horizontal Pod Autoscaler (HPA)** по метрикам CPU и задержки RPC-запросов.
 * Балансировка входящего трафика между подами обеспечивается стандартным объектом `Kubernetes Service` (ClusterIP).
 
-### 4.2. Контур данных в StatefulSet (PostgreSQL)
+### 3.2. Контур данных в StatefulSet (PostgreSQL)
 * База данных `Hiring DB` развёрнута в **Kubernetes StatefulSet**.
 * **Отказ от репликации СУБД:** В соответствии с принятым решением, база данных работает как одиночный экземпляр (**Single-Instance**), исключая избыточную сложность настройки Patroni HA, физической репликации WAL и DCS-кворума (etcd). Отсутствие необходимости распределенного консенсуса для БД существенно упрощает эксплуатацию и обслуживание, тогда как отказоустойчивость и надежность шины данных обеспечиваются репликацией брокеров `Kafka KRaft` (3 реплики, `replication.factor=3`), а высокая доступность прикладных сервисов — шардированием и динамическим масштабированием подов stateless-приложений через HPA.
 
-### 4.3. Брокер сообщений в StatefulSet (Apache Kafka KRaft)
+### 3.3. Брокер сообщений в StatefulSet (Apache Kafka KRaft)
 * Кластер брокеров Kafka развёрнут в **StatefulSet** из 3 подов в режиме **KRaft** (без ZooKeeper).
 * Топик `hiring.events` конфигурируется с `replication.factor=3`, гарантируя отказоустойчивость шины событий.
 
-### 4.4. Внутренний медиа-контур (LiveKit)
+### 3.4. Внутренний медиа-контур (LiveKit)
 * Медиа-сервер **LiveKit** разворачивается внутри собственного контура инфраструктуры (namespace `careeria-media`) на выделенных worker-узлах с host networking, а не через внешние SaaS-сервисы.
 * Это исключает зависимость от сторонних облачных провайдеров и снижает сетевые задержки при проведении собеседований.
 
