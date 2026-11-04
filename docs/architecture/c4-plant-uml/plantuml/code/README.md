@@ -24,6 +24,8 @@
 |---|---|---|---|
 | **Application Service** | `Hiring Service` | FSM воронки отклика, аудит переходов (`StageTransition`), межагрегатная доменная политика (`OfferEligibilityPolicy`). | [hiring-application-service.md](backend/hiring-application-service.md) |
 | **Candidate Profile Service** | `Candidate Service` | Агрегат профиля соискателя, доменная стратегия маскирования данных для API (`MaskingStrategy`), реестр стратегий. | [candidate-profile-service.md](backend/candidate-profile-service.md) |
+| **Assessment Service** | `Assessment Service` | Сессии тестирования, Live Coding, паттерн Стратегия для скоринга (`ScoringStrategy`), межагрегатная политика дедлайнов (`SessionLifecyclePolicy`). | [assessment-service.md](backend/assessment-service.md) |
+| **Communication Service** | `Communication Service` | Декомпозиция агрегатов диалога и сообщений, политика квот и тайм-аута редактирования (`MessagingPolicy`), отметки прочтения. | [communication-service.md](backend/communication-service.md) |
 
 ---
 

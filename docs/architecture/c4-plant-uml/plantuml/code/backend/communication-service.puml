@@ -1,0 +1,158 @@
+@startuml communication-service
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam ranksep 45
+skinparam nodesep 60
+skinparam packagePadding 15
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    ArrowColor #2C3E50
+    BorderColor #34495E
+}
+
+package "Component: Communication Service (Communication Domain)" {
+
+    ' ===================================================
+    ' 1. ПРИКЛАДНОЙ СЛОЙ (ОРКЕСТРАЦИЯ I/O И ЮЗКЕЙСЫ)
+    ' ===================================================
+    package "Application Layer" {
+        class CommunicationService <<Application Service>> {
+            - conversationRepo: ConversationRepository
+            - messageRepo: MessageRepository
+            - messagingPolicy: MessagingPolicy
+            - authPort: AuthorizationPort
+            - fileService: FileServicePort
+            - outboxRepo: OutboxRepository
+            - txManager: TransactionManager
+            - clock: Clock
+            - idGen: IDGenerator
+            + CreateDirectConversation(ctx: Context, input: CreateDirectInput): UUID
+            + CreateContextConversation(ctx: Context, input: CreateContextInput): UUID
+            + AddParticipant(ctx: Context, input: AddParticipantInput): error
+            + ArchiveConversation(ctx: Context, convID: UUID, actorID: UUID): error
+            + CloseConversationToReadOnly(ctx: Context, convID: UUID, actorID: UUID): error
+            + SendMessage(ctx: Context, input: SendMessageInput): UUID
+            + EditMessage(ctx: Context, input: EditMessageInput): error
+            + DeleteMessage(ctx: Context, input: DeleteMessageInput): error
+            + ListMessages(ctx: Context, convID: UUID, cursor: MessageCursor): List<Message>
+            + MarkMessagesAsRead(ctx: Context, input: MarkReadInput): error
+            + AddReaction(ctx: Context, input: AddReactionInput): error
+        }
+    }
+
+    ' ===================================================
+    ' 2. ДОМЕННЫЙ СЛОЙ (ЧИСТАЯ ЛОГИКА БЕЗ I/O)
+    ' ===================================================
+    package "Domain Layer" {
+
+        class Conversation <<Aggregate Root>> {
+            + ID: UUID
+            + Type: string
+            + ContextID: UUID
+            + Status: string
+            + Participants: List<UUID>
+            + Version: int
+            + CreatedAt: Timestamp
+            + UpdatedAt: Timestamp
+            + AddParticipant(userID: UUID, role: string, now: Timestamp): error
+            + RemoveParticipant(userID: UUID, now: Timestamp): error
+            + Archive(actorID: UUID, now: Timestamp): error
+            + MarkReadOnly(actorID: UUID, now: Timestamp): error
+            + CanAcceptMessages(): bool
+        }
+
+        class Message <<Aggregate Root>> {
+            + ID: UUID
+            + ConversationID: UUID
+            + SenderID: UUID
+            + ReplyToMessageID: UUID
+            + Content: string
+            + Status: string
+            + Version: int
+            + CreatedAt: Timestamp
+            + EditedAt: Timestamp
+            + Edit(newContent: string, now: Timestamp): error
+            + SoftDelete(now: Timestamp): error
+            + IsEdited(): bool
+            + IsDeleted(): bool
+        }
+
+        class MessagingPolicy <<Domain Policy>> {
+            - maxContentLength: int
+            - maxAttachmentsCount: int
+            - maxTotalAttachmentBytes: int64
+            - editWindowDuration: Duration
+            + CanSendMessage(conv: Conversation, senderID: UUID, content: string): error
+            + CanEditMessage(msg: Message, actorID: UUID, now: Timestamp): error
+            + CanDeleteMessage(msg: Message, actorID: UUID): error
+        }
+    }
+
+    ' ===================================================
+    ' 3. ВНЕШНИЕ КОНТРАКТЫ (ПОРТЫ И РЕПОЗИТОРИИ)
+    ' ===================================================
+    package "External Contracts (Ports & Repositories)" {
+        interface ConversationRepository <<interface>> {
+            + Create(ctx: Context, conv: Conversation): error
+            + Update(ctx: Context, conv: Conversation): error
+            + FindByID(ctx: Context, id: UUID): Conversation
+            + FindDirect(ctx: Context, user1: UUID, user2: UUID): Conversation
+        }
+
+        interface MessageRepository <<interface>> {
+            + Save(ctx: Context, msg: Message): error
+            + Update(ctx: Context, msg: Message): error
+            + FindByID(ctx: Context, id: UUID): Message
+            + ListByConversation(ctx: Context, convID: UUID, cursor: MessageCursor): List<Message>
+        }
+
+        interface AuthorizationPort <<interface>> {
+            + CheckConversationAccess(ctx: Context, actorID: UUID, convID: UUID): error
+        }
+
+        interface FileServicePort <<interface>> {
+            + ValidateAndBind(ctx: Context, fileIDs: List<UUID>, ownerID: UUID): error
+            + GetDownloadURL(ctx: Context, fileID: UUID): string
+        }
+
+        interface OutboxRepository <<interface>> {
+            + Save(ctx: Context, message: Message): error
+        }
+    }
+}
+
+' ========================================================
+' РАСПОЛОЖЕНИЕ И ВЫРАВНИВАНИЕ
+' ========================================================
+
+CommunicationService -[hidden]down-> Conversation
+Conversation -[hidden]right-> MessagingPolicy
+MessagingPolicy -[hidden]right-> Message
+
+CommunicationService -[hidden]right-> ConversationRepository
+ConversationRepository -[hidden]down-> MessageRepository
+MessageRepository -[hidden]down-> AuthorizationPort
+AuthorizationPort -[hidden]down-> FileServicePort
+FileServicePort -[hidden]down-> OutboxRepository
+
+Message -[hidden]right-> MessageRepository
+
+' ========================================================
+' СВЯЗИ
+' ========================================================
+
+CommunicationService ..> Conversation : commands mutation
+CommunicationService ..> Message : commands mutation
+CommunicationService --> MessagingPolicy : executes policy
+CommunicationService -right-> ConversationRepository : uses
+CommunicationService --> MessageRepository : uses
+CommunicationService --> AuthorizationPort : uses
+CommunicationService --> FileServicePort : uses
+CommunicationService --> OutboxRepository : uses
+
+MessagingPolicy ..> Conversation : evaluates
+MessagingPolicy ..> Message : evaluates
+
+@enduml
