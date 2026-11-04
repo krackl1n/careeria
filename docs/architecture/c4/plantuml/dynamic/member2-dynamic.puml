@@ -6,7 +6,6 @@ title Careeria — Сквозной процесс фиксации резуль
 LAYOUT_LEFT_RIGHT()
 
 Person(hiringManager, "Нанимающий менеджер", "Проводит собеседование, выставляет оценку и получает подтверждение в UI.")
-Person(candidate, "Кандидат", "Проходит собеседование и получает уведомление о переходе на этап оффера.")
 
 System_Boundary(platform, "Платформа Careeria") {
     Container(web, "Web Application", "Next.js, React", "Пользовательский интерфейс.", $tags="frontend")
