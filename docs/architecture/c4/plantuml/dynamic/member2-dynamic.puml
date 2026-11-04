@@ -18,6 +18,7 @@ System_Boundary(platform, "Платформа Careeria") {
     DebeziumContainer("eventInfrastructure")
     ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Шина доменных событий.", $tags="eventBus")
     Container(notificationService, "Notification Service", "Go, Kafka Consumer", "Оркестрация мультиканальных оповещений.", $tags="business")
+    Container(integrationService, "Integration Service", "Go, Kafka Consumer", "Синхронизация кадровых данных и отправка вебхуков.", $tags="business")
 }
 
 EmployerHrSystem()
@@ -42,7 +43,8 @@ Rel(hiringDb, debezium, "11. Считывает запись Outbox из жур�
 Rel(debezium, kafka, "12. Публикует CandidateEvaluatedEvent в топик hiring.events", "Kafka / Avro, порт 9092", $tags="async")
 Rel(kafka, notificationService, "13. Доставляет событие изменения этапа найма", "Kafka / Avro", $tags="async")
 Rel(notificationService, notificationProviders, "14. Инициирует отправку уведомления кандидату", "HTTPS / REST API")
-Rel(kafka, employerHrSystem, "15. Синхронизирует этап кандидата во внешней HR-системе", "HTTPS / Webhook", $tags="async")
+Rel(kafka, integrationService, "15. Вычитывает событие смены этапа", "Kafka Protocol / TCP", $tags="async")
+Rel(integrationService, employerHrSystem, "16. Синхронизирует этап кандидата (Webhook)", "HTTPS / Webhooks", $tags="async")
 
 ShowArchitectureLegend()
 @enduml

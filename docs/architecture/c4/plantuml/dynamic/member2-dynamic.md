@@ -17,7 +17,7 @@
 
 Сценарий органично объединяет два потока обработки данных:
 1. **Синхронный контур (Request-Response, Шаги 1–10)**: Обработка действия нанимающего менеджера в веб-интерфейсе, проверка прав, выполнение транзакции изменения состояния воронки и обязательный возврат актуального статуса в пользовательский интерфейс.
-2. **Асинхронный контур (Event-Driven, Шаги 11–15)**: Фоновая доставка доменного события через Transactional Outbox, CDC Debezium и шину Kafka с оповещением соискателя и обновлением кадровой системы предприятия.
+2. **Асинхронный контур (Event-Driven, Шаги 11–16)**: Фоновая доставка доменного события через Transactional Outbox, CDC Debezium и шину Kafka с оповещением соискателя и обновлением кадровой системы предприятия через Integration Service.
 
 В цепочке задействованы следующие контейнеры и узлы:
 * **Web Application** (Next.js / React) — фронтенд-интерфейс нанимающего менеджера.
@@ -30,11 +30,12 @@
 * **Apache Kafka (KRaft)** — распределённый брокер сообщений, обеспечивающий надёжную доставку доменных событий.
 * **Notification Service** — сервис мультиканальной рассылки оповещений.
 * **Notification Providers** (SendGrid, FCM) — внешние коммуникационные платформы.
+* **Integration Service** — микросервис интеграции, вычитывающий события из Kafka и доставляющий исходящие вебхуки во внешние кадровые платформы.
 * **Employer HR System** (1С:ЗУП / Workday) — внешняя учётная HR-система предприятия.
 
 ---
 
-## 2. Подробная хронология и спецификация этапов (Шаги 1–15)
+## 2. Подробная хронология и спецификация этапов (Шаги 1–16)
 
 ### Фаза А. Синхронный поток обработки запроса (Шаги 1–6)
 
@@ -94,8 +95,8 @@
 * **Протокол и порт**: `SQL / TCP`, порт `:5432`.
 * **Операция**: Физическая транзакция PostgreSQL: `BEGIN ... COMMIT`.
 * **Внутренняя логика**:
-  1. Создаётся запись `interview_feedbacks`, статус интервью обновляется на `COMPLETED`.
-  2. Вычисляется чистая доменная функция `policy.CanInitiateOffer(application, interviewSummaries)` (проходной балл `>= 4`).
+  1. Прикладной модуль `Interview Service` фиксирует фидбек через `interview_repo`, после чего в рамках единого контекста транзакции вызывает оркестратор `Application Service`, который запрашивает проекцию через `InterviewSummaryRepository`, выполняет вычисление чистой доменной политики `OfferEligibilityPolicy.CanInitiateOffer()` и выполняет атомарный переход статуса в агрегате `JobApplication`.
+  2. Создаётся запись `interview_feedbacks`, статус интервью обновляется на `COMPLETED`.
   3. Конечный автомат (FSM) переводит заявку в статус `PipelineStage.OFFER_PENDING`.
   4. Создаётся неизменяемая запись аудита `stage_transitions`.
   5. В служебную таблицу `outbox` сериализуется событие `CandidateEvaluatedEvent`.
@@ -148,7 +149,7 @@
 
 ---
 
-### Фаза В. Асинхронная доставка событий и интеграция (Шаги 11–15)
+### Фаза В. Асинхронная доставка событий и интеграция (Шаги 11–16)
 
 #### Шаг 11. CDC-захват изменений из журнала WAL (Debezium)
 * **Инициатор**: `Hiring DB` (PostgreSQL WAL).
@@ -165,7 +166,7 @@
 #### Шаг 13. Асинхронное получение события Notification Service
 * **Инициатор**: `Apache Kafka`.
 * **Получатель**: `Notification Service`.
-* **Протокол и порт**: `Kafka Consumer Protocol / TCP`.
+* **Протокол и порт**: `Kafka Consumer Protocol / TCP`, порт `:9092`.
 * **Логика**: Сервис вычитывает сообщение в группе `careeria.notifications.group`, проверяет ключ идемпотентности и коммитит offset.
 
 #### Шаг 14. Оповещение соискателя (Notification Providers)
@@ -174,11 +175,18 @@
 * **Протокол и порт**: `HTTPS / REST API`, порт `:443`.
 * **Логика**: Соискателю отправляется персонализированное письмо и push-уведомление об успешном прохождении собеседования и переводе на этап формирования предложения о работе.
 
-#### Шаг 15. Синхронизация статуса во внешней HR-системе работодателя
-* **Инициатор**: `Kafka` / `Integration Service`.
+#### Шаг 15. Вычитывание события смены этапа (Integration Service)
+* **Инициатор**: `Apache Kafka`.
+* **Получатель**: `Integration Service`.
+* **Протокол и порт**: `Kafka Protocol / TCP`, порт `:9092`.
+* **Логика**: `Integration Service` вычитывает событие `CandidateEvaluatedEvent` из топика `hiring.events` в консьюмер-группе `careeria.integration.group`, десериализует Avro-полезную нагрузку и подготавливает полезную нагрузку для внешней кадровой системы работодателя.
+
+#### Шаг 16. Доставка Webhook в систему работодателя (Employer HR System)
+* **Инициатор**: `Integration Service`.
 * **Получатель**: `Employer HR System` (1С:ЗУП / Workday).
-* **Протокол и порт**: `HTTPS / Webhooks`, порт `:443`.
-* **Логика**: Запрос с заголовком подписи `X-Careeria-Signature` синхронизирует статус отклика в корпоративной системе кадрового учёта.
+* **Протокол и порт**: `HTTPS / Webhooks`, порт `443`, подпись `X-Careeria-Signature`.
+* **Операция**: `POST /webhooks/careeria/status`.
+* **Логика**: Выполняется исходящий HTTPS POST-запрос с JSON-телом, подписанный HMAC SHA-256 секретом тенанта в заголовке `X-Careeria-Signature`, что синхронизирует статус отклика в корпоративной системе кадрового учёта.
 
 ---
 
@@ -200,7 +208,8 @@
 | **12** | Событие | Debezium Connector | Apache Kafka | `ProduceRecord(hiring.events)` | Kafka / 9092 | Apache Avro Binary | Асинхронный | < 50 мс |
 | **13** | Событие | Apache Kafka | Notification Service | `FetchRecord(hiring.events)` | Kafka / 9092 | Apache Avro Binary | Асинхронный | < 50 мс |
 | **14** | Событие | Notification Service | Notification Providers | `SendTransactionalEmail / Push` | HTTPS / 443 | JSON Payload | Асинхронный | < 1.5 с |
-| **15** | Событие | Integration Service | Employer HR System | `POST /webhooks/careeria/status` | HTTPS / 443 | JSON + HMAC SHA-256 | Асинхронный | < 2.0 с |
+| **15** | Событие | Apache Kafka | Integration Service | `FetchRecord(hiring.events)` | Kafka / 9092 | Apache Avro Binary | Асинхронный | < 50 мс |
+| **16** | Событие | Integration Service | Employer HR System | `POST /webhooks/careeria/status` | HTTPS / 443 | JSON + HMAC SHA-256 | Асинхронный | < 2.0 с |
 
 ---
 
@@ -210,7 +219,6 @@
 
 ```plantuml
 @startuml
-skinparam shadowing false
 autonumber "<b>[00]</b>"
 
 actor "Нанимающий менеджер" as User
@@ -223,6 +231,7 @@ database "Hiring DB\n(PostgreSQL)" as DB
 participant "Debezium\n(CDC)" as CDC
 queue "Apache Kafka\n(hiring.events)" as Kafka
 participant "Notification\nService" as NS
+participant "Integration\nService" as IS
 entity "Notification\nProviders" as NP
 entity "Employer HR\n(1С:ЗУП)" as HR
 
@@ -230,7 +239,7 @@ entity "Employer HR\n(1С:ЗУП)" as HR
 
 User -> Web: 1. Отправляет оценку и комментарий
 Web -> BFF: 2. POST /api/hiring/interviews/{id}/feedback (Кука сессии)
-BFF -> GW: 3. gRPC SubmitFeedback (User/Tenant context)
+BFF -> GW: 3. RouteHiringCall(SubmitFeedbackRequest) [User/Tenant metadata]
 GW -> HS: 4. gRPC SubmitFeedbackRequest
 HS -> FGA: 5. Check(user, "can_evaluate", interview)
 FGA --> HS: 5.1. Allowed: true
@@ -255,7 +264,8 @@ DB -> CDC: 11. Потоковое чтение WAL (pgoutput CDC)
 CDC -> Kafka: 12. ProduceRecord(topic='hiring.events', Avro payload)
 Kafka -> NS: 13. Consume CandidateEvaluatedEvent
 NS -> NP: 14. Отправка письма и Push кандидату
-Kafka -> HR: 15. Webhook: синхронизация этапа кандидата в 1С:ЗУП
+Kafka -> IS: 15. Consume CandidateEvaluatedEvent
+IS -> HR: 16. POST /webhooks/careeria/status (HMAC SHA-256)
 
 @enduml
 ```
@@ -269,7 +279,7 @@ Kafka -> HR: 15. Webhook: синхронизация этапа кандидат
 | Интервьюер не привязан к собеседованию или не имеет роли оценщика | OpenFGA / Authz Client | `ErrUnauthorizedEvaluator` | `403 Forbidden` / `codes.PermissionDenied` | Прерывание транзакции. Логирование попытки несанкционированного доступа в журнал аудита безопасности. |
 | Оценка за данное интервью уже была выставлена ранее | Domain Aggregate (Interview) | `ErrFeedbackAlreadySubmitted` | `409 Conflict` / `codes.FailedPrecondition` | Повторное выставление запрещено бизнес-инвариантом. Возврат подробностей ошибки `google.rpc.ErrorInfo`. |
 | Параллельная смена этапа другим оператором (несовпадение `version`) | Infrastructure (pgx/sqlc) | `ErrOptimisticLockConflict` | `409 Conflict` / `codes.Aborted` | Откат транзакции. Клиенту возвращается предложение обновить данные воронки и повторить операцию. |
-| Собеседование завершено с оценкой ниже проходного балла (`score < 4`) | Domain Policy (`OfferEligibilityPolicy`) | `ErrCandidateNotEligibleForOffer` | `422 Unprocessable Entity` / `codes.FailedPrecondition` | Оценка сохраняется в базе, однако автопереход в `OFFER_PENDING` блокируется. Рекрутеру направляется предложение перевести кандидата в архив или назначить повторный раунд. |
+| Собеседование завершено с оценкой ниже проходного балла (`score < 4`) при выполнении `SubmitFeedback` | Domain Policy (`OfferEligibilityPolicy`) | — | `200 OK` / `codes.OK` | Оценка успешно фиксируется в `interview_feedbacks` со статусом интервью `COMPLETED`. Автоматический перевод FSM в `OFFER_PENDING` не выполняется, заявка остается в текущей стадии `INTERVIEW` либо помечается флагом завершения раунда без допуска к офферу. Попытка прямого вызова `InitiateOffer` для такой заявки блокируется доменной политикой `OfferEligibilityPolicy` с возвратом ошибки `422 Unprocessable Entity` (`ErrCandidateNotEligibleForOffer`). |
 | Сетевой сбой доставки письма через SendGrid | Notification Service | `ErrExternalGatewayTimeout` | Внутренняя ошибка консьюмера | Сообщение в Kafka не коммитится, отправляется в очередь отложенной повторной доставки (Retry Topic) с экспоненциальной задержкой. |
 
 ---

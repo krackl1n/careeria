@@ -1,8 +1,8 @@
 # Диаграмма развёртывания подсистемы Hiring Service (Level 2: Deployment)
 
-Диаграмма развёртывания C4 (**Deployment Diagram, Level 2**) отображает отображение программных контейнеров подсистемы найма (**Hiring Domain** платформы **Careeria**) на физическую и виртуальную вычислительную инфраструктуру, топологию сетевых контуров, узлы отказоустойчивости и параметры сетевой безопасности.
+Диаграмма развёртывания C4 (**Deployment Diagram, Level 2**) отражает распределение программных контейнеров подсистемы найма (**Hiring Domain** платформы **Careeria**) на физическую и виртуальную вычислительную инфраструктуру, топологию сетевых контуров, узлы отказоустойчивости и параметры сетевой безопасности.
 
-Диаграмма разработана в соответствии с архитектурными решениями проекта: сервисы запускаются в кластере **Kubernetes**, СУБД **PostgreSQL** и брокеры **Apache Kafka (KRaft)** разворачиваются в **StatefulSet**, а медиа-сервер **LiveKit** развёрнут в собственном медиа-контуре кластера. Для упрощения эксплуатации и снижения сложности администрирования база данных не реплицируется (Single-Instance в StatefulSet), а количество подов приложений регулируется через HPA без дублирования сущностей на диаграмме.
+Диаграмма разработана в соответствии с архитектурными решениями проекта: сервисы запускаются в кластере **Kubernetes**, СУБД **PostgreSQL** и брокеры **Apache Kafka (KRaft)** разворачиваются в **StatefulSet**, а медиа-сервер **LiveKit** развёрнут в собственном медиа-контуре кластера. Количество подов приложений регулируется через HPA без дублирования сущностей на диаграмме.
 
 ```plantuml
 @startuml
@@ -19,7 +19,6 @@
 ```plantuml
 @startuml
 !include <C4/C4_Deployment>
-skinparam shadowing false
 
 title Зонирование сетевой безопасности и инфраструктурные контуры
 
@@ -32,6 +31,7 @@ Deployment_Node(dmz_tier, "Периметральный контур (DMZ / Edge
 }
 
 Deployment_Node(app_tier, "Приватный контур приложений (Application Subnet)", "careeria-apps") {
+    Container(bff_pod, "BFF Pod × 2..10", "Go 1.23 / net/http, grpc-go", "Сессионный фасад, валидация HttpOnly кук, CSRF-защита (порт 8080)")
     Container(api_gw, "API Gateway Pod × 2..10", "Go / grpc-gateway", "Маршрутизация REST/gRPC (порт 8080, 50051)")
     Container(hiring_svc, "Hiring Service Pod × 2..10", "Go 1.23+ / K8s Deployment", "Бизнес-логика найма и FSM (порт 50053)")
     Container(openfga_svc, "OpenFGA Server Pod × 2", "OpenFGA Server", "Вычисление ReBAC-графов (порт 8081)")
@@ -51,16 +51,22 @@ Deployment_Node(data_tier, "Изолированный контур данных
     }
 }
 
+Deployment_Node(external_infra, "Внешние корпоративные системы", "External Enterprise Systems") {
+    Container(hr_corp_server, "Корпоративная HR-система", "1С:ЗУП / Workday", "Кадровый учет и штатное расписание. Порт 443 (HTTPS)")
+}
+
 Rel(browser, ingress_ctrl, "Входящие пользовательские запросы", "HTTPS / TLS 1.3 (порт 443)")
 Rel(browser, livekit_svc, "Прямой медиатрафик собеседований", "WebRTC / UDP (порт 7881)")
-Rel(ingress_ctrl, api_gw, "Внутренняя маршрутизация", "HTTP/1.1 (порт 8080)")
+Rel(ingress_ctrl, bff_pod, "Проксирование клиентских веб-запросов", "HTTP/1.1 (порт 8080)")
 Rel(ingress_ctrl, livekit_svc, "Сигнализация сессий", "WSS / HTTPS (порт 7880)")
+Rel(bff_pod, api_gw, "Авторизованные межсервисные RPC-вызовы", "gRPC / HTTP2 (порт 50051)")
 Rel(api_gw, hiring_svc, "gRPC-вызовы к методам найма", "gRPC / HTTP2 (порт 50053)")
 Rel(hiring_svc, openfga_svc, "Проверка прав ReBAC", "gRPC / mTLS (порт 8081)")
 Rel(hiring_svc, livekit_svc, "Управление переговорными комнатами", "HTTP / REST API (порт 7880)")
 Rel(hiring_svc, db_hiring, "Транзакции записи и чтения", "SQL / TCP (порт 5432)")
 Rel(db_hiring, debezium_svc, "Логическая репликация outbox", "pgoutput WAL (порт 5432)")
 Rel(debezium_svc, kafka_clu, "Публикация доменных событий", "Kafka Protocol (порт 9092)")
+Rel(api_gw, hr_corp_server, "Интеграционные вызовы и вебхуки", "HTTPS / TLS 1.3 (порт 443)")
 
 @enduml
 ```
@@ -73,6 +79,7 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 |---|---|---|---|---|
 | **Рабочее место пользователя** | Физическое устройство | Windows / macOS / Linux / iOS / Android | `Web Client (Next.js SPA)` | Интерактивный интерфейс браузера соискателя и сотрудников нанимающей команды. |
 | **Периметральный шлюз (DMZ)** | Виртуальный шлюз | Linux VM / K8s Edge Ingress (2 vCPU, 4 GB RAM) | `Ingress Controller (Nginx / Envoy)` | Фронтальный обратный прокси, SSL-терминация сертификатов, защита от DDoS, маршрутизация HTTP(S). |
+| **Контур приложений: BFF** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `bff` (Pods × 2..10, Go 1.23) | Управление сессиями, CSRF-защита, валидация cookie `__Host-Careeria-Session`, маршрутизация gRPC к API Gateway. |
 | **Контур приложений: API Gateway** | Kubernetes Pod | K8s Worker Node (cgroups v2, 2 vCPU, 2 GB RAM) | `api-gateway` (Go 1.23) | Трансляция внешних REST-запросов в gRPC-вызовы микросервисов, инжекция трассировки OpenTelemetry. |
 | **Контур приложений: Hiring Service** | Kubernetes Deployment | K8s Worker Nodes (High CPU, 4 vCPU, 4 GB RAM per pod) | `hiring-service` (Pods × 2..10) | Горизонтально масштабируемый инстанс бизнес-логики найма. Обработка RPC, FSM, фоновые воркеры. Количество реплик масштабируется HPA. |
 | **Контур приложений: OpenFGA** | Kubernetes Pod | K8s Worker Node (2 vCPU, 2 GB RAM) | `openfga` (OpenFGA Server) | Высокопроизводительный сервер вычисления графов ReBAC-авторизации отношений доступа. |
@@ -90,11 +97,12 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 |---|---|---|---|:---:|---|---|
 | Браузер пользователя | Ingress Controller | Доставка статики фронтенда, REST-запросы к API платформы | HTTPS / TLS 1.3 | 443 | Глобальная сеть (Internet) | TLS 1.3, шифр-сьюты ECDHE-RSA-AES256-GCM, HSTS |
 | Браузер пользователя | LiveKit Media Server | Аудио- и видеопотоки собеседования, демонстрация экрана | WebRTC / UDP | 7881 | Публичная сеть / Host Network | DTLS-SRTP шифрование медиатрафика |
-| Ingress Controller | API Gateway Pod | Внутреннее проксирование запросов к API | HTTP / 1.1 | 8080 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
-| Ingress Controller | LiveKit Media Server | Сигнализация сессий видеоинтервью | WSS / HTTPS | 7880 | careera-media namespace | Внутренний трафик кластера |
+| Ingress Controller | BFF Pod | Проксирование клиентских веб-запросов | HTTP / 1.1 | 8080 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
+| BFF Pod | API Gateway Pod | Авторизованные межсервисные RPC-вызовы | gRPC / HTTP2 | 50051 | Приватная сеть K8s Cluster | Внутрикластерный mTLS / ClusterIP |
+| Ingress Controller | LiveKit Media Server | Сигнализация сессий видеоинтервью | WSS / HTTPS | 7880 | careeria-media namespace | Внутренний трафик кластера |
 | API Gateway Pod | Hiring Service Pod | Вызовы RPC-методов домена найма (`SubmitFeedback`, `ChangeStage` и др.) | gRPC / HTTP2 | 50053 | K8s Service Mesh / Overlay | Балансировка Round-Robin, mTLS |
 | Hiring Service Pod | OpenFGA Pod | Проверка ReBAC-полномочий на действия над объектами найма | gRPC / HTTP2 | 8081 | Внутренняя сеть K8s | Взаимный mTLS, корпоративный Root CA |
-| Hiring Service Pod | LiveKit Media Server | Создание переговорных комнат, выпуск JWT-токенов участников | HTTP / REST API | 7880 | careera-media namespace | Внутрикластерный API токен |
+| Hiring Service Pod | LiveKit Media Server | Создание переговорных комнат, выпуск JWT-токенов участников | HTTP / REST API | 7880 | careeria-media namespace | Внутрикластерный API токен |
 | Hiring Service Pod | PostgreSQL (StatefulSet) | Транзакции бизнес-логики: создание откликов, смена этапов, Outbox | SQL / TCP | 5432 | Приватная подсеть данных (StatefulSet) | Внутрикластерное соединение, SCRAM-SHA-256 |
 | PostgreSQL | Debezium Connector | Логическая репликация строк служебной таблицы `outbox` | Logical Streaming (pgoutput) | 5432 | Приватная подсеть данных | Логический слот репликации `careeria_hiring_slot` |
 | Debezium Connector | Kafka Brokers | Публикация сериализованных Avro-событий найма в топик `hiring.events` | Kafka Protocol / TCP | 9092 | Сеть брокеров сообщений (StatefulSet) | SASL_PLAINTEXT / TLS, acks=all |
@@ -112,7 +120,7 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 
 ### 4.2. Контур данных в StatefulSet (PostgreSQL)
 * База данных `Hiring DB` развёрнута в **Kubernetes StatefulSet**.
-* **Отказ от репликации СУБД:** В соответствии с принятым решением, база данных работает как одиночный экземпляр (Single-Instance), исключая избыточную сложность настройки Patroni HA, физической репликации WAL и DCS-кворума (etcd).
+* **Отказ от репликации СУБД:** В соответствии с принятым решением, база данных работает как одиночный экземпляр (**Single-Instance**), исключая избыточную сложность настройки Patroni HA, физической репликации WAL и DCS-кворума (etcd). Отсутствие необходимости распределенного консенсуса для БД существенно упрощает эксплуатацию и обслуживание, тогда как отказоустойчивость и надежность шины данных обеспечиваются репликацией брокеров `Kafka KRaft` (3 реплики, `replication.factor=3`), а высокая доступность прикладных сервисов — шардированием и динамическим масштабированием подов stateless-приложений через HPA.
 
 ### 4.3. Брокер сообщений в StatefulSet (Apache Kafka KRaft)
 * Кластер брокеров Kafka развёрнут в **StatefulSet** из 3 подов в режиме **KRaft** (без ZooKeeper).
