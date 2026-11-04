@@ -142,5 +142,5 @@ Careeria собирает резюме и отклики из разных ка�
 - [1.3. SWOT-анализ среды](03-swot-analysis.md) — стратегический анализ факторов внутренней и внешней среды, матрица TOWS.
 - [1.4. SMART-анализ целей](04-smart-analysis.md) — исследование данных, преимущества и недостатки цели, формулировка по SMART.
 - [1.5. Анализ аналогов ПО](05-analogs-analysis.md) — качественный и количественный сравнительный анализ по модели FURPS+.
-- [Системный контекст C4 L1](../../architecture/c4-plant-uml/plantuml/context/system-context.md) — системный контекст платформы.
-- [Контейнеры C4 L2](../../architecture/c4-plant-uml/plantuml/container/full-system.md) — архитектура контейнеров системы.
+- [Системный контекст C4 L1](../../architecture/c4/plantuml/system-context%28L1%29/index.md) — системный контекст платформы.
+- [Контейнеры C4 L2](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/index.md) — архитектура контейнеров системы.

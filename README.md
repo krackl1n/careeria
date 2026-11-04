@@ -12,7 +12,7 @@ Careeria — рекрутинговая платформа полного цик
 - Realtime и медиа: Centrifugo/WebSocket и LiveKit/WebRTC.
 - Наблюдаемость: OpenTelemetry, Prometheus, Grafana и Loki.
 
-Подробное описание контейнеров, протоколов, владения данными и командной сегментации находится в [документации C4-PlantUML](docs/architecture/c4-plant-uml/README.md).
+Подробное описание контейнеров, протоколов, владения данными и командной сегментации находится в [документации C4-PlantUML](docs/architecture/c4/README.md).
 
 ## Документация
 
@@ -37,5 +37,4 @@ make docs
 - [IDEF0-диаграммы кодом](docs/contributing/idef0/index.md) — вложенность, SVG и настройки цветов.
 - Конфигурация сайта: `mkdocs.yml`; зависимости: `docs/requirements.txt`.
 - Локальные настройки контейнера: `docs/.env` (шаблон — `docs/.env.example`).
-- Схемы C4-PlantUML: `docs/architecture/c4-plant-uml/plantuml/`.
-- Дополнительная модель Structurizr: `docs/architecture/c4/`; запуск — `make structurizr-architecture`, проверка — `make structurizr-architecture-validate`.
+- Схемы C4-PlantUML: `docs/architecture/c4/plantuml/`.

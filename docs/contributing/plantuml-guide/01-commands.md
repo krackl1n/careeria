@@ -9,7 +9,7 @@
 ````markdown
 ```plantuml
 @startuml
-!include architecture/c4-plant-uml/plantuml/context/system-context.puml
+!include architecture/c4/plantuml/system-context(L1)/system-context.puml
 @enduml
 ```
 ````
@@ -31,10 +31,10 @@ Alice -> Bob: Пример сообщения
 Подставляет содержимое другого `.puml` в текущую диаграмму. В Careeria так подключаются общие определения из `model/`, стили из `common/` и готовые виды на Markdown-страницах.
 
 ```text
-!include architecture/c4-plant-uml/plantuml/context/system-context.puml
+!include architecture/c4/plantuml/system-context(L1)/system-context.puml
 ```
 
-Используйте существующий файл и проверяйте путь от места запуска рендерера. Для Markdown-блока он считается от `docs/`; рабочий пример есть на [странице системного контекста](../../architecture/c4-plant-uml/plantuml/context/system-context.md).
+Используйте существующий файл и проверяйте путь от места запуска рендерера. Для Markdown-блока он считается от `docs/`; рабочий пример есть на [странице системного контекста](../../architecture/c4/plantuml/system-context%28L1%29/index.md).
 
 ## `!startsub`, `!endsub` и `!includesub`
 
@@ -51,7 +51,7 @@ Alice -> Bob: Сценарий L2
 ````markdown
 ```plantuml
 @startuml
-!includesub architecture/c4-plant-uml/plantuml/example.puml!L2
+!includesub architecture/c4/plantuml/example.puml!L2
 @enduml
 ```
 ````
@@ -63,10 +63,10 @@ Alice -> Bob: Сценарий L2
 Параметр `$link` задаёт адрес, по которому можно перейти нажатием на элемент диаграммы C4. Его указывают в объявлении элемента, например `System`, `Container` или `Component`. На Markdown-странице рядом со схемой добавьте обычную ссылку на тот же уровень, чтобы переход был виден и без нажатия на SVG.
 
 ```text
-System(careeria, "Careeria", "Система подбора", $link="/architecture/c4-plant-uml/plantuml/container/full-system/")
+System(careeria, "Careeria", "Система подбора", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/")
 ```
 
-Ссылка с начальным `/` рассчитана на сайт в корне домена. При публикации в подкаталоге проверьте адреса. Реальный пример есть в [исходнике системного контекста](../../architecture/c4-plant-uml/plantuml/context/system-context.puml).
+Ссылка с начальным `/` рассчитана на сайт в корне домена. При публикации в подкаталоге проверьте адреса. Реальный пример есть в [исходнике системного контекста](../../architecture/c4/plantuml/system-context%28L1%29/system-context.puml).
 
 ## Команды проверки
 

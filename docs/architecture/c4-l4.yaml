@@ -10,7 +10,7 @@ components:
     cross_domain_pkg: "services/hiring/internal/domain/interview"
     service_name: "HiringApplicationService"
     aggregate: "JobApplication"
-    output_dir: "docs/architecture/c4-plant-uml/plantuml/code/backend"
+    output_dir: "docs/architecture/c4/plantuml/system-context(L1)/full-system(L2)/hiring-service(L3)/hiring-application-service"
 
   - name: "Interview Service"
     slug: "hiring-interview-service"
@@ -23,7 +23,7 @@ components:
       - "services/hiring/internal/usecase/interview/room"
     service_name: "HiringInterviewService"
     aggregate: "Interview"
-    output_dir: "docs/architecture/c4-plant-uml/plantuml/code/backend"
+    output_dir: "docs/architecture/c4/plantuml/system-context(L1)/full-system(L2)/hiring-service(L3)/hiring-interview-service"
 
   - name: "Offer Service"
     slug: "hiring-offer-service"
@@ -34,5 +34,5 @@ components:
     domain_pkg: "services/hiring/internal/domain/offer"
     service_name: "HiringOfferService"
     aggregate: "JobOffer"
-    output_dir: "docs/architecture/c4-plant-uml/plantuml/code/backend"
+    output_dir: "docs/architecture/c4/plantuml/system-context(L1)/full-system(L2)/hiring-service(L3)/hiring-offer-service"
 

@@ -15,10 +15,13 @@ class Links(HTMLParser):
     def __init__(self):
         super().__init__()
         self.links = []
+        self.anchors = set()
     def handle_starttag(self, tag, attrs):
         for key, value in attrs:
-            if key in ('href', 'src') and value:
+            if key in ('href', 'src', 'xlink:href') and value:
                 self.links.append(value)
+            if value and (key == 'id' or (tag == 'a' and key == 'name')):
+                self.anchors.add(value)
 
 count = 0
 
@@ -64,20 +67,39 @@ for source in docs.rglob('*.md'):
             errors.append(f'Stretched SVG: {relative}')
     count += diagrams
 
+pages = {}
 for target in site.rglob('*.html'):
     parser = Links()
     parser.feed(target.read_text())
+    pages[target.resolve()] = parser
+
+for target, parser in pages.items():
     for href in parser.links:
         url = urlsplit(href)
-        if url.scheme or url.netloc or not url.path:
+        if url.scheme or url.netloc:
             continue
-        destination = site / unquote(url.path).lstrip('/') if url.path.startswith('/') else target.parent / unquote(url.path)
+        if not url.path:
+            destination = target
+        elif url.path.startswith('/'):
+            destination = site / unquote(url.path).lstrip('/')
+        else:
+            destination = target.parent / unquote(url.path)
         if not destination.exists():
             errors.append(f'{target.relative_to(site)}: broken link {href}')
+            continue
+        if destination.is_dir():
+            destination = destination / 'index.html'
+            if not destination.exists():
+                errors.append(f'{target.relative_to(site)}: missing index page {href}')
+                continue
+        linked_page = pages.get(destination.resolve())
+        if url.fragment and linked_page is not None:
+            if unquote(url.fragment) not in linked_page.anchors:
+                errors.append(f'{target.relative_to(site)}: broken anchor {href}')
 
-context = (site / 'architecture/c4-plant-uml/plantuml/context/system-context/index.html').read_text()
-if '/architecture/c4-plant-uml/plantuml/container/full-system/' not in context:
+context = (site / 'architecture/c4/plantuml/system-context(L1)/index.html').read_text()
+if '/architecture/c4/plantuml/system-context(L1)/full-system(L2)/' not in context:
     errors.append('Missing clickable context-to-container link')
 if errors:
     raise SystemExit('\n'.join(sorted(set(errors))))
-print(f'MkDocs: {count} диаграмм; страницы и внутренние ссылки проверены.')
+print(f'MkDocs: {count} диаграмм; страницы, внутренние ссылки и якоря проверены.')

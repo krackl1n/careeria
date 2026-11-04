@@ -1,8 +1,8 @@
 # Безопасность и доступ
 
-Целевые правила аутентификации, авторизации и защиты интеграций описаны в [архитектурной документации](../architecture/c4-plant-uml/README.md).
+Целевые правила аутентификации, авторизации и защиты интеграций описаны в [архитектурной документации](../architecture/c4/README.md).
 
-Платформенные сервисы доступа раскрыты в [области Member 4](../architecture/c4-plant-uml/plantuml/projections/members/member4/README.md).
+Платформенные сервисы доступа раскрыты в [области Member 4](../architecture/c4/plantuml/members/member4/README.md).
 
 Makefile содержит команду проверки модели OpenFGA и тестов авторизации:
 

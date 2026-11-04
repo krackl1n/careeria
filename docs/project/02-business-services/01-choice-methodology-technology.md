@@ -245,5 +245,5 @@ C5 --> D
 - [Глава 2. Концепт программного продукта](index.md)
 - [2.2. Разработка концептуальной модели ПО "как есть"](02-as-is.md)
 - [2.3. Разработка концептуальной модели ПО "как должно быть"](03-to-be.md)
-- [Системный контекст архитектуры C4 (L1)](../../architecture/c4-plant-uml/plantuml/context/system-context.md)
-- [Контейнерная архитектура полной системы C4 (L2)](../../architecture/c4-plant-uml/plantuml/container/full-system.md)
+- [Системный контекст архитектуры C4 (L1)](../../architecture/c4/plantuml/system-context%28L1%29/index.md)
+- [Контейнерная архитектура полной системы C4 (L2)](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/index.md)

@@ -26,9 +26,6 @@ OPENFGA_CLI_API_URL ?= http://host.docker.internal:$(OPENFGA_HTTP_PORT)
 OPENFGA_HTTP_PORT ?= 18081
 OPENFGA_STORE_NAME ?= careeria
 
-STRUCTURIZR_VERSION ?= 2026.09.19
-STRUCTURIZR_IMAGE ?= structurizr/structurizr:$(STRUCTURIZR_VERSION)
-STRUCTURIZR_PORT ?= 18882
 PLANTUML_VERSION ?= 1.2026.8
 PLANTUML_IMAGE ?= plantuml/plantuml:$(PLANTUML_VERSION)
 PLANTUML_JAR ?=
@@ -51,12 +48,10 @@ OPENFGA_MODEL_DIR := $(CURDIR)/authz/openfga
 OPENFGA_MODEL_FILE := /model/model.fga
 OPENFGA_TEST_FILE := /model/model.fga.yaml
 
-STRUCTURIZR_DIR := $(CURDIR)/docs/architecture/c4
-STRUCTURIZR_WORKSPACE := /usr/local/structurizr/workspace.dsl
-PLANTUML_ARCHITECTURE_DIR := docs/architecture/c4-plant-uml
+PLANTUML_ARCHITECTURE_DIR := docs/architecture/c4
 PLANTUML_ARCHITECTURE_SOURCE_DIR := $(PLANTUML_ARCHITECTURE_DIR)/plantuml
 PLANTUML_ARCHITECTURE_OUTPUT_DIR := $(PLANTUML_ARCHITECTURE_DIR)/images/generated
-PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_SOURCE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort)
+PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_SOURCE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort | sed "s/.*/'&'/")
 
 MODULE_DIRS := $(shell find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; | sort)
 MIGRATION_SERVICES := identity
@@ -73,7 +68,7 @@ MIGRATION_SERVICES := identity
 	authz-model-test authz-store-create authz-model-write \
 	docs docs-build docs-stop docs-test idef0-render \
 	architecture-validate \
-	structurizr-architecture structurizr-architecture-validate plantuml-architecture plantuml-architecture-validate \
+	plantuml-architecture plantuml-architecture-validate \
 	run-gateway run-identity \
 	migrate-new migrate-up migrate-status migrate-version \
 	proto-generate proto-lint proto-format
@@ -225,28 +220,6 @@ authz-model-write: ## Write a new immutable model version; OPENFGA_STORE_ID is r
 			--store-id "$(OPENFGA_STORE_ID)" \
 			--file $(OPENFGA_MODEL_FILE)
 
-structurizr-architecture: ## Start the optional Structurizr viewer.
-	@test -f "$(STRUCTURIZR_DIR)/workspace.dsl" || { \
-		printf '%s\n' 'Structurizr workspace not found: $(STRUCTURIZR_DIR)/workspace.dsl' >&2; \
-		exit 2; \
-	}
-	docker run --rm -it \
-		-p "$(STRUCTURIZR_PORT):8080" \
-		-v "$(STRUCTURIZR_DIR):/usr/local/structurizr" \
-		$(STRUCTURIZR_IMAGE) \
-		local
-
-structurizr-architecture-validate: ## Validate the optional Structurizr workspace.
-	@test -f "$(STRUCTURIZR_DIR)/workspace.dsl" || { \
-		printf '%s\n' 'Structurizr workspace not found: $(STRUCTURIZR_DIR)/workspace.dsl' >&2; \
-		exit 2; \
-	}
-	docker run --rm \
-		-v "$(STRUCTURIZR_DIR):/usr/local/structurizr:ro" \
-		$(STRUCTURIZR_IMAGE) \
-		validate -workspace $(STRUCTURIZR_WORKSPACE)
-
-
 $(DOCS_ENV): $(DOCS_DIR)/.env.example
 	@cp "$<" "$@"
 
@@ -260,7 +233,7 @@ docs: $(DOCS_ENV) ## Start the documentation container with live reload.
 		port=$$((port + 1)); \
 	done; \
 	url="http://localhost:$$port/"; \
-	env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml up --build --detach docs; \
+	env DOCS_PORT="$$port" docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml up --build --detach --force-recreate docs; \
 	attempt=0; \
 	until curl --fail --silent --output /dev/null "$$url"; do \
 		if [ "$$attempt" -ge "$(DOCS_START_TIMEOUT)" ]; then \

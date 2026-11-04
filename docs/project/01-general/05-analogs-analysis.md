@@ -323,5 +323,5 @@ rectangle "СРАВНЕНИЕ ПО КЛЮЧЕВЫМ ФУНКЦИОНАЛЬНЫМ
 - [1.2. Формулировка задач](02-formulation-of-tasks.md): назначение системы, цели, характеристики ввода/вывода, требования к надёжности и безопасности.
 - [1.3. SWOT-анализ среды](03-swot-analysis.md): стратегический анализ факторов внутренней и внешней среды, матрица TOWS и дорожная карта.
 - [2.1. Выбор методологии и технологии концептуального моделирования ИС](../02-business-services/01-choice-methodology-technology.md): методологический базис FURPS+ и архитектурное обоснование.
-- [Системный контекст C4 L1](../../architecture/c4-plant-uml/plantuml/context/system-context.md): системный контекст платформы Careeria.
-- [Контейнеры C4 L2](../../architecture/c4-plant-uml/plantuml/container/full-system.md): компонентно-контейнерная архитектура платформы.
+- [Системный контекст C4 L1](../../architecture/c4/plantuml/system-context%28L1%29/index.md): системный контекст платформы Careeria.
+- [Контейнеры C4 L2](../../architecture/c4/plantuml/system-context%28L1%29/full-system%28L2%29/index.md): компонентно-контейнерная архитектура платформы.

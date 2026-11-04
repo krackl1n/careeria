@@ -3,6 +3,8 @@ package c4
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
+	"strings"
 )
 
 func GenerateMarkdown(m *ComponentModel) string {
@@ -15,7 +17,7 @@ func GenerateMarkdown(m *ComponentModel) string {
 func generateDomainMarkdown(m *ComponentModel) string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("# %s — детализация кода L4\n\n", m.Config.Title))
+	buf.WriteString(fmt.Sprintf("# %s — детализация кода (L4)\n\n", m.Config.Title))
 	buf.WriteString(fmt.Sprintf("Этот раздел описывает внутреннее устройство, классы, доменные сущности, контракты и структуры компонента **%s**, входящего в контейнер `%s`.\n\n", m.Config.Name, m.Config.Container))
 	buf.WriteString(fmt.Sprintf("> %s\n\n", m.Config.Description))
 
@@ -24,7 +26,7 @@ func generateDomainMarkdown(m *ComponentModel) string {
 	buf.WriteString("<details>\n<summary>PlantUML Исходный код</summary>\n\n")
 	buf.WriteString("```plantuml\n")
 	buf.WriteString("@startuml\n")
-	buf.WriteString(fmt.Sprintf("!include %s.puml\n", m.Config.Slug))
+	buf.WriteString(fmt.Sprintf("!include %s\n", filepath.ToSlash(filepath.Join(strings.TrimPrefix(m.Config.OutputDir, "docs/"), m.Config.Slug+".puml"))))
 	buf.WriteString("@enduml\n")
 	buf.WriteString("```\n")
 	buf.WriteString("</details>\n\n")
@@ -140,7 +142,7 @@ func generateDomainMarkdown(m *ComponentModel) string {
 func generateLayeredMarkdown(m *ComponentModel) string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("# %s — детализация кода L4\n\n", m.Config.Title))
+	buf.WriteString(fmt.Sprintf("# %s — детализация кода (L4)\n\n", m.Config.Title))
 	buf.WriteString(fmt.Sprintf("Этот раздел описывает внутреннее устройство, классы, контракты и структуры компонента **%s**, входящего в контейнер `%s`.\n\n", m.Config.Name, m.Config.Container))
 	if m.Config.Description != "" {
 		buf.WriteString(fmt.Sprintf("> %s\n\n", m.Config.Description))
@@ -151,7 +153,7 @@ func generateLayeredMarkdown(m *ComponentModel) string {
 	buf.WriteString("<details>\n<summary>PlantUML Исходный код</summary>\n\n")
 	buf.WriteString("```plantuml\n")
 	buf.WriteString("@startuml\n")
-	buf.WriteString(fmt.Sprintf("!include %s.puml\n", m.Config.Slug))
+	buf.WriteString(fmt.Sprintf("!include %s\n", filepath.ToSlash(filepath.Join(strings.TrimPrefix(m.Config.OutputDir, "docs/"), m.Config.Slug+".puml"))))
 	buf.WriteString("@enduml\n")
 	buf.WriteString("```\n")
 	buf.WriteString("</details>\n\n")
@@ -205,4 +207,3 @@ func generateLayeredMarkdown(m *ComponentModel) string {
 
 	return buf.String()
 }
-
