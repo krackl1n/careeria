@@ -32,15 +32,13 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
     }
     
     Deployment_Node(data_subnet, "Изолированный контур данных (Storage & Data Subnet)", "careeria-data namespace") {
-        Deployment_Node(pg_statefulset, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet + PVC") {
+        Deployment_Node(pg_statefulset, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
             ContainerDb(hiring_db, "Hiring DB", "PostgreSQL 16", "Хранение агрегатов найма и таблицы transactional outbox. Без репликации. Порт 5432.")
         }
         
-        Deployment_Node(kafka_statefulset, "Kafka Cluster (StatefulSet)", "Kubernetes StatefulSet + PVC") {
+        Deployment_Node(kafka_statefulset, "Kafka Cluster (StatefulSet)", "Kubernetes StatefulSet") {
             ContainerQueue(kafka_broker, "Kafka Brokers (3 Nodes)", "Apache Kafka 3.7+ (KRaft)", "Отказоустойчивая шина доменных событий hiring.events. Порт 9092.")
         }
-        
-        Node(storage, "Постоянные тома (PV / CSI)", "Persistent Volumes", "Выделенное дисковое хранилище для StatefulSet", $tags="infrastructure")
     }
 }
 
@@ -59,7 +57,6 @@ Rel(hiring_db, debezium, "Логическая репликация таблиц
 Rel(debezium, kafka_broker, "Публикация доменных событий найма", "Kafka Protocol / TCP, порт 9092")
 Rel(hiring_svc, livekit, "Управление комнатами и генерация токенов", "HTTP / REST API, порт 7880")
 Rel(api_gateway, hr_corp_server, "Интеграционные вызовы и вебхуки", "HTTPS / TLS 1.3, порт 443")
-Rel(data_subnet, storage, "Монтирование дисков", "CSI / PVC")
 
 ShowArchitectureLegend()
 @enduml

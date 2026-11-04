@@ -2,7 +2,7 @@
 
 Диаграмма развёртывания C4 (**Deployment Diagram, Level 2**) отображает отображение программных контейнеров подсистемы найма (**Hiring Domain** платформы **Careeria**) на физическую и виртуальную вычислительную инфраструктуру, топологию сетевых контуров, узлы отказоустойчивости и параметры сетевой безопасности.
 
-Диаграмма разработана в соответствии с архитектурными решениями проекта: сервисы запускаются в кластере **Kubernetes**, СУБД **PostgreSQL** и брокеры **Apache Kafka (KRaft)** разворачиваются в **StatefulSet** с постоянными томами (Persistent Volumes), а медиа-сервер **LiveKit** развёрнут в собственном медиа-контуре кластера. Для упрощения эксплуатации и снижения сложности администрирования база данных не реплицируется (Single-Instance в StatefulSet), а количество подов приложений регулируется через HPA без дублирования сущностей на диаграмме.
+Диаграмма разработана в соответствии с архитектурными решениями проекта: сервисы запускаются в кластере **Kubernetes**, СУБД **PostgreSQL** и брокеры **Apache Kafka (KRaft)** разворачиваются в **StatefulSet**, а медиа-сервер **LiveKit** развёрнут в собственном медиа-контуре кластера. Для упрощения эксплуатации и снижения сложности администрирования база данных не реплицируется (Single-Instance в StatefulSet), а количество подов приложений регулируется через HPA без дублирования сущностей на диаграмме.
 
 ```plantuml
 @startuml
@@ -43,10 +43,10 @@ Deployment_Node(media_tier, "Медиа-контур (Media Subnet)", "careeria-
 }
 
 Deployment_Node(data_tier, "Изолированный контур данных (Storage & Data Subnet)", "careeria-data") {
-    Deployment_Node(pg_set, "PostgreSQL (StatefulSet)", "StatefulSet + PVC") {
+    Deployment_Node(pg_set, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
         ContainerDb(db_hiring, "Hiring DB", "PostgreSQL 16", "Транзакции найма и outbox (порт 5432)")
     }
-    Deployment_Node(kafka_set, "Kafka Cluster (StatefulSet)", "StatefulSet + PVC") {
+    Deployment_Node(kafka_set, "Kafka Cluster (StatefulSet)", "Kubernetes StatefulSet") {
         ContainerQueue(kafka_clu, "Apache Kafka Cluster", "3 Brokers (KRaft)", "Шина доменных событий hiring.events (порт 9092)")
     }
 }
@@ -78,8 +78,8 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 | **Контур приложений: OpenFGA** | Kubernetes Pod | K8s Worker Node (2 vCPU, 2 GB RAM) | `openfga` (OpenFGA Server) | Высокопроизводительный сервер вычисления графов ReBAC-авторизации отношений доступа. |
 | **Контур приложений: Debezium** | Kubernetes Pod | K8s Worker Node (2 vCPU, 4 GB RAM) | `debezium-connector` | Потоковый агент Change Data Capture (CDC), непрерывно считывающий журнал упреждающей записи СУБД. |
 | **Медиа-контур: LiveKit** | Kubernetes Pod | Media Worker Nodes (Host Network, 4 vCPU, 8 GB RAM) | `livekit-server` (Pods × 2..N) | Внутренний кластерный медиа-сервер WebRTC для организации онлайн-собеседований (без использования внешнего SaaS). |
-| **Контур данных: PostgreSQL (StatefulSet)** | Kubernetes StatefulSet | High-IOPS Nodes (PersistentVolume / SSD, 8 vCPU, 32 GB RAM) | `Hiring DB (PostgreSQL 16)` | База данных сервиса найма в StatefulSet. Без межсерверной репликации (Single-Instance с привязкой к постоянному тому PV). |
-| **Контур данных: Apache Kafka Cluster** | Kubernetes StatefulSet | Storage Nodes (3 Pods, PersistentVolume / SSD) | `Kafka Brokers (KRaft)` | Отказоустойчивый распределённый журнал доменных событий. Хранение топика `hiring.events` в StatefulSet. |
+| **Контур данных: PostgreSQL (StatefulSet)** | Kubernetes StatefulSet | High-IOPS Worker Nodes (8 vCPU, 32 GB RAM) | `Hiring DB (PostgreSQL 16)` | База данных сервиса найма в StatefulSet. Без межсерверной репликации (Single-Instance). |
+| **Контур данных: Apache Kafka Cluster** | Kubernetes StatefulSet | Storage Nodes (3 Pods, 4 vCPU, 16 GB RAM) | `Kafka Brokers (KRaft)` | Отказоустойчивый распределённый журнал доменных событий. Хранение топика `hiring.events` в StatefulSet. |
 | **Корпоративная HR-система** | Корпоративный контур | On-Premise Enterprise VM / Private Cloud | `1С:ЗУП 8.3 / Workday HCM` | Главная система кадрового учёта компании-работодателя. |
 
 ---
@@ -111,13 +111,11 @@ Rel(debezium_svc, kafka_clu, "Публикация доменных событи
 * Балансировка входящего трафика между подами обеспечивается стандартным объектом `Kubernetes Service` (ClusterIP).
 
 ### 4.2. Контур данных в StatefulSet (PostgreSQL)
-* База данных `Hiring DB` развёрнута в **Kubernetes StatefulSet** с постоянным томом (**PersistentVolumeClaim / PV**).
+* База данных `Hiring DB` развёрнута в **Kubernetes StatefulSet**.
 * **Отказ от репликации СУБД:** В соответствии с принятым решением, база данных работает как одиночный экземпляр (Single-Instance), исключая избыточную сложность настройки Patroni HA, физической репликации WAL и DCS-кворума (etcd).
-* Гарантия сохранности данных обеспечивается сетевыми постоянными томами (CSI Storage Class) и регулярным резервным копированием снапшотов. При отказе ноды контроллер StatefulSet автоматически перезапускает под с повторным монтированием того же диска.
 
 ### 4.3. Брокер сообщений в StatefulSet (Apache Kafka KRaft)
 * Кластер брокеров Kafka развёрнут в **StatefulSet** из 3 подов в режиме **KRaft** (без ZooKeeper).
-* Каждый брокер использует собственный постоянный том (PVC) для логов сообщений.
 * Топик `hiring.events` конфигурируется с `replication.factor=3`, гарантируя отказоустойчивость шины событий.
 
 ### 4.4. Внутренний медиа-контур (LiveKit)
