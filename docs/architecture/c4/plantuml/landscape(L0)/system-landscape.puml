@@ -2,32 +2,37 @@
 !include ../common/styles.puml
 !include ../model/elements.puml
 
-title Экосистема подбора и кадрового учёта — System Landscape (L0)
-LAYOUT_TOP_DOWN()
+title Careeria — Диаграмма системного ландшафта (L0): платформа подбора и корпоративные системы
+LAYOUT_LANDSCAPE()
 
 CandidateActor()
-Person(employerTeam, "Команда работодателя", "Рекрутеры, нанимающие руководители и администраторы компании.")
+RecruiterActor()
+HiringManagerActor()
+CompanyAdminActor()
 
-Enterprise_Boundary(careeriaScope, "Контур Careeria") {
-    System(platform, "Careeria", "Поиск работы, вакансии, отклики, оценивание, коммуникации и процесс найма.", $link="/architecture/c4/plantuml/system-context(L1)/")
+Enterprise_Boundary(careeriaScope, "Продуктовая экосистема Careeria") {
+    System(platform, "Careeria", "Профили кандидатов и компаний, вакансии, отклики, оценивание, собеседования, офферы и коммуникации.", $link="/architecture/c4/plantuml/system-context(L1)/")
 }
 
-Enterprise_Boundary(employerScope, "Контур работодателя") {
+Enterprise_Boundary(employerScope, "Корпоративный ИТ-ландшафт работодателя") {
     EmployerHrSystem()
 }
 
-Boundary(supportingServices, "Внешние сервисы", "Независимые поставщики") {
-    IdentityProviderSystem()
-    NotificationProvidersSystem()
-}
+IdentityProviderSystem()
+NotificationProvidersSystem()
 
-Rel_D(candidate, platform, "Ищет работу и проходит отбор")
-Rel_D(employerTeam, platform, "Публикует вакансии и ведёт найм")
-Rel_D(employerTeam, employerHrSystem, "Работает с кадровым учётом")
-Rel_R(platform, employerHrSystem, "Передаёт результаты найма")
-Rel_L(employerHrSystem, platform, "Передаёт изменения кадровых данных")
-Rel_D(platform, identityProvider, "Использует внешнюю аутентификацию")
-Rel_D(platform, notificationProviders, "Передаёт уведомления для доставки")
+Rel(candidate, platform, "Размещает резюме, ищет вакансии и проходит отбор", "HTTPS")
+Rel(recruiter, platform, "Публикует вакансии, ведёт отклики, интервью и офферы", "HTTPS")
+Rel(hiringManager, platform, "Оценивает кандидатов и согласует найм", "HTTPS")
+Rel(companyAdmin, platform, "Управляет профилем компании, участниками и ролями", "HTTPS")
+Rel(recruiter, employerHrSystem, "Работает с кадровыми заявками и результатами найма", "HTTPS")
+
+Rel_R(platform, employerHrSystem, "Передаёт результаты найма и исходящие webhooks", "HTTPS / REST / Webhooks")
+Rel_L(employerHrSystem, platform, "Передаёт изменения кадровых данных", "HTTPS / Webhooks")
+Rel(platform, identityProvider, "Аутентифицирует пользователей через федеративный вход", "HTTPS / OAuth 2.0 / OIDC")
+Rel(platform, notificationProviders, "Запрашивает доставку уведомлений", "HTTPS / API")
+Rel_Back(candidate, notificationProviders, "Доставляет приглашения, сообщения и офферы", "Email / Push / SMS")
+Rel_Back(recruiter, notificationProviders, "Доставляет уведомления об откликах и интервью", "Email / Push / SMS")
 
 ShowArchitectureLegend()
 @enduml
