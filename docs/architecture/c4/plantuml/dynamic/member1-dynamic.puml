@@ -2,7 +2,7 @@
 !include ../common/styles.puml
 !include ../model/elements.puml
 
-title Careeria — Сквозной процесс публикации вакансии (PublishVacancy), перехода FSM и публикации доменных событий
+title Careeria — Сквозной процесс публикации вакансии (PublishVacancy)
 LAYOUT_LEFT_RIGHT()
 
 Person(recruiter, "Рекрутер", "Редактирует черновик, инициирует публикацию вакансии и получает подтверждение в UI.")
