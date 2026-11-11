@@ -18,48 +18,48 @@ System_Boundary(platform, "Платформа Careeria") {
     CandidateDatabase("storage")
     DebeziumContainer("eventInfrastructure")
     ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Шина доменных событий.", $tags="eventBus")
-    VacancyServiceContainer("business")
+    Container(authzSync, "AuthZ Synchronization", "Go, Kafka Consumer", "Синхронизация ReBAC-отношений доступа в OpenFGA.", $tags="platform")
     Container(notificationService, "Notification Service", "Go, Kafka Consumer", "Оркестрация мультиканальных оповещений.", $tags="business")
 }
 
 NotificationProvidersSystem()
 
-' --- Синхронная цепочка: запрос и генерация presigned URL ---
-Rel(candidate, web, "1. Выбирает файл резюме и инициирует загрузку в форме профиля", "HTTPS / UI")
-Rel(web, bff, "2. Передаёт метаданные файла с сессионной кукой", "HTTPS / JSON")
-Rel(bff, apiGateway, "3. Направляет авторизованный RPC-запрос", "gRPC / HTTP2")
-Rel(apiGateway, candidateService, "4. Вызывает метод RequestResumeUpload()", "gRPC / HTTP2, порт 50052")
+' --- Фаза 1. Инициализация загрузки и получение presigned URL ---
+Rel(candidate, web, "1. Выбирает файл резюме (PDF/DOCX) и инициирует загрузку", "HTTPS / UI")
+Rel(web, bff, "2. Передаёт метаданные файла (fileName, mimeType, size) с кукой", "HTTPS / JSON")
+Rel(bff, apiGateway, "3. Направляет авторизованный RPC-запрос", "gRPC / HTTP2, порт 50051")
+Rel(apiGateway, candidateService, "4. Вызывает RequestResumeUpload()", "gRPC / HTTP2, порт 50052")
 Rel(candidateService, openFga, "5. Проверяет права кандидата (can_upload_resume)", "gRPC / mTLS, порт 8081")
-Rel(candidateService, fileService, "6. Запрашивает presigned URL для загрузки файла", "gRPC / HTTP2, порт 50055")
-Rel(fileService, objectStorage, "7. Генерирует временный presigned PUT URL (TTL 15 мин, AWS Sig V4)", "S3 API / HTTPS, порт 9000")
-
-' --- Синхронная цепочка: ответ с presigned URL ---
+Rel(candidateService, fileService, "6. Запрашивает регистрацию файла и генерацию presigned URL", "gRPC / HTTP2, порт 50055")
+Rel(fileService, objectStorage, "7. Формирует временный presigned PUT URL (TTL 15 мин, AWS Sig V4)", "S3 API / HTTPS, порт 9000")
 Rel(fileService, candidateService, "8. Возвращает presigned URL и fileId", "gRPC response")
-Rel(candidateService, apiGateway, "9. Передаёт presigned URL клиенту", "gRPC response")
-Rel(apiGateway, bff, "10. Транслирует ответ шлюза", "gRPC response")
-Rel(bff, web, "11. Возвращает 200 OK с presigned URL и fileId", "JSON / HTTPS")
+Rel(candidateService, candidateDb, "9. Создаёт запись версии резюме в статусе UPLOADING и задачу контроля TTL", "SQL / TCP, порт 5432")
+Rel(candidateService, apiGateway, "10. Возвращает presigned URL и resumeVersionId", "gRPC response")
+Rel(apiGateway, bff, "11. Транслирует ответ шлюза", "gRPC response")
+Rel(bff, web, "12. Возвращает 200 OK с presigned URL и идентификатором версии", "JSON / HTTPS")
 
-' --- Прямая загрузка файла ---
-Rel(web, objectStorage, "12. Загружает файл резюме напрямую по presigned URL", "HTTPS / PUT, S3 API, порт 9000", $tags="async")
+' --- Фаза 2. Прямая выгрузка файла в объектное хранилище ---
+Rel(web, objectStorage, "13. Загружает бинарный файл резюме напрямую по presigned URL", "HTTPS / PUT, S3 API, порт 9000", $tags="async")
 
-' --- Синхронная цепочка: подтверждение загрузки ---
-Rel(web, bff, "13. Подтверждает успешную загрузку (ConfirmResumeUpload + fileId)", "HTTPS / JSON")
-Rel(bff, apiGateway, "14. Направляет подтверждение", "gRPC / HTTP2")
-Rel(apiGateway, candidateService, "15. Вызывает ConfirmResumeUpload(fileId)", "gRPC / HTTP2, порт 50052")
-Rel(candidateService, candidateDb, "16. Сохраняет метаданные резюме (READY), обновляет профиль и пишет Outbox", "SQL Transaction, порт 5432")
+' --- Фаза 3. Подтверждение загрузки, верификация файла и запись в Outbox ---
+Rel(web, bff, "14. Подтверждает загрузку файла (ConfirmResumeUpload)", "HTTPS / JSON")
+Rel(bff, apiGateway, "15. Направляет запрос подтверждения", "gRPC / HTTP2, порт 50051")
+Rel(apiGateway, candidateService, "16. Вызывает ConfirmResumeUpload(resumeVersionId, fileId)", "gRPC / HTTP2, порт 50052")
+Rel(candidateService, fileService, "17. Проверяет статус загрузки файла и связывает его с резюме", "gRPC / HTTP2, порт 50055")
+Rel(fileService, objectStorage, "18. Проверяет метаданные и контрольную сумму загруженного объекта", "S3 API / HTTPS, порт 9000")
+Rel(candidateService, candidateDb, "19. В единой транзакции переводит версию в статус READY, обновляет профиль и пишет в Outbox", "SQL Transaction, порт 5432")
+Rel(candidateService, apiGateway, "20. Возвращает статус OK и актуальный DTO резюме", "gRPC response")
+Rel(apiGateway, bff, "21. Транслирует ответ шлюза", "gRPC response")
+Rel(bff, web, "22. Возвращает 200 OK (резюме активно)", "JSON / HTTPS")
+Rel(web, candidate, "23. Отображает в UI активное резюме", "UI Render")
 
-' --- Синхронная цепочка: ответ клиенту ---
-Rel(candidateService, apiGateway, "17. Возвращает статус OK и DTO профиля", "gRPC response")
-Rel(apiGateway, bff, "18. Транслирует ответ шлюза", "gRPC response")
-Rel(bff, web, "19. Возвращает 200 OK (резюме загружено)", "JSON / HTTPS")
-Rel(web, candidate, "20. Отображает в UI подтверждение и превью резюме", "UI Render")
-
-' --- Асинхронная цепочка: CDC, события и интеграции ---
-Rel(candidateDb, debezium, "21. Считывает запись Outbox из журнала транзакций WAL (CDC)", "PostgreSQL WAL (pgoutput)", $tags="async")
-Rel(debezium, kafka, "22. Публикует CandidateResumeUploadedEvent в топик candidate.events", "Kafka / Avro, порт 9092", $tags="async")
-Rel(kafka, vacancyService, "23. Доставляет событие для поиска релевантных вакансий кандидату", "Kafka / Avro", $tags="async")
-Rel(kafka, notificationService, "24. Доставляет событие загрузки резюме кандидатом", "Kafka / Avro", $tags="async")
-Rel(notificationService, notificationProviders, "25. Инициирует отправку уведомления о публикации резюме", "HTTPS / REST API", $tags="async")
+' --- Фаза 4. Асинхронная доставка событий через CDC и реакция подписчиков ---
+Rel(candidateDb, debezium, "24. Считывает запись из таблицы outbox через журнал WAL (CDC)", "PostgreSQL WAL (pgoutput)", $tags="async")
+Rel(debezium, kafka, "25. Публикует CandidateResumeUploadedEvent в топик candidate.events", "Kafka / Avro, порт 9092", $tags="async")
+Rel(kafka, authzSync, "26. Доставляет событие создания новой версии резюме", "Kafka / Avro", $tags="async")
+Rel(authzSync, openFga, "27. Записывает ReBAC-отношения владельца и доступа к резюме", "OpenFGA API / gRPC, порт 8081", $tags="async")
+Rel(kafka, notificationService, "28. Доставляет событие для оповещения соискателя", "Kafka / Avro", $tags="async")
+Rel(notificationService, notificationProviders, "29. Инициирует отправку Email/Push-подтверждения публикации резюме", "HTTPS / REST API", $tags="async")
 
 ShowArchitectureLegend()
 @enduml
