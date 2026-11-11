@@ -34,8 +34,7 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
 
     Deployment_Node(data_subnet, "Изолированный контур данных (Data Subnet)", "careeria-data namespace") {
         Deployment_Node(pg_statefulset, "PostgreSQL (StatefulSet)", "Kubernetes StatefulSet") {
-            ContainerDb(candidate_db, "Candidate DB", "PostgreSQL 16", "Профили, статусы поиска, метаданные версий резюме, cleanup jobs и transactional outbox. Порт 5432.")
-            ContainerDb(vacancy_db, "Vacancy DB", "PostgreSQL 16", "Вакансии, требования, навыки и transactional outbox. Порт 5432.")
+            ContainerDb(postgres_db, "PostgreSQL (candidate_db, vacancy_db)", "PostgreSQL 16", "Единый инстанс СУБД: логические БД профилей и вакансий, cleanup jobs и таблицы transactional outbox. Без репликации. Порт 5432.")
         }
 
         Deployment_Node(minio_statefulset, "MinIO Object Storage (StatefulSet)", "Kubernetes StatefulSet") {
@@ -43,7 +42,7 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
         }
 
         Deployment_Node(kafka_statefulset, "Kafka Cluster (StatefulSet)", "Kubernetes StatefulSet") {
-            ContainerQueue(kafka_broker, "Kafka Brokers (3 Nodes)", "Apache Kafka 3.7+ (KRaft)", "Шина доменных событий candidate.events и vacancy.events. Порт 9092.")
+            ContainerQueue(kafka_broker, "Kafka Brokers (3 Nodes)", "Apache Kafka 3.7+ (KRaft)", "Отказоустойчивая шина доменных событий candidate.events и vacancy.events. Порт 9092.")
         }
     }
 }
@@ -55,17 +54,14 @@ Rel(ingress, bff_pod, "Проксирование API-запросов (/api/*)"
 Rel(bff_pod, api_gateway, "Авторизованные межсервисные RPC-вызовы", "gRPC / HTTP2, порт 50051")
 Rel(api_gateway, candidate_svc, "gRPC-вызовы к сервису профилей кандидатов", "gRPC / HTTP2, порт 50052")
 Rel(api_gateway, vacancy_svc, "gRPC-вызовы к сервису вакансий", "gRPC / HTTP2, порт 50054")
-Rel(api_gateway, file_svc, "Запрос presigned URL и управление метаданными файлов", "gRPC / HTTP2, порт 50055")
 Rel(candidate_svc, openfga, "Проверка ReBAC-полномочий доступа к профилям", "gRPC / mTLS, порт 8081")
 Rel(vacancy_svc, openfga, "Проверка ReBAC-полномочий доступа к вакансиям", "gRPC / mTLS, порт 8081")
-Rel(candidate_svc, candidate_db, "Транзакции: профиль, резюме, карьерные данные и Outbox", "SQL / TCP, порт 5432")
-Rel(vacancy_svc, vacancy_db, "Транзакции: вакансии, требования, жизненный цикл и Outbox", "SQL / TCP, порт 5432")
-Rel(candidate_svc, file_svc, "Загружает и связывает файлы резюме с профилем", "gRPC / HTTP2, порт 50055")
-Rel(file_svc, object_storage, "Читает и записывает файлы резюме и аватаров", "S3 API / HTTPS, порт 9000")
-Rel(candidate_db, debezium, "Логическая репликация таблицы outbox (candidate.events)", "PostgreSQL WAL (pgoutput), порт 5432")
-Rel(vacancy_db, debezium, "Логическая репликация таблицы outbox (vacancy.events)", "PostgreSQL WAL (pgoutput), порт 5432")
+Rel(candidate_svc, postgres_db, "Транзакции (candidate_db): профиль, резюме и Outbox", "SQL / TCP, порт 5432")
+Rel(vacancy_svc, postgres_db, "Транзакции (vacancy_db): вакансии, требования и Outbox", "SQL / TCP, порт 5432")
+Rel(candidate_svc, file_svc, "Запрос presigned URL и привязка файлов резюме к профилю", "gRPC / HTTP2, порт 50055")
+Rel(file_svc, object_storage, "Генерация presigned URL и управление объектами резюме", "S3 API / HTTPS, порт 9000")
+Rel(postgres_db, debezium, "Логическая репликация таблиц outbox (candidate_db, vacancy_db)", "PostgreSQL WAL (pgoutput), порт 5432")
 Rel(debezium, kafka_broker, "Публикация доменных событий кандидатов и вакансий", "Kafka Protocol / TCP, порт 9092")
 
 ShowArchitectureLegend()
 @enduml
-
