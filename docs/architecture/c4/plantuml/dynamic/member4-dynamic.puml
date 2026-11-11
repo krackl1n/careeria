@@ -1,0 +1,40 @@
+@startuml member4-dynamic
+!include <C4/C4_Dynamic>
+!include ../common/styles.puml
+
+title Careeria — Identity Service: регистрация пользователя по email
+LAYOUT_LEFT_RIGHT()
+skinparam ranksep 45
+skinparam nodesep 35
+
+Person(candidate, "Пользователь", "Создаёт учётную запись по email и паролю.")
+
+System_Boundary(platform, "Платформа Careeria — регистрация пользователя") {
+    Container(web, "Web Application", "Next.js / React", "Форма регистрации и её результат.", $tags="frontend")
+    Container(bff, "BFF", "Go / HTTP", "Веб-фасад: передаёт запросы Authentication UI.", $tags="edge")
+    Container(apiGateway, "API Gateway", "Go / grpc-gateway", "Преобразует HTTP/JSON в RPC Identity.", $tags="gateway")
+    Container(identityService, "Identity Service", "Go / gRPC", "Выполняет RegisterIdentity и возвращает контекст регистрации.", $tags="platform")
+    ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Учётные записи, профили, пароли, челленджи и outbox.", $tags="storage")
+    ContainerDb(redis, "Redis", "Redis / TTL", "Хранит транзакцию авторизации и текущий шаг регистрации.", $tags="storage")
+}
+
+' Предусловие: OAuth Authorize уже создал authorization transaction в Redis.
+' SQL-действия одной регистрации объединены в одну связь.
+RelIndex(1, candidate, web, "Заполняет форму регистрации", "UI / HTTPS")
+RelIndex(2, web, bff, "POST /api/v1/registration", "HTTPS / JSON")
+RelIndex(3, bff, apiGateway, "Передаёт регистрацию", "HTTP / JSON, порт 8080")
+RelIndex(4, apiGateway, identityService, "RegistrationService.RegisterIdentity", "gRPC / HTTP2, порт 50052")
+RelIndex(5, identityService, redis, "Загружает транзакцию авторизации", "Redis RESP, порт 6379")
+RelIndex(6, identityService, identityDb, "Создаёт identity, профиль, пароль,\nчеллендж и записи outbox", "Одна SQL-транзакция, порт 5432")
+RelIndex(7, identityService, redis, "Сохраняет контекст регистрации\nсо следующим шагом email_verification", "Redis RESP / TTL")
+RelIndex(8, identityService, apiGateway, "Возвращает RegisterIdentityResponse", "gRPC response")
+RelIndex(9, apiGateway, bff, "Передаёт результат регистрации", "HTTP 200 / JSON")
+RelIndex(10, bff, web, "Возвращает контекст регистрации", "HTTPS / JSON")
+RelIndex(11, web, candidate, "Показывает результат регистрации", "UI Render")
+
+Lay_D(web, bff)
+Lay_D(bff, apiGateway)
+Lay_D(identityDb, redis)
+
+ShowArchitectureLegend()
+@enduml
