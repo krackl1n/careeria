@@ -77,4 +77,4 @@
 
 ---
 
-[Ландшафт L0](../landscape/member1-l0-landscape.md) · [Контекст L1](../context%28L1%29/index.md) · [Контейнеры L2](../context%28L1%29/containers%28L2%29/index.md) · [Динамический процесс загрузки резюме](../../../dynamic/member1-dynamic.md) · [Раздел Member 1](../README.md)
+[Ландшафт L0](../landscape/member1-l0-landscape.md) · [Контекст L1](../context%28L1%29/index.md) · [Контейнеры L2](../context%28L1%29/containers%28L2%29/index.md) · [Динамический процесс публикации вакансии](../../../dynamic/member1-dynamic.md) · [Раздел Member 1](../README.md)
