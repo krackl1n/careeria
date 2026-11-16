@@ -18,4 +18,5 @@
 
 ### [3. ](03-platform-services/index.md)
 
-### [4. ](04-technology-infrastructure/index.md)
+### [4. Проект системы: многоуровневая архитектура C4 Model и дизайн UI](04-technology-infrastructure/index.md)
+- [4.4. Разработка структуры пользовательского интерфейса ПО](04-technology-infrastructure/04-user-interface-structure.md)
