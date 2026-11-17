@@ -9,6 +9,7 @@ Table integration_connections {
   company_id uuid [not null, note: 'Внешний Company ID']
   provider_type text [not null]
   external_tenant_ref text [not null]
+  allowed_events text[] [not null, default: '{}', note: 'Разрешённые типы входящих событий']
   route_id uuid [not null, unique]
   mapping_version integer [not null]
   lifecycle text [not null]
@@ -16,11 +17,6 @@ Table integration_connections {
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
   indexes { (company_id, lifecycle) }
-}
-Table connection_allowed_events {
-  connection_id uuid [not null, ref: > integration_connections.id]
-  event_type text [not null]
-  indexes { (connection_id, event_type) [pk] }
 }
 Table inbound_signing_keys {
   id uuid [pk]
@@ -52,6 +48,7 @@ Table subscription_revisions {
   ordinal integer [not null]
   endpoint_url text [not null, note: 'Проверяется на каждом соединении; без secrets в URL']
   payload_schema_version integer [not null]
+  event_types text[] [not null, default: '{}', note: 'Типы исходящих событий редакции подписки']
   created_at timestamptz [not null]
   indexes {
     (subscription_id, ordinal) [unique]
@@ -59,11 +56,6 @@ Table subscription_revisions {
   }
 }
 Ref: webhook_subscriptions.(id, current_revision_id) > subscription_revisions.(subscription_id, id)
-Table subscription_revision_events {
-  revision_id uuid [not null, ref: > subscription_revisions.id]
-  event_type text [not null]
-  indexes { (revision_id, event_type) [pk] }
-}
 Table outbound_signing_keys {
   id uuid [pk]
   subscription_id uuid [not null, ref: > webhook_subscriptions.id]

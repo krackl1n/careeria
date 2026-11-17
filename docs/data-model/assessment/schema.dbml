@@ -34,15 +34,11 @@ Table assessment_tasks {
   test_suite_file_id uuid [note: 'Внешний File ID; привязка и доступ требуют контракта']
   max_score numeric(10,2) [not null]
   position integer [not null]
+  allowed_languages text[] [not null, default: '{}', note: 'Допустимые языки решения задачи']
   indexes {
     (revision_id, id) [unique]
     (revision_id, position) [unique]
   }
-}
-Table task_allowed_languages {
-  task_id uuid [not null, ref: > assessment_tasks.id]
-  language text [not null]
-  indexes { (task_id, language) [pk] }
 }
 Table assessment_sessions {
   create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
