@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1109" viewBox="0 0 1900 1109" role="img" aria-label="ERD identity">
+<svg xmlns="http://www.w3.org/2000/svg" width="1890" height="1109" viewBox="0 0 1890 1109" role="img" aria-label="ERD identity">
 <rect width="100%" height="100%" fill="#f7f9fc"/>
 <text x="35" y="35" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="21" font-weight="600" fill="#142c46">Сессии и токены</text>
 <text x="35" y="61" xml:space="preserve" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="13" fill="#52687e">PK: первичный ключ   FK: внешний ключ   *: обязательно</text>
@@ -10,10 +10,10 @@
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,509.0 L 893.0,521.0"/><path d="M 902.0,509.0 L 902.0,521.0"/><path d="M 995.0,515.0 L 983.0,509.0 M 995.0,515.0 L 983.0,521.0"/><circle cx="976.0" cy="515.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e3" data-parent="sessions" data-parent-field="id" data-child="refresh_token_families" data-child-field="session_id" d="M 885.0 518.0 L 895.0 518.0 L 895.0 687.0 L 995.0 687.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,512.0 L 893.0,524.0"/><path d="M 902.0,512.0 L 902.0,524.0"/><path d="M 987.0,693.0 L 987.0,681.0"/><circle cx="976.0" cy="687.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e4" data-parent="refresh_token_families" data-parent-field="id" data-child="refresh_tokens" data-child-field="family_id" d="M 1365.0 664.0 L 1485.0 664.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1373.0,658.0 L 1373.0,670.0"/><path d="M 1382.0,658.0 L 1382.0,670.0"/><path d="M 1485.0,664.0 L 1473.0,658.0 M 1485.0,664.0 L 1473.0,670.0"/><circle cx="1466.0" cy="664.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e5" data-parent="refresh_tokens" data-parent-field="id" data-child="refresh_tokens" data-child-field="parent_token_id" d="M 1855.0 641.0 L 1865.0 641.0 L 1865.0 922.0 L 1475.0 922.0 L 1475.0 687.0 L 1485.0 687.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1863.0,635.0 L 1863.0,647.0"/><circle cx="1874.0" cy="641.0" r="4" fill="#f7f9fc"/><path d="M 1485.0,687.0 L 1473.0,681.0 M 1485.0,687.0 L 1473.0,693.0"/><circle cx="1466.0" cy="687.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e4" data-parent="refresh_token_families" data-parent-field="id" data-child="refresh_tokens" data-child-field="family_id" d="M 1365.0 664.0 L 1475.0 664.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1373.0,658.0 L 1373.0,670.0"/><path d="M 1382.0,658.0 L 1382.0,670.0"/><path d="M 1475.0,664.0 L 1463.0,658.0 M 1475.0,664.0 L 1463.0,670.0"/><circle cx="1456.0" cy="664.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e5" data-parent="refresh_tokens" data-parent-field="family_id" data-child="refresh_tokens" data-child-field="family_id" d="M 1845.0 667.0 L 1855.0 667.0 L 1855.0 670.0 L 1845.0 670.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1853.0,661.0 L 1853.0,673.0"/><circle cx="1864.0" cy="667.0" r="4" fill="#f7f9fc"/><path d="M 1845.0,670.0 L 1857.0,676.0 M 1845.0,670.0 L 1857.0,664.0"/><circle cx="1864.0" cy="670.0" r="4" fill="#f7f9fc"/></g>
 <g data-table="identities" transform="translate(35,486)">
 <rect width="370" height="163" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
 <path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
@@ -171,7 +171,7 @@
 <text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">revoke_reason</text>
 <text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
 </g>
-<g data-table="refresh_tokens" transform="translate(1485,588)">
+<g data-table="refresh_tokens" transform="translate(1475,591)">
 <rect width="370" height="324" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
 <path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
 <text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">refresh_tokens</text>

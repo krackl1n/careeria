@@ -111,6 +111,11 @@ Table candidate_skills {
 
 Table career_preferences {
   candidate_id uuid [pk, ref: > candidate_profiles.id]
+  desired_roles text[] [not null, default: '{}', note: 'Желаемые роли; пустой массив означает отсутствие предпочтений']
+  seniority_levels text[] [not null, default: '{}', note: 'Предпочитаемые уровни']
+  employment_types text[] [not null, default: '{}', note: 'Предпочитаемые виды занятости']
+  work_formats text[] [not null, default: '{}', note: 'Предпочитаемые форматы работы']
+  preferred_locations text[] [not null, default: '{}', note: 'Предпочитаемые места работы']
   willing_to_relocate boolean
   compensation_min numeric(18,2)
   compensation_max numeric(18,2)
@@ -118,32 +123,6 @@ Table career_preferences {
   compensation_period text
   version bigint [not null, default: 1]
   updated_at timestamptz [not null]
-}
-
-Table career_preference_desired_roles {
-  candidate_id uuid [not null, ref: > career_preferences.candidate_id]
-  value text [not null]
-  indexes { (candidate_id, value) [pk] }
-}
-Table career_preference_seniority_levels {
-  candidate_id uuid [not null, ref: > career_preferences.candidate_id]
-  value text [not null]
-  indexes { (candidate_id, value) [pk] }
-}
-Table career_preference_employment_types {
-  candidate_id uuid [not null, ref: > career_preferences.candidate_id]
-  value text [not null]
-  indexes { (candidate_id, value) [pk] }
-}
-Table career_preference_work_formats {
-  candidate_id uuid [not null, ref: > career_preferences.candidate_id]
-  value text [not null]
-  indexes { (candidate_id, value) [pk] }
-}
-Table career_preference_preferred_locations {
-  candidate_id uuid [not null, ref: > career_preferences.candidate_id]
-  value text [not null]
-  indexes { (candidate_id, value) [pk] }
 }
 
 Table resumes {

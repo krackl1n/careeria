@@ -2,8 +2,8 @@
 <rect width="100%" height="100%" fill="#f7f9fc"/>
 <text x="35" y="35" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="21" font-weight="600" fill="#142c46">OAuth-клиенты</text>
 <text x="35" y="61" xml:space="preserve" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="13" fill="#52687e">PK: первичный ключ   FK: внешний ключ   *: обязательно</text>
-<path data-ref="e0" data-parent="identities" data-parent-field="id" data-child="oauth_clients" data-child-field="created_by_identity_id" d="M 405.0 994.0 L 415.0 994.0 L 415.0 745.0 L 515.0 745.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,988.0 L 413.0,1000.0"/><circle cx="424.0" cy="994.0" r="4" fill="#f7f9fc"/><path d="M 515.0,745.0 L 503.0,739.0 M 515.0,745.0 L 503.0,751.0"/><circle cx="496.0" cy="745.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e0" data-parent="identities" data-parent-field="id" data-child="oauth_clients" data-child-field="created_by_identity_id" d="M 405.0 994.0 L 415.0 994.0 L 415.0 743.0 L 515.0 743.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,988.0 L 413.0,1000.0"/><circle cx="424.0" cy="994.0" r="4" fill="#f7f9fc"/><path d="M 515.0,743.0 L 503.0,737.0 M 515.0,743.0 L 503.0,749.0"/><circle cx="496.0" cy="743.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e1" data-parent="oauth_clients" data-parent-field="id" data-child="oauth_client_redirect_uris" data-child-field="oauth_client_id" d="M 885.0 532.0 L 895.0 532.0 L 895.0 171.0 L 995.0 171.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,526.0 L 893.0,538.0"/><path d="M 902.0,526.0 L 902.0,538.0"/><path d="M 995.0,171.0 L 983.0,165.0 M 995.0,171.0 L 983.0,177.0"/><circle cx="976.0" cy="171.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e2" data-parent="oauth_clients" data-parent-field="id" data-child="oauth_client_post_logout_redirect_uris" data-child-field="oauth_client_id" d="M 885.0 535.0 L 905.0 535.0 L 905.0 366.0 L 995.0 366.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
@@ -12,8 +12,8 @@
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,532.0 L 893.0,544.0"/><path d="M 902.0,532.0 L 902.0,544.0"/><path d="M 995.0,538.0 L 983.0,532.0 M 995.0,538.0 L 983.0,544.0"/><circle cx="976.0" cy="538.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e4" data-parent="oauth_clients" data-parent-field="id" data-child="oauth_client_scopes" data-child-field="oauth_client_id" d="M 885.0 541.0 L 905.0 541.0 L 905.0 710.0 L 995.0 710.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,535.0 L 893.0,547.0"/><path d="M 902.0,535.0 L 902.0,547.0"/><path d="M 995.0,710.0 L 983.0,704.0 M 995.0,710.0 L 983.0,716.0"/><circle cx="976.0" cy="710.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e5" data-parent="oauth_clients" data-parent-field="id" data-child="oauth_client_credentials" data-child-field="oauth_client_id" d="M 885.0 544.0 L 895.0 544.0 L 895.0 905.0 L 995.0 905.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,538.0 L 893.0,550.0"/><path d="M 902.0,538.0 L 902.0,550.0"/><path d="M 995.0,905.0 L 983.0,899.0 M 995.0,905.0 L 983.0,911.0"/><circle cx="976.0" cy="905.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e5" data-parent="oauth_clients" data-parent-field="client_type" data-child="oauth_client_credentials" data-child-field="client_type" d="M 885.0 582.0 L 895.0 582.0 L 895.0 928.0 L 995.0 928.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,576.0 L 893.0,588.0"/><path d="M 902.0,576.0 L 902.0,588.0"/><path d="M 995.0,928.0 L 983.0,922.0 M 995.0,928.0 L 983.0,934.0"/><circle cx="976.0" cy="928.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e6" data-parent="identities" data-parent-field="id" data-child="oauth_client_credentials" data-child-field="created_by_identity_id" d="M 405.0 997.0 L 995.0 997.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,991.0 L 413.0,1003.0"/><circle cx="424.0" cy="997.0" r="4" fill="#f7f9fc"/><path d="M 995.0,997.0 L 983.0,991.0 M 995.0,997.0 L 983.0,1003.0"/><circle cx="976.0" cy="997.0" r="4" fill="#f7f9fc"/></g>
 <g data-table="identities" transform="translate(35,942)">
@@ -36,7 +36,7 @@
 <text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">deleted_at</text>
 <text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
 </g>
-<g data-table="oauth_clients" transform="translate(515,485)">
+<g data-table="oauth_clients" transform="translate(515,483)">
 <rect width="370" height="370" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
 <path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
 <text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">oauth_clients</text>

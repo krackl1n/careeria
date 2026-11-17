@@ -2,17 +2,17 @@
 <rect width="100%" height="100%" fill="#f7f9fc"/>
 <text x="35" y="35" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="21" font-weight="600" fill="#142c46">Многофакторная аутентификация и восстановление</text>
 <text x="35" y="61" xml:space="preserve" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="13" fill="#52687e">PK: первичный ключ   FK: внешний ключ   *: обязательно</text>
-<path data-ref="e0" data-parent="identities" data-parent-field="id" data-child="mfa_factors" data-child-field="identity_id" d="M 405.0 479.0 L 515.0 479.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,473.0 L 413.0,485.0"/><path d="M 422.0,473.0 L 422.0,485.0"/><path d="M 515.0,479.0 L 503.0,473.0 M 515.0,479.0 L 503.0,485.0"/><circle cx="496.0" cy="479.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e1" data-parent="mfa_factors" data-parent-field="id" data-child="totp_factors" data-child-field="factor_id" d="M 885.0 455.0 L 895.0 455.0 L 895.0 148.0 L 995.0 148.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,449.0 L 893.0,461.0"/><path d="M 902.0,449.0 L 902.0,461.0"/><path d="M 987.0,154.0 L 987.0,142.0"/><circle cx="976.0" cy="148.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e2" data-parent="mfa_factors" data-parent-field="id" data-child="webauthn_credentials" data-child-field="factor_id" d="M 885.0 458.0 L 995.0 458.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,452.0 L 893.0,464.0"/><path d="M 902.0,452.0 L 902.0,464.0"/><path d="M 987.0,464.0 L 987.0,452.0"/><circle cx="976.0" cy="458.0" r="4" fill="#f7f9fc"/></g>
-<path data-ref="e3" data-parent="identities" data-parent-field="id" data-child="recovery_code_sets" data-child-field="identity_id" d="M 405.0 482.0 L 415.0 482.0 L 415.0 860.0 L 515.0 860.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
-<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,476.0 L 413.0,488.0"/><path d="M 422.0,476.0 L 422.0,488.0"/><path d="M 515.0,860.0 L 503.0,854.0 M 515.0,860.0 L 503.0,866.0"/><circle cx="496.0" cy="860.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e0" data-parent="identities" data-parent-field="id" data-child="mfa_factors" data-child-field="identity_id" d="M 405.0 456.0 L 515.0 456.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,450.0 L 413.0,462.0"/><path d="M 422.0,450.0 L 422.0,462.0"/><path d="M 515.0,456.0 L 503.0,450.0 M 515.0,456.0 L 503.0,462.0"/><circle cx="496.0" cy="456.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e1" data-parent="mfa_factors" data-parent-field="factor_type" data-child="totp_factors" data-child-field="factor_type" d="M 885.0 478.0 L 895.0 478.0 L 895.0 171.0 L 995.0 171.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,472.0 L 893.0,484.0"/><path d="M 902.0,472.0 L 902.0,484.0"/><path d="M 987.0,177.0 L 987.0,165.0"/><circle cx="976.0" cy="171.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e2" data-parent="mfa_factors" data-parent-field="factor_type" data-child="webauthn_credentials" data-child-field="factor_type" d="M 885.0 481.0 L 995.0 481.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,475.0 L 893.0,487.0"/><path d="M 902.0,475.0 L 902.0,487.0"/><path d="M 987.0,487.0 L 987.0,475.0"/><circle cx="976.0" cy="481.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e3" data-parent="identities" data-parent-field="id" data-child="recovery_code_sets" data-child-field="identity_id" d="M 405.0 459.0 L 415.0 459.0 L 415.0 860.0 L 515.0 860.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 413.0,453.0 L 413.0,465.0"/><path d="M 422.0,453.0 L 422.0,465.0"/><path d="M 515.0,860.0 L 503.0,854.0 M 515.0,860.0 L 503.0,866.0"/><circle cx="496.0" cy="860.0" r="4" fill="#f7f9fc"/></g>
 <path data-ref="e4" data-parent="recovery_code_sets" data-parent-field="id" data-child="recovery_codes" data-child-field="set_id" d="M 885.0 837.0 L 995.0 837.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
 <g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 893.0,831.0 L 893.0,843.0"/><path d="M 902.0,831.0 L 902.0,843.0"/><path d="M 995.0,837.0 L 983.0,831.0 M 995.0,837.0 L 983.0,843.0"/><circle cx="976.0" cy="837.0" r="4" fill="#f7f9fc"/></g>
-<g data-table="identities" transform="translate(35,427)">
+<g data-table="identities" transform="translate(35,404)">
 <rect width="370" height="163" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
 <path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
 <text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">identities</text>
@@ -32,7 +32,7 @@
 <text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">deleted_at</text>
 <text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
 </g>
-<g data-table="mfa_factors" transform="translate(515,403)">
+<g data-table="mfa_factors" transform="translate(515,380)">
 <rect width="370" height="278" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
 <path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
 <text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">mfa_factors</text>

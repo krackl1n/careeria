@@ -4,33 +4,11 @@
 
 ## ER-диаграмма
 
-Таблицы показаны со всеми полями из DBML. PK — первичный ключ, FK — внешний ключ, звёздочка — обязательное поле. Связи обозначены нотацией «воронья лапка»: круг — необязательная связь, черта — один, лапка — многие. Линии подходят к строкам полей; для составного FK линия подходит к первому полю, а все поля перечислены ниже. Кратность выведена из FK, NOT NULL и уникальных ключей DBML; дополнительные SQL-ограничения смотрите в миграциях или проекте ограничений. Внешние идентификаторы других сервисов не соединены межбазовыми FK.
+Таблицы показаны со всеми полями из DBML. PK — первичный ключ, FK — внешний ключ, звёздочка — обязательное поле. Связи обозначены нотацией «воронья лапка»: круг — необязательная связь, черта — один, лапка — многие. Линии подходят к строкам полей; для составного FK линия подходит к последнему полю, а все поля перечислены ниже. Кратность выведена из FK, NOT NULL и уникальных ключей DBML; дополнительные SQL-ограничения смотрите в миграциях или проекте ограничений. Внешние идентификаторы других сервисов не соединены межбазовыми FK.
 
-Схема разделена на части; общие таблицы повторяются там, где нужны для связей.
+![ER-диаграмма Candidate](erd.svg)
 
-### Профиль кандидата
-
-![ER-диаграмма Candidate: Профиль кандидата](erd-profile.svg)
-
-[Открыть SVG: Профиль кандидата](erd-profile.svg)
-
-### Версии резюме
-
-![ER-диаграмма Candidate: Версии резюме](erd-resume_files.svg)
-
-[Открыть SVG: Версии резюме](erd-resume_files.svg)
-
-### Резюме и активная версия
-
-![ER-диаграмма Candidate: Резюме и активная версия](erd-resume_catalog.svg)
-
-[Открыть SVG: Резюме и активная версия](erd-resume_catalog.svg)
-
-### Основное резюме
-
-![ER-диаграмма Candidate: Основное резюме](erd-resume_primary.svg)
-
-[Открыть SVG: Основное резюме](erd-resume_primary.svg)
+[Открыть SVG полностью](erd.svg)
 
 ## Перечень связей
 
@@ -42,17 +20,12 @@
 | 4 | candidate_profiles (id) | candidate_skill_sets (candidate_id) | не указано |
 | 5 | candidate_skill_sets (candidate_id) | candidate_skills (candidate_id) | не указано |
 | 6 | candidate_profiles (id) | career_preferences (candidate_id) | не указано |
-| 7 | career_preferences (candidate_id) | career_preference_desired_roles (candidate_id) | не указано |
-| 8 | career_preferences (candidate_id) | career_preference_seniority_levels (candidate_id) | не указано |
-| 9 | career_preferences (candidate_id) | career_preference_employment_types (candidate_id) | не указано |
-| 10 | career_preferences (candidate_id) | career_preference_work_formats (candidate_id) | не указано |
-| 11 | career_preferences (candidate_id) | career_preference_preferred_locations (candidate_id) | не указано |
-| 12 | candidate_profiles (id) | resumes (candidate_id) | не указано |
-| 13 | resumes (id) | resume_versions (resume_id) | не указано |
-| 14 | resume_versions (resume_id, id) | resumes (id, active_version_id) | не указано |
-| 15 | candidate_profiles (id) | candidate_resume_preferences (candidate_id) | не указано |
-| 16 | resumes (candidate_id, id) | candidate_resume_preferences (candidate_id, primary_resume_id) | не указано |
-| 17 | resume_versions (id) | resume_cleanup_jobs (resume_version_id) | не указано |
+| 7 | candidate_profiles (id) | resumes (candidate_id) | не указано |
+| 8 | resumes (id) | resume_versions (resume_id) | не указано |
+| 9 | resume_versions (resume_id, id) | resumes (id, active_version_id) | не указано |
+| 10 | candidate_profiles (id) | candidate_resume_preferences (candidate_id) | не указано |
+| 11 | resumes (candidate_id, id) | candidate_resume_preferences (candidate_id, primary_resume_id) | не указано |
+| 12 | resume_versions (id) | resume_cleanup_jobs (resume_version_id) | не указано |
 
 ## Таблицы и поля
 
@@ -159,6 +132,11 @@
 | Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
 |---|---|---|---|---|---|
 | candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
+| desired_roles | text[] | да | — | {} | Желаемые роли; пустой массив означает отсутствие предпочтений |
+| seniority_levels | text[] | да | — | {} | Предпочитаемые уровни |
+| employment_types | text[] | да | — | {} | Предпочитаемые виды занятости |
+| work_formats | text[] | да | — | {} | Предпочитаемые форматы работы |
+| preferred_locations | text[] | да | — | {} | Предпочитаемые места работы |
 | willing_to_relocate | boolean | нет / не указано | — | — | Готовность к переезду. |
 | compensation_min | numeric(18,2) | нет / не указано | — | — | Нижняя граница компенсации. |
 | compensation_max | numeric(18,2) | нет / не указано | — | — | Верхняя граница компенсации. |
@@ -166,51 +144,6 @@
 | compensation_period | text | нет / не указано | — | — | Период компенсации. |
 | version | bigint | да | — | 1 | Версия для контроля конкурентных изменений. |
 | updated_at | timestamptz | да | — | — | Время последнего изменения. |
-
-### career_preference_desired_roles
-
-| Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
-|---|---|---|---|---|---|
-| candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
-| value | text | да | PK | — | Значение элемента набора. |
-
-Составные ключи и индексы DBML: `PK (candidate_id, value)`.
-
-### career_preference_seniority_levels
-
-| Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
-|---|---|---|---|---|---|
-| candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
-| value | text | да | PK | — | Значение элемента набора. |
-
-Составные ключи и индексы DBML: `PK (candidate_id, value)`.
-
-### career_preference_employment_types
-
-| Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
-|---|---|---|---|---|---|
-| candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
-| value | text | да | PK | — | Значение элемента набора. |
-
-Составные ключи и индексы DBML: `PK (candidate_id, value)`.
-
-### career_preference_work_formats
-
-| Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
-|---|---|---|---|---|---|
-| candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
-| value | text | да | PK | — | Значение элемента набора. |
-
-Составные ключи и индексы DBML: `PK (candidate_id, value)`.
-
-### career_preference_preferred_locations
-
-| Поле | Тип | Обязательно | Ключ / уникальность | По умолчанию | Пояснение |
-|---|---|---|---|---|---|
-| candidate_id | uuid | да | PK, FK | — | Идентификатор кандидата. |
-| value | text | да | PK | — | Значение элемента набора. |
-
-Составные ключи и индексы DBML: `PK (candidate_id, value)`.
 
 ### resumes
 

@@ -17,11 +17,6 @@ ALTER TABLE career_preferences ADD CONSTRAINT ck_preferences_version CHECK (vers
     AND (compensation_min IS NULL OR compensation_max IS NULL OR compensation_min <= compensation_max)
     AND ((compensation_min IS NULL AND compensation_max IS NULL) OR (compensation_currency IS NOT NULL AND compensation_period IS NOT NULL))
   );
-ALTER TABLE career_preference_desired_roles ADD CONSTRAINT ck_desired_roles_value CHECK (length(btrim(value)) > 0);
-ALTER TABLE career_preference_seniority_levels ADD CONSTRAINT ck_seniority_value CHECK (length(btrim(value)) > 0);
-ALTER TABLE career_preference_employment_types ADD CONSTRAINT ck_employment_value CHECK (length(btrim(value)) > 0);
-ALTER TABLE career_preference_work_formats ADD CONSTRAINT ck_work_format_value CHECK (length(btrim(value)) > 0);
-ALTER TABLE career_preference_preferred_locations ADD CONSTRAINT ck_location_value CHECK (length(btrim(value)) > 0);
 ALTER TABLE resumes ADD CONSTRAINT ck_resume_version CHECK (version > 0), ADD CONSTRAINT ck_resume_title CHECK (length(btrim(title)) > 0);
 ALTER TABLE resume_versions ADD CONSTRAINT ck_resume_version_fields CHECK (version > 0 AND ordinal > 0),
   ADD CONSTRAINT ck_resume_ready CHECK (status <> 'READY' OR (file_id IS NOT NULL AND verified_mime_type IS NOT NULL AND verified_size_bytes IS NOT NULL AND verified_size_bytes > 0 AND verified_checksum IS NOT NULL AND ready_at IS NOT NULL));
