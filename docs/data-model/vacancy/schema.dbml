@@ -1,0 +1,74 @@
+Project careeria_vacancy {
+  database_type: 'PostgreSQL'
+  Note: 'Проект Vacancy Service; ограничения в docs/services/vacancy/index.md. Не миграция.'
+}
+Enum vacancy_status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  CLOSED
+}
+Enum work_format {
+  OFFICE
+  REMOTE
+  HYBRID
+}
+Table vacancies {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  company_id uuid [not null, note: 'Внешний ID Company Service, не FK']
+  author_id uuid [not null, note: 'Внешний ID Identity, устанавливается из доверенного контекста']
+  title text [not null]
+  description text [not null]
+  status vacancy_status [not null, default: 'DRAFT']
+  required_experience text
+  employment_type text
+  work_format work_format [not null]
+  location text
+  compensation_min numeric(18,2)
+  compensation_max numeric(18,2)
+  compensation_currency char(3)
+  compensation_period text
+  compensation_tax_basis text [note: 'GROSS или NET, если указано']
+  compensation_bonus text
+  version bigint [not null, default: 1]
+  first_published_at timestamptz
+  published_at timestamptz [note: 'Время последней публикации или восстановления']
+  closed_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (company_id, status, created_at, id)
+    (status, published_at, id)
+  }
+}
+Table vacancy_skills {
+  vacancy_id uuid [not null, ref: > vacancies.id]
+  skill_key text [not null]
+  display_name text [not null]
+  indexes { (vacancy_id, skill_key) [pk] }
+  Note: 'Ограниченный набор значений внутри Vacancy, заменяется атомарно.'
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+  Note: 'Предлагаемая форма по миграции Identity; способ публикации и дополнительные индексы требуют согласования.'
+}

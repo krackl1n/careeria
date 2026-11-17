@@ -1,0 +1,107 @@
+Project careeria_hiring {
+  database_type: 'PostgreSQL'
+  Note: 'Проект; не миграция. Правила и неопределённости: docs/services/hiring/index.md.'
+}
+Table applications {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  vacancy_id uuid [not null, note: 'Внешний Vacancy ID']
+  candidate_id uuid [not null, note: 'Внешний Candidate ID']
+  current_stage text [not null]
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (vacancy_id, candidate_id) }
+  Note: 'Активность и уникальность активного отклика требуют согласованного частичного индекса.'
+}
+Table stage_transitions {
+  id uuid [pk]
+  application_id uuid [not null, ref: > applications.id]
+  ordinal bigint [not null]
+  from_stage text [note: 'NULL при начальном переходе']
+  to_stage text [not null]
+  actor_id uuid [not null, note: 'Внешний инициатор или сервисная identity']
+  reason text
+  occurred_at timestamptz [not null]
+  indexes { (application_id, ordinal) [unique] }
+}
+Table interviews {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  application_id uuid [not null, ref: > applications.id]
+  interview_type text [not null]
+  meeting_format text [not null]
+  status text [not null]
+  scheduled_start_at timestamptz [not null]
+  scheduled_end_at timestamptz [not null]
+  meeting_room_url text [note: 'Состав и защита данных комнаты требуют решения']
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (application_id, status) }
+}
+Table interview_participants {
+  interview_id uuid [not null, ref: > interviews.id]
+  identity_id uuid [not null, note: 'Внешний Identity ID']
+  role text [not null]
+  indexes { (interview_id, identity_id) [pk] }
+}
+Table interview_feedback {
+  interview_id uuid [not null]
+  author_id uuid [not null]
+  score integer [not null]
+  notes text [not null]
+  submitted_at timestamptz [not null]
+  indexes { (interview_id, author_id) [pk] }
+}
+Ref: interview_feedback.(interview_id, author_id) > interview_participants.(interview_id, identity_id)
+Table job_offers {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  application_id uuid [not null, ref: > applications.id]
+  compensation bigint [not null, note: 'Единица и период суммы требуют согласования']
+  currency char(3) [not null]
+  grade text [not null]
+  status text [not null]
+  expires_at timestamptz [not null]
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (status, expires_at)
+    (application_id, created_at)
+  }
+}
+Table processed_events {
+  consumer text [not null]
+  event_id uuid [not null]
+  outcome text [not null]
+  processed_at timestamptz [not null]
+  indexes { (consumer, event_id) [pk] }
+  Note: 'Предлагаемая дедупликация consumer; порядок и защита от устаревших событий требуют отдельной модели.'
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+  Note: 'Предлагаемая форма; согласовать с общей инфраструктурой.'
+}

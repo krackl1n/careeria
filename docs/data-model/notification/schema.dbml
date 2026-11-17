@@ -1,0 +1,81 @@
+Project careeria_notification {
+  database_type: 'PostgreSQL'
+  Note: 'Проект: не миграция. Гарантии и ограничения — docs/services/notification/index.md.'
+}
+Table notification_templates {
+  id uuid [pk]
+  template_key text [not null, unique]
+  status text [not null]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+Table template_revisions {
+  id uuid [pk]
+  template_id uuid [not null, ref: > notification_templates.id]
+  revision integer [not null]
+  channel text [not null]
+  locale text [not null]
+  subject_template text
+  body_template text [not null]
+  status text [not null, note: 'Опубликованная редакция неизменяема']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  indexes { (template_id, channel, locale, revision) [unique] }
+}
+Table delivery_jobs {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  recipient_id uuid [not null, note: 'Внешний Identity ID']
+  template_revision_id uuid [not null, ref: > template_revisions.id]
+  rendered_subject text [note: 'Фиксируется перед первой отправкой; содержит чувствительные данные']
+  rendered_body text [note: 'Фиксируется перед первой отправкой; повтор использует тот же снимок']
+  template_payload jsonb [not null, note: 'Данные рендеринга; минимум персональных данных']
+  status text [not null]
+  scheduled_at timestamptz [not null]
+  next_attempt_at timestamptz
+  attempt_count integer [not null, default: 0]
+  lease_token uuid
+  lease_until timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (id, recipient_id) [unique]
+    (status, next_attempt_at)
+    (status, scheduled_at)
+  }
+  Note: 'Одна задача одному получателю и одному каналу; канал определяется неизменяемой редакцией.'
+}
+Table delivery_attempts {
+  id uuid [pk]
+  job_id uuid [not null, ref: > delivery_jobs.id]
+  ordinal integer [not null]
+  lease_token uuid [not null]
+  status text [not null]
+  provider_message_id text
+  error_class text
+  started_at timestamptz [not null]
+  finished_at timestamptz
+  indexes { (job_id, ordinal) [unique] }
+}
+Table in_app_notifications {
+  id uuid [pk]
+  delivery_job_id uuid [not null, unique]
+  recipient_id uuid [not null, note: 'Внешний Identity ID']
+  title text
+  body text [not null]
+  created_at timestamptz [not null]
+  indexes { (recipient_id, created_at, id) }
+  Note: 'Снимок показанного сообщения; получатель согласован с job составным FK.'
+}
+Ref: in_app_notifications.(delivery_job_id, recipient_id) > delivery_jobs.(id, recipient_id)
+Table processed_events {
+  consumer text [not null]
+  source_event_id uuid [not null]
+  outcome text [not null]
+  processed_at timestamptz [not null]
+  indexes { (consumer, source_event_id) [pk] }
+  Note: 'Сохраняется атомарно с полным набором задач для одного входного события.'
+}

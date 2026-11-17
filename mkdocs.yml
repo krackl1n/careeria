@@ -45,10 +45,14 @@ extra:
       - contributing
       - project
       - architecture
+      - services
+      - data-model
       - deployment
       - security
       - readme.md
     titles:
+      services: Сервисы
+      data-model: Модели данных
       architecture: Архитектура
       c4: C4
       plantuml: Диаграммы и модели

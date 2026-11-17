@@ -1,0 +1,24 @@
+@startuml identity-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Пользователь" as user
+actor "OAuth-клиент" as client
+actor "Администратор\nплатформы" as admin
+rectangle "Identity Service" {
+ usecase "Зарегистрировать\nучётную запись" as register
+ usecase "Войти и подтвердить\nконтакт" as auth
+ usecase "Рассмотреть запрос\nсогласия" as consent
+ usecase "Запустить и завершить\nавторизацию" as authorize
+ usecase "Обменять / обновить\nтокены" as token
+ usecase "Получить discovery\nи публичные ключи" as metadata
+ usecase "Зарегистрировать OAuth-клиент\nи signing key" as setup
+}
+user -- register
+user -- auth
+user -- consent
+client -- authorize
+client -- token
+client -- metadata
+admin -- setup
+@enduml
