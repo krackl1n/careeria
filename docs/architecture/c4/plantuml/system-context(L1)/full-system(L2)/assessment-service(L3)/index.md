@@ -64,6 +64,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ## Доменная модель и хранение
 
+Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/assessment/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
+
 Модель декомпозирована на изолированные агрегаты с вынесением логики расчетов в стратегии:
 
 | Сущность | Основные данные | Инварианты |
@@ -83,7 +85,7 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 - **StrictAutoScoringStrategy:** 100% оценка по результатам автотестов; сессия считается пройденной только при прохождении всех обязательных тестов (Screening-задачи).
 - **LiveCodingRubricStrategy:** оценка на основе матрицы компетенций (Problem Solving, Communication, Code Quality, Edge Cases), заполняемой нанимающим инженером в реальном времени.
 
-Предлагаемые таблицы: assessment_templates, assessment_tasks, assessment_sessions, task_submissions, assessment_manual_reviews, idempotency_keys, assessment_outbox.
+Предлагаемые таблицы: assessment_templates, assessment_tasks, assessment_sessions, task_submissions, assessment_manual_reviews, assessment_outbox.
 
 Межсервисные связи опираются на внешние UUID (candidate_id, application_id, company_id) без cross-database foreign keys.
 

@@ -1,0 +1,13 @@
+-- Проект PostgreSQL-ограничений, не миграция.
+ALTER TABLE integration_connections ADD CONSTRAINT ck_connection_version CHECK (version > 0 AND mapping_version > 0), ADD CONSTRAINT ck_connection_lifecycle CHECK (lifecycle IN ('ACTIVE','PAUSED','REVOKED'));
+ALTER TABLE inbound_signing_keys ADD CONSTRAINT ck_inbound_key_version CHECK (key_version > 0), ADD CONSTRAINT ck_inbound_key_interval CHECK (valid_until IS NULL OR valid_until > valid_from), ADD CONSTRAINT ck_inbound_key_status CHECK (status IN ('ACTIVE','RETIRING','REVOKED'));
+ALTER TABLE webhook_subscriptions ADD CONSTRAINT ck_subscription_version CHECK (version > 0), ADD CONSTRAINT ck_subscription_lifecycle CHECK (lifecycle IN ('PENDING_VERIFICATION','ACTIVE','PAUSED','DELETED'));
+ALTER TABLE subscription_revisions ADD CONSTRAINT ck_subscription_revision CHECK (ordinal > 0 AND payload_schema_version > 0);
+ALTER TABLE outbound_signing_keys ADD CONSTRAINT ck_outbound_key_version CHECK (key_version > 0), ADD CONSTRAINT ck_outbound_key_interval CHECK (valid_until IS NULL OR valid_until > valid_from), ADD CONSTRAINT ck_outbound_key_status CHECK (status IN ('ACTIVE','RETIRING','REVOKED'));
+ALTER TABLE inbound_receipts ADD CONSTRAINT ck_inbound_status CHECK (status IN ('ACCEPTED','IGNORED')), ADD CONSTRAINT ck_inbound_event CHECK (status <> 'ACCEPTED' OR normalized_event_id IS NOT NULL), ADD CONSTRAINT ck_inbound_versions CHECK (schema_version > 0 AND mapping_version > 0);
+ALTER TABLE webhook_deliveries ADD CONSTRAINT ck_delivery_fields CHECK (version > 0 AND attempt_count >= 0 AND deadline > created_at), ADD CONSTRAINT ck_delivery_status CHECK (status IN ('PENDING','IN_FLIGHT','RETRY_WAIT','DELIVERED','FAILED','CANCELLED')), ADD CONSTRAINT ck_delivery_lease_pair CHECK ((lease_token IS NULL) = (lease_until IS NULL)), ADD CONSTRAINT ck_delivery_inflight CHECK (status <> 'IN_FLIGHT' OR (lease_token IS NOT NULL AND lease_until IS NOT NULL));
+ALTER TABLE webhook_delivery_attempts ADD CONSTRAINT ck_attempt_ordinal CHECK (ordinal > 0), ADD CONSTRAINT ck_attempt_time CHECK (finished_at IS NULL OR finished_at >= started_at), ADD CONSTRAINT ck_attempt_http CHECK (http_status IS NULL OR http_status BETWEEN 100 AND 599);
+ALTER TABLE integration_connections ADD CONSTRAINT ck_integration_request_pair_1 CHECK ((create_request_id IS NULL) = (create_request_hash IS NULL));
+ALTER TABLE webhook_subscriptions ADD CONSTRAINT ck_integration_request_pair_2 CHECK ((create_request_id IS NULL) = (create_request_hash IS NULL));
+ALTER TABLE inbound_signing_keys ADD CONSTRAINT ck_integration_inbound_signing_keys_version CHECK (version > 0);
+ALTER TABLE outbound_signing_keys ADD CONSTRAINT ck_integration_outbound_signing_keys_version CHECK (version > 0);

@@ -1,0 +1,135 @@
+Project careeria_company {
+  database_type: 'PostgreSQL'
+  Note: 'Проект Company Service; ограничения и открытые решения см. docs/services/company/index.md. Не миграция.'
+}
+Enum company_lifecycle {
+  ACTIVE
+  BLOCKED
+}
+Enum member_role {
+  OWNER
+  ADMIN
+  RECRUITER
+  HIRING_MANAGER
+}
+Enum member_status {
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+Enum invitation_status {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+Enum verification_request_status {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  SUPERSEDED
+}
+
+Table companies {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  name text [not null]
+  legal_name text
+  registration_country char(2)
+  registration_number text
+  description text
+  website_url text
+  lifecycle company_lifecycle [not null, default: 'ACTIVE']
+  blocked_at timestamptz
+  blocked_by uuid [note: 'Внешний Identity ID']
+  block_reason text
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  Note: 'Легальные реквизиты и критерии уникальности не утверждены. Блокировка и верификация независимы.'
+}
+Table company_members {
+  id uuid [pk]
+  company_id uuid [not null, ref: > companies.id]
+  identity_id uuid [not null, note: 'Внешний Identity ID; не межсервисный FK']
+  role member_role [not null]
+  status member_status [not null]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (company_id, identity_id) [unique]
+    (company_id, status, role)
+  }
+  Note: 'Одна строка членства на пару; повторное принятие приглашения реактивирует REMOVED согласно правилам сервиса.'
+}
+Table company_invitations {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  company_id uuid [not null, ref: > companies.id]
+  invitee_identity_id uuid [not null, note: 'Приглашение существующей identity; внешний ID']
+  proposed_role member_role [not null]
+  status invitation_status [not null]
+  invited_by uuid [not null, note: 'Внешний Identity ID']
+  expires_at timestamptz [not null]
+  accepted_at timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  Note: 'Частичный UNIQUE по company_id, invitee_identity_id WHERE status = PENDING; см. constraints.sql.'
+}
+Table verification_requests {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  company_id uuid [not null, ref: > companies.id]
+  submitted_by uuid [not null]
+  ordinal bigint [not null, note: 'Монотонный номер заявки в компании']
+  status verification_request_status [not null]
+  submitted_legal_name text [not null, note: 'Снимок реквизитов на момент подачи']
+  submitted_registration_country char(2) [not null]
+  submitted_registration_number text [not null]
+  submitted_at timestamptz [not null]
+  decided_by uuid
+  decided_at timestamptz
+  decision_reason text
+  version bigint [not null, default: 1]
+  indexes { (company_id, ordinal) [unique] }
+  Note: 'Последняя заявка определяется по ordinal; частичный UNIQUE для PENDING — constraints.sql.'
+}
+Table company_audit_events {
+  id uuid [pk]
+  company_id uuid [not null, ref: > companies.id]
+  actor_id uuid [not null]
+  action text [not null]
+  subject_id uuid
+  reason text
+  occurred_at timestamptz [not null]
+  indexes { (company_id, occurred_at) }
+  Note: 'Аудит чувствительных действий; не доменный агрегат. Состав, защита и срок хранения требуют решения.'
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+  Note: 'Предлагаемая форма по миграции Identity; публикацию и индексы нужно согласовать с инфраструктурой.'
+}

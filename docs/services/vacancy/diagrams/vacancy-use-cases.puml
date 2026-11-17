@@ -1,0 +1,26 @@
+@startuml vacancy-use-cases
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName sans-serif
+actor "Представитель\nработодателя" as rep
+actor "Кандидат /\nпосетитель" as candidate
+rectangle "Vacancy Service" {
+  usecase "Создать черновик" as create
+  usecase "Изменить содержание\nи требования" as update
+  usecase "Опубликовать вакансию" as publish
+  usecase "Архивировать /\nвосстановить публикацию" as archive
+  usecase "Закрыть вакансию" as close
+  usecase "Просмотреть вакансию" as view
+  usecase "Просмотреть вакансии\nкомпании" as list
+}
+rep -- create
+rep -- update
+rep -- publish
+rep -- archive
+rep -- close
+rep -- view
+rep -- list
+candidate -- view
+candidate -- list
+@enduml

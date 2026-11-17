@@ -1,0 +1,37 @@
+@startuml candidate-resume-use-cases
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName sans-serif
+actor "Кандидат" as candidate
+actor "Уполномоченный\nрекрутер" as recruiter
+actor "Hiring Service" as hiring
+actor "File Service" as files
+actor "Планировщик" as timer
+rectangle "Candidate Service: резюме" {
+  usecase "Загрузить резюме\nили новую версию" as R1
+  usecase "Отменить загрузку" as R2
+  usecase "Просмотреть доступные\nрезюме" as R3
+  usecase "Переименовать резюме" as R9
+  usecase "Выбрать версию\nи основное резюме" as R4
+  usecase "Удалить резюме" as R5
+  usecase "Скачать доступное\nрезюме" as R6
+  usecase "Подготовить данные\nдля отклика" as R7
+  usecase "Согласовать загрузки\nи освободить привязки" as R8
+}
+candidate -- R1
+candidate -- R2
+candidate -- R3
+candidate -- R9
+candidate -- R4
+candidate -- R5
+candidate -- R6
+recruiter -- R3
+recruiter -- R6
+hiring -- R7
+timer -- R8
+files -- R1
+files -- R6
+files -- R7
+files -- R8
+@enduml

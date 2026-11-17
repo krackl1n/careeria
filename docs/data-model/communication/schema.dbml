@@ -1,0 +1,119 @@
+Project careeria_communication {
+  database_type: 'PostgreSQL'
+  Note: 'Проект, не миграция; правила и оговорки в docs/services/communication/index.md.'
+}
+Table conversations {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  type text [not null]
+  context_id uuid [note: 'Внешний ID отклика или интервью']
+  status text [not null]
+  next_sequence bigint [not null, default: 1]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (type, context_id) }
+}
+Table direct_conversation_pairs {
+  conversation_id uuid [pk, ref: > conversations.id]
+  identity_low uuid [not null, note: 'Внешний Identity ID']
+  identity_high uuid [not null, note: 'Внешний Identity ID']
+  indexes { (identity_low, identity_high) [unique] }
+  Note: 'Канонический порядок UUID; равенство паре участников обеспечивается транзакцией.'
+}
+Table conversation_participants {
+  conversation_id uuid [not null, ref: > conversations.id]
+  identity_id uuid [not null, note: 'Внешний Identity ID']
+  role text [not null]
+  status text [not null]
+  joined_at timestamptz [not null]
+  removed_at timestamptz
+  archived_at timestamptz [note: 'Персональное скрытие из активного списка']
+  is_muted boolean [not null, default: false]
+  indexes { (conversation_id, identity_id) [pk] }
+}
+Table messages {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  conversation_id uuid [not null, ref: > conversations.id]
+  sequence bigint [not null]
+  sender_id uuid [not null, note: 'Внешний Identity ID']
+  reply_to_message_id uuid
+  content text
+  status text [not null]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  edited_at timestamptz
+  deleted_at timestamptz
+  indexes {
+    (conversation_id, sequence) [unique]
+    (conversation_id, id) [unique]
+  }
+}
+Ref: messages.(conversation_id, sender_id) > conversation_participants.(conversation_id, identity_id)
+Ref: messages.(conversation_id, reply_to_message_id) > messages.(conversation_id, id)
+Table message_attachments {
+  id uuid [pk]
+  message_id uuid [not null, ref: > messages.id]
+  file_id uuid [not null, note: 'Внешний File ID']
+  binding_operation_id uuid [not null, unique]
+  file_name text [not null]
+  size_bytes bigint [not null]
+  mime_type text [not null]
+  created_at timestamptz [not null]
+  indexes { (message_id, file_id) [unique] }
+}
+Table conversation_read_receipts {
+  conversation_id uuid [not null]
+  identity_id uuid [not null]
+  last_read_sequence bigint [note: 'NULL до первого прочтения']
+  updated_at timestamptz [not null]
+  indexes { (conversation_id, identity_id) [pk] }
+}
+Ref: conversation_read_receipts.(conversation_id, identity_id) > conversation_participants.(conversation_id, identity_id)
+Ref: conversation_read_receipts.(conversation_id, last_read_sequence) > messages.(conversation_id, sequence)
+Table message_reactions {
+  message_id uuid [not null, ref: > messages.id]
+  identity_id uuid [not null, note: 'Внешний Identity ID; активное членство проверяется сервисом']
+  emoji_code text [not null]
+  created_at timestamptz [not null]
+  indexes { (message_id, identity_id, emoji_code) [pk] }
+}
+Table attachment_cleanup_jobs {
+  id uuid [pk]
+  file_id uuid [not null]
+  binding_operation_id uuid [not null, unique]
+  status text [not null]
+  attempts integer [not null, default: 0]
+  next_attempt_at timestamptz
+  lease_token uuid
+  lease_until timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (status, next_attempt_at) }
+  Note: 'Не зависит FK от удаляемой строки вложения; служит для восстановления внешнего освобождения.'
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+}

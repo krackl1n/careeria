@@ -1,0 +1,163 @@
+name: Render docs
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  plantuml:
+    name: PlantUML diagrams
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Graphviz and download PlantUML
+        env:
+          PLANTUML_VERSION: '1.2026.8'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" \
+            --output "$RUNNER_TEMP/plantuml.jar"
+      - name: Check syntax and render SVG diagrams
+        run: |
+          mkdir -p "$RUNNER_TEMP/plantuml-output"
+          find . -type f -name '*.puml' -not -path './.git/*' -print0 |
+            xargs -0 -r java -Djava.awt.headless=true -jar "$RUNNER_TEMP/plantuml.jar" \
+              -failfast2 -tsvg -o plantuml-ci-output
+          find . -type f -path '*/plantuml-ci-output/*.svg' \
+            -exec cp --parents -t "$RUNNER_TEMP/plantuml-output" {} +
+      - name: Upload diagrams
+        uses: actions/upload-artifact@v4
+        with:
+          name: plantuml-diagrams
+          path: ${{ runner.temp }}/plantuml-output/
+          if-no-files-found: error
+
+  documentation:
+    name: Documentation and IDEF0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install documentation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz ruby
+          python -m pip install -r docs/requirements.txt
+          curl --fail --location --retry 3 --silent --show-error \
+            https://github.com/plantuml/plantuml/releases/download/v1.2026.8/plantuml-1.2026.8.jar \
+            --output "$RUNNER_TEMP/plantuml.jar"
+      - name: Test documentation tools and validate diagrams
+        env:
+          PLANTUML_JAR: ${{ runner.temp }}/plantuml.jar
+        run: |
+          python -m unittest discover -s docs/tools -p 'test_*.py'
+          python docs/tools/idef0_render.py --check
+          python docs/tools/idef0_inline.py --check
+          python -m mkdocs build --config-file mkdocs.yml --strict
+          python docs/tools/check.py
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: .site-docs/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  database-diagrams:
+    name: Database diagrams
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install DBML and layout dependencies
+        run: npm install --prefix "$RUNNER_TEMP/diagram-deps" --no-save @dbml/core@12.1.0 elkjs@0.12.1
+      - name: Validate DBML and generate ER diagrams
+        env:
+          NODE_PATH: ${{ runner.temp }}/diagram-deps/node_modules
+        run: |
+          find . -type f -name '*.dbml' -not -path './.git/*' -print0 |
+            xargs -0 -r -n 1 node -e 'const fs = require("fs"); require("@dbml/core").Parser.parse(fs.readFileSync(process.argv[1], "utf8"), "dbml"); console.log("Valid:", process.argv[1]);'
+          if [ -f docs/tools/generate-erd.cjs ]; then
+            node docs/tools/generate-erd.cjs
+          fi
+      - name: Validate SVG files
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import xml.etree.ElementTree as ET
+          for path in pathlib.Path('docs').rglob('*.svg'):
+              ET.parse(path)
+          PY
+      - name: Upload ER diagrams
+        if: ${{ hashFiles('docs/tools/generate-erd.cjs') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: er-diagrams
+          path: docs/data-model/**/reference/*.svg
+          if-no-files-found: error
+
+  go:
+    name: Go tests and vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache: false
+      - name: Test all Go modules
+        run: make test
+      - name: Run go vet
+        run: make vet
+      - name: Build all Go modules
+        run: make build
+
+  protobuf:
+    name: Protobuf lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.69.0'
+      - name: Check vendored dependencies
+        run: make proto-vendor-check
+      - name: Lint protobuf definitions
+        working-directory: contracts
+        run: buf lint
+
+  ci:
+    name: CI
+    if: always()
+    needs: [plantuml, documentation, database-diagrams, go, protobuf]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all checks to pass
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          results = json.loads(os.environ['RESULTS'])
+          failed = [name for name, job in results.items() if job['result'] != 'success']
+          if failed:
+              print('Failed or skipped checks:', ', '.join(failed))
+              sys.exit(1)
+          PY
