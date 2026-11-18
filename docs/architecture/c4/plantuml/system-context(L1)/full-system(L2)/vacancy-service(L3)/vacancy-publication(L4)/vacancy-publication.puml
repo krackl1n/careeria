@@ -1,0 +1,79 @@
+@startuml vacancy-publication
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title Vacancy Service - публикация и жизненный цикл вакансии (L4)
+
+package "Прикладной слой" {
+    class VacancyApplicationService <<Application Service>> {
+        + CreateDraft(input: CreateVacancy): UUID
+        + Update(input: UpdateVacancy): error
+        + Publish(input: PublishVacancy): error
+        + Archive(id: UUID, version: Int64): error
+        + Close(id: UUID, version: Int64): error
+    }
+}
+package "Доменная модель" {
+    class Vacancy <<Aggregate Root>> {
+        - id: UUID
+        - companyID: UUID
+        - title: String
+        - description: String
+        - status: VacancyStatus
+        - version: Int64
+        + Publish(now: Timestamp): error
+        + Archive(): error
+        + Close(now: Timestamp): error
+    }
+    class PublishingPolicy <<Domain Policy>> {
+        + Validate(vacancy: Vacancy): error
+    }
+    class SkillRequirement <<Value Object>> {
+        - skillKey: String
+        - level: String
+    }
+    class Compensation <<Value Object>> {
+        - minimum: Decimal
+        - maximum: Decimal
+        - currency: String
+        - period: String
+        + Validate(): error
+    }
+}
+package "Выходные интерфейсы" {
+    interface VacancyRepository <<Port>> {
+        + Get(id: UUID): Vacancy
+        + Save(vacancy: Vacancy, expectedVersion: Int64): error
+    }
+    interface AuthorizationPort <<Port>> {
+        + Check(actorID: UUID, resourceID: UUID, action: String): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+    interface OutboxWriter <<Port>> {
+        + Append(event: DomainEvent): error
+    }
+}
+VacancyApplicationService ..> Vacancy : изменяет
+VacancyApplicationService ..> PublishingPolicy : проверяет готовность
+PublishingPolicy ..> Vacancy : проверяет
+Vacancy *-- SkillRequirement : навыки
+Vacancy *-- Compensation : условия оплаты
+VacancyApplicationService ..> VacancyRepository : использует
+VacancyApplicationService ..> AuthorizationPort : использует
+VacancyApplicationService ..> TransactionManager : использует
+VacancyApplicationService ..> OutboxWriter : использует
+
+Vacancy -[hidden]right- PublishingPolicy
+SkillRequirement -[hidden]right- Compensation
+Vacancy -[hidden]down- SkillRequirement
+VacancyRepository -[hidden]right- AuthorizationPort
+TransactionManager -[hidden]right- OutboxWriter
+VacancyRepository -[hidden]down- TransactionManager
+@enduml

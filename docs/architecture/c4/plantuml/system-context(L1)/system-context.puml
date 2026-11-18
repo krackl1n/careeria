@@ -21,8 +21,7 @@ Rel(hiringManager, platform, "Оценивает кандидатов", "HTTPS")
 Rel(companyAdmin, platform, "Управляет компанией и ролями", "HTTPS")
 Rel(platform, identityProvider, "Аутентифицирует пользователей", "OAuth 2.0 / OIDC")
 Rel(platform, notificationProviders, "Доставляет уведомления", "Email / Push / SMS")
-Rel(platform, employerHrSystem, "Передаёт данные найма", "REST / Webhooks")
-Rel(employerHrSystem, platform, "Передаёт изменения", "Webhooks")
+Rel(platform, employerHrSystem, "Обменивается данными найма", "HTTPS / REST / Webhooks")
 
 ShowArchitectureLegend()
 @enduml

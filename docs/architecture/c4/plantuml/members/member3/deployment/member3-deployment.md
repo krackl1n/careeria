@@ -18,8 +18,7 @@
 |---|---|---|---|---|
 | **Рабочее место пользователя** | Физическое устройство | Windows / macOS / Linux / iOS / Android | `Web Client (Browser Runtime)` | Клиентский интерфейс соискателя (редактор кода, чат, аудио/видео) и нанимающей команды; исполнение React/TypeScript, WebRTC и WebSocket. |
 | **Периметральный шлюз (DMZ)** | Виртуальный шлюз | Linux VM / K8s Edge Ingress (2 vCPU, 4 GB RAM) | `Ingress Controller (Nginx / Envoy)` | Точка входа в кластер: SSL/TLS-терминация сертификатов, балансировка L7, защита от DDoS, проксирование HTTP/WSS. |
-| **Контур приложений: Web App** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `web-app` (Pods × 2..10, Node.js 20 / Next.js 14) | Серверный рендеринг веб-страниц (SSR), начальная генерация HTML, раздача скомпилированных JS/CSS-бандлов и статических ассетов платформы. Масштабируется через HPA по утилизации CPU. |
-| **Контур приложений: BFF** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `bff` (Pods × 2..10, Go 1.23) | Сессионный шлюз, CSRF-защита, проверка `HttpOnly`-cookie `__Host-Careeria-Session`, маршрутизация авторизованных gRPC-вызовов. |
+| **Контур приложений: Web App** | Kubernetes Deployment | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `web-app` (Pods × 2..10, Node.js 20 / Next.js 14) | Серверный рендеринг веб-страниц (SSR), начальная генерация HTML, раздача скомпилированных JS/CSS-бандлов и статических ассетов платформы. Масштабируется через HPA по утилизации CPU. BFF управляет сессией и проверяет CSRF. |
 | **Контур приложений: API Gateway** | Kubernetes Pod | K8s Worker Node (2 vCPU, 2 GB RAM) | `api-gateway` (Pods × 2..10, Go 1.23) | Маршрутизация внешних REST/JSON запросов в gRPC-вызовы внутренних сервисов, rate limiting, инжекция W3C Trace Context. |
 | **Контур приложений: Assessment Service** | Kubernetes Deployment | K8s Worker Nodes (High CPU, 4 vCPU, 4 GB RAM per pod) | `assessment-service` (Pods × 2..10) | Бизнес-логика банка заданий, управление жизненным циклом сессий испытаний, вычисление скоринговых стратегий (Strategy pattern). |
 | **Контур приложений: Communication Service** | Kubernetes Deployment | K8s Worker Nodes (4 vCPU, 4 GB RAM per pod) | `communication-service` (Pods × 2..10) | Управление диалогами, сообщениями, реакциями, вложениями и отметками о прочтении (watermarks). Масштабируется через HPA. |
@@ -42,11 +41,10 @@
 | Браузер пользователя | Ingress Controller | Загрузка страниц, статических скриптов и вызовы REST API | HTTPS / TLS 1.3 | 443 | Глобальная сеть (Internet) | TLS 1.3, шифр-сьюты ECDHE-RSA-AES256-GCM, HSTS |
 | Браузер пользователя | LiveKit Media Server | Аудио/видео стриминг и data-каналы Live Coding | WebRTC / UDP | 7881 | Публичная сеть / Host Network | DTLS-SRTP шифрование медиатрафика |
 | Браузер пользователя | Centrifugo Server | Постоянное WebSocket-соединение для мгновенных push-уведомлений и чата | WSS / HTTPS | 8000 | careeria-media namespace | TLS 1.3, авторизация по подписанным JWT |
-| Ingress Controller | Web App Pod | Проксирование запросов к SSR-страницам и статике | HTTP / 1.1 | 3000 | Внутрикластерный трафик | ClusterIP, приватная сеть |
-| Ingress Controller | BFF Pod | Проксирование API-запросов клиентов (`/api/*`) | HTTP / 1.1 | 8080 | Внутрикластерный трафик | ClusterIP, приватная сеть |
+| Ingress Controller | Web App Pod | Страницы, статика и запросы к BFF | HTTP / 1.1 | 3000 | Внутрикластерный трафик | ClusterIP, приватная сеть |
 | Ingress Controller | LiveKit Media Server | Сигнализация комнат и WebRTC-рукопожатие | WSS / HTTPS | 7880 | careeria-media namespace | Внутренний mTLS |
 | Ingress Controller | Centrifugo Server | Проксирование постоянных WebSocket-соединений | WSS / HTTP 1.1 | 8000 | careeria-media namespace | Внутренний трафик кластера |
-| BFF Pod | API Gateway Pod | Авторизованные межсервисные RPC-вызовы | gRPC / HTTP2 | 50051 | Приватная сеть K8s | Внутрикластерный mTLS |
+| Web App Pod (BFF) | API Gateway Pod | Авторизованные запросы | HTTP / JSON | 8080 | Приватная сеть K8s | Внутрикластерный mTLS |
 | API Gateway Pod | Assessment Service Pod | Вызовы RPC-методов домена оценки (`SubmitTaskSolution` и др.) | gRPC / HTTP2 | 50055 | careeria-apps namespace | Round-Robin балансировка, mTLS |
 | API Gateway Pod | Communication Service Pod | Вызовы RPC-методов чата (`SendMessage`, `ListMessages` и др.) | gRPC / HTTP2 | 50056 | careeria-apps namespace | Round-Robin балансировка, mTLS |
 | Assessment Service Pod | OpenFGA Pod | Проверка ReBAC-полномочий на прохождение теста (`can_submit`) | gRPC / HTTP2 | 8081 | Внутренняя сеть K8s | Взаимный mTLS, корпоративный Root CA |
@@ -66,7 +64,7 @@
 ## 3. Архитектура развёртывания, масштабирования и отказоустойчивости
 
 ### 3.1. Развёртывание прикладных сервисов (Stateless Microservices)
-* Микросервисы бизнес-логики `Assessment Service` и `Communication Service`, сервисы шлюзов `Web App`, `BFF` и `API Gateway`, а также брокеры трансляции `Realtime Publisher` разворачиваются как stateless Kubernetes Deployments.
+* Микросервисы бизнес-логики `Assessment Service` и `Communication Service`, веб-приложение с серверным BFF и API Gateway, а также брокеры трансляции `Realtime Publisher` разворачиваются как stateless Kubernetes Deployments.
 * Горизонтальное масштабирование управляется через **Horizontal Pod Autoscaler (HPA)** на основе утилизации CPU и задержек обработки запросов (Pods × 2..10).
 * Трафик балансируется средствами стандартных сервисов Kubernetes (`ClusterIP` и встроенная L4/L7 балансировка).
 

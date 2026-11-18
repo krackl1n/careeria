@@ -4,7 +4,7 @@
 !endprocedure
 
 !unquoted procedure FileServiceContainer($tags)
-    Container(fileService, "File Service", "Go, gRPC, MinIO Go SDK", "Multipart upload, presigned URL, MIME/size validation, antivirus hook и lifecycle файлов.", $tags=$tags)
+    Container(fileService, "File Service", "Go, gRPC, MinIO Go SDK", "Multipart upload, presigned URL, MIME/size validation, antivirus hook и lifecycle файлов.", $tags=$tags, $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/")
 !endprocedure
 
 !unquoted procedure ObjectStorageContainer($tags)
@@ -17,4 +17,8 @@
 
 !unquoted procedure LiveKitContainer($tags)
     Container(livekit, "LiveKit", "LiveKit, WebRTC, LiveKit React SDK", "Комнаты интервью, аудио, видео, screen sharing и опциональная запись.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure FileDatabase($tags)
+    ContainerDb(fileDb, "File DB", "PostgreSQL", "Метаданные файлов, сеансы загрузки, привязки и задачи очистки.", $tags=$tags)
 !endprocedure

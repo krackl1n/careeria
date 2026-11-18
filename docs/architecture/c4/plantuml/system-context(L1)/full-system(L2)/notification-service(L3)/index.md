@@ -1,12 +1,62 @@
 # Notification Service (L3)
 
-Notification Service принимает синхронные запросы через gRPC, читает триггерные события из Kafka и создаёт фоновые задачи доставки. Он хранит шаблоны, задачи и in-app Inbox в собственной PostgreSQL-базе; отправку email, push и SMS изолирует адаптер провайдеров SendGrid, FCM и Twilio.
+<!-- excerpt -->
+
+Notification Service принимает команды и события из Kafka, выбирает шаблон и создаёт задачу доставки. Обработчики сохраняют уведомления в личном кабинете или передают их провайдерам email, push и SMS.
+
+Команда API или доменное событие превращается в задачу уведомления. Рабочие обработчики выбирают задачу, загружают шаблон и формируют сообщение для нужного канала. Адаптер провайдера выполняет внешнюю доставку, а репозитории хранят её состояние и пользовательский Inbox. Stream Server предоставляет поток сохранённых уведомлений клиенту.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/system-context(L1)/full-system(L2)/notification-service(L3)/notification-service.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Notification Service (L3)</p>
+
+<p align="right">Таблица - Элементы. Notification Service (L3)</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| Kafka | Apache Kafka, KRaft | Событийная шина платформы. Хранит доменные сообщения в топиках и передаёт их группам потребителей для независимой асинхронной обработки. |
+| Schema Registry | Apicurio Registry, Avro | Хранилище версий схем событий Avro на базе Apicurio Registry. Издатели и потребители получают схемы для сериализации и чтения доменных сообщений. |
+| gRPC Server | Go / gRPC | Принимает синхронные команды и запросы уведомлений, валидирует DTO и передаёт их прикладному сервису. |
+| Stream Server | Go / gRPC Stream | Поддерживает пользовательские соединения, принимает in-app push через Go Channels и отправляет его подключённым клиентам. Не заменяет постоянное хранение Inbox. |
+| Events Consumer | Go / Kafka Client | Читает триггерные события, получает Avro-схемы, декодирует и проверяет сообщение, вызывает создание задачи. |
+| Worker Pool | Go Async Workers | Ограничивает параллелизм, выбирает готовые задачи и инициирует Execute. Управляет жизненным циклом работников, но не решает бизнес-содержание сообщения. |
+| Notification Service | Go Application Service | Notification Service принимает команды и события из Kafka, выбирает шаблон и создаёт задачу доставки. Обработчики сохраняют уведомления в личном кабинете или передают их провайдерам email, push и SMS. |
+| Template Repo | Go / SQL | Загружает сырой шаблон и его параметры. Не собирает данные из чужих бизнес-баз. |
+| Job Repo | Go / SQL | Сохраняет задачи и результаты попыток; обеспечивает конкурентную выборку готовых заданий через SKIP LOCKED и согласованные переходы состояния. |
+| In-App Repo | Go / SQL | Сохраняет и читает постоянный Inbox пользователя. Ограничивает выборки получателем и параметрами страницы. |
+| Template Engine | Go Template | Загружает шаблон через Template Repo и рендерит текст из payload задачи. Возвращает ошибки отсутствующих данных или невалидного шаблона. |
+| Notification Provider Adapter | Go REST Clients | Преобразует подготовленное уведомление в запрос SendGrid, FCM или Twilio, нормализует ошибки и идентификаторы ответов. |
+| Notification DB | PostgreSQL | Шаблоны уведомлений, delivery jobs и in-app Inbox. |
+| Notification Providers | Внешняя система | SendGrid, Firebase Cloud Messaging и Twilio. Доставляют email, push и SMS по запросам сервиса уведомлений. |
+
+<p align="right">Таблица - Связи. Notification Service (L3)</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| API Gateway | gRPC Server | Управляет уведомлениями. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| API Gateway | Stream Server | Удержание стримов. Запрос и ответ передаются как сообщения Protobuf. | gRPC Stream |
+| Kafka | Events Consumer | Доставляет события уведомлений. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| gRPC Server | Notification Service | Вызов сценариев. Координирует Schedule, Cancel, FetchPending и Execute; связывает задания, шаблоны, Inbox и каналы отправки. | In-process |
+| Events Consumer | Notification Service | Создание джобы. Координирует Schedule, Cancel, FetchPending и Execute; связывает задания, шаблоны, Inbox и каналы отправки. | In-process |
+| Worker Pool | Notification Service | Запуск джоб. Координирует Schedule, Cancel, FetchPending и Execute; связывает задания, шаблоны, Inbox и каналы отправки. | In-process |
+| Notification Service | Stream Server | Push события. | Go Channels |
+| Notification Service | Job Repo | Управление Jobs. Сохраняет задачи и результаты попыток; обеспечивает конкурентную выборку готовых заданий через SKIP LOCKED и согласованные переходы состояния. | In-process |
+| Notification Service | In-App Repo | Управление Inbox. Сохраняет и читает постоянный Inbox пользователя. Ограничивает выборки получателем и параметрами страницы. | In-process |
+| Notification Service | Template Engine | Рендеринг текста. Загружает шаблон через Template Repo и рендерит текст из payload задачи. Возвращает ошибки отсутствующих данных или невалидного шаблона. | In-process |
+| Notification Service | Notification Provider Adapter | Передача уведомления. Преобразует подготовленное уведомление в запрос SendGrid, FCM или Twilio, нормализует ошибки и идентификаторы ответов. | In-process |
+| Events Consumer | Schema Registry | Получает Avro-схемы. | Registry API |
+| Template Engine | Template Repo | Запрос шаблона. Загружает сырой шаблон и его параметры. Не собирает данные из чужих бизнес-баз. | In-process |
+| Notification Provider Adapter | Notification Providers | Отправляет уведомления. | Email / Push / SMS |
+| Template Repo | Notification DB | Чтение шаблонов. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Job Repo | Notification DB | Пулинг задач (SKIP LOCKED). Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| In-App Repo | Notification DB | Запись / Выборка Inbox. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+
+<!-- /excerpt -->
 
 ## Статус описания и границы ответственности
 
@@ -26,6 +76,8 @@ Notification Service отвечает за подготовку и достав�
 
 ### Компоненты внутри Notification Service
 
+<p align="right">Таблица - Компоненты внутри Notification Service (Notification Service (L3))</p>
+
 | Элемент | Технология / слой | Ответственность | Основные зависимости |
 |---|---|---|---|
 | gRPC Server | Go / gRPC, входной адаптер | Принимает синхронные команды и запросы уведомлений, валидирует DTO и передаёт их прикладному сервису. | Notification Service |
@@ -41,6 +93,8 @@ Notification Service отвечает за подготовку и достав�
 
 ### Соседние контейнеры и границы
 
+<p align="right">Таблица - Соседние контейнеры и границы (Notification Service (L3))</p>
+
 | Элемент | Принадлежность | Роль в сценариях |
 |---|---|---|
 | Careeria | Граница нашей системы | Включает сервис и платформенную инфраструктуру. |
@@ -52,6 +106,8 @@ Notification Service отвечает за подготовку и достав�
 | Notification Providers | Внешние системы: SendGrid, FCM, Twilio | Принимают сообщения email, push и SMS. На текущей диаграмме отдельного SMTP Server или SMTP Adapter нет. |
 
 ## Каталог юзкейсов
+
+<p align="right">Таблица - Каталог юзкейсов (Notification Service (L3))</p>
 
 | Сценарий | Точка входа | Назначение | Результат |
 |---|---|---|---|
@@ -164,3 +220,5 @@ Job Repo и In-App Repo не должны начинать независимы�
 - Подтверждения доставки, read receipts и настройки пользователя — отдельные расширения, пока не показанные на диаграмме.
 
 [Компонентные диаграммы](../index.md#components) · [Company Service](../company-service%28L3%29/index.md) · [Hiring Service](../hiring-service%28L3%29/index.md) · [L2 платформенных сервисов](../../../members/member4/context%28L1%29/containers%28L2%29/index.md)
+
+[Диаграмма кода. Notification Service - планирование и исполнение доставки (L4)](notification-delivery%28L4%29/index.md)

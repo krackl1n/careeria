@@ -1,12 +1,69 @@
 # Identity Service (L3)
 
-Сервис владеет учётными записями пользователей платформы Careeria, аутентификацией, хранением учётных данных, выпуском и верификацией криптографических токенов, управлением пользовательскими сессиями и ротацией refresh-токенов, а также интеграцией с внешним Identity Provider. Сервис не хранит бизнес-данные резюме кандидата, компаний, вакансий или процессов найма. Доступ к платформенным ресурсам авторизуется на основе выданных токенов и контекста идентичности.
+<!-- excerpt -->
+
+Identity Service регистрирует пользователей, проверяет учётные данные, выпускает токены и управляет сессиями. Для входа через внешнего провайдера сервис поддерживает OIDC.
+
+Входные запросы принимает gRPC Server. Прикладные компоненты ведут регистрацию, шаги аутентификации и обмен токенов, а службы безопасности проверяют пароли и управляют ключами подписи. Постоянные данные пользователей и сессий сохраняются в Identity DB. Redis хранит краткоживущие шаги авторизации, адаптер внешних интеграций обеспечивает взаимодействие с провайдером OIDC.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/system-context(L1)/full-system(L2)/identity-service(L3)/identity-service.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Identity Service (L3)</p>
+
+<p align="right">Таблица - Элементы. Identity Service (L3)</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| gRPC Server | Go / gRPC | Предоставляет API сервисов RegistrationService, AuthenticationService, OAuthService, IdentitySessionService, IdentityMetadataService и Admin API. Проверяет структуру входных DTO, валидирует форматы, переводит доменные ошибки в gRPC Status Codes. |
+| Authentication & Registration Service | Go Application Service | Координирует сценарии регистрации новых пользователей, аутентификации по логину и паролю, верификации контактов (email/телефон), прохождения шагов MFA и фиксации consent. |
+| OAuth & Token Service | Go Application Service | Координирует шаги OAuth 2.0 / OIDC авторизации: Authorize, ContinueAuthorization, обмен authorization code на токены, обмен refresh-токена с ротацией семейства, обнаружение reuse, отзыв токенов и сборку UserInfo. |
+| Credential Security Service | Go / Argon2id, Crypto | Реализует хеширование паролей Argon2id с криптографической солью, проверку хешей за константное время, генерацию случайных криптографических токенов и хеширование SHA-256 для refresh-токенов и authorization codes. |
+| Token Minting & Key Service | Go / JWT, Ed25519 | Формирует полезную нагрузку JWT Access Token по профилю RFC 9068 и OIDC ID Token, подписывает приватным Ed25519 ключом, публикует JWKS и осуществляет ротацию ключей. |
+| External Integration Adapter | Go / HTTP, OIDC | Адаптер для внешних интеграций: взаимодействие с внешним Identity Provider по OIDC, валидация внешних токенов, запрос UserInfo, связывание external subjects с локальными identities платформы. |
+| Identity Repo | Go / pgx, sqlc | Сохраняет и загружает агрегаты Identity, подтверждённые и основные Email и Phone, а также связи внешних провайдеров ExternalIdentityAccount. |
+| Credential & Auth State Repo | Go / pgx, sqlc | Сохраняет хеши паролей IdentityPasswordCredential, отслеживает счётчик неудачных попыток входа и временную блокировку аккаунта в IdentityPasswordAuthState. |
+| Session & Token Family Repo | Go / pgx, sqlc | Сохраняет сущности Session, назначенные SessionScopes, агрегаты RefreshTokenFamily и цепочки одноразовых RefreshToken. Выполняет атомарную блокировку семейства токенов при ротации. |
+| OAuth Client & Keys Repo | Go / pgx, sqlc | Загружает настройки зарегистрированных OAuth-клиентов, разрешённые redirect URIs, scopes, ранее выданные пользователем гранты и активные/устаревающие signing keys. |
+| Transactional Outbox | Go / pgx, sqlc | Фиксирует интеграционные и аудиторные события безопасности в PostgreSQL в той же транзакции, что и изменение доменного состояния. Доставка в Kafka выполняется платформенным Debezium CDC через чтение PostgreSQL WAL. |
+| Authorization Transaction Repo | Go / Redis | Хранит в Redis краткоживущие транзакции авторизации AuthorizationTransaction и одноразовые authorization codes AuthorizationCode с атомарным погашением. |
+| Identity DB | PostgreSQL | Реляционная СУБД для постоянного хранения пользователей, хешей паролей, профилей, сессий, истории ротаций refresh-токенов, клиентов, ключей и outbox-событий. |
+| Identity Redis | Redis | In-memory хранилище с TTL для промежуточных транзакций авторизации и одноразовых authorization codes. |
+| Identity Provider | Внешняя система | Внешний провайдер аутентификации на базе Keycloak. Используется для федеративного входа через OAuth 2.0 и OIDC. |
+
+<p align="right">Таблица - Связи. Identity Service (L3)</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| API Gateway | gRPC Server | Запросы авторизации и токенов. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| gRPC Server | Authentication & Registration Service | Регистрация и вход. Координирует сценарии регистрации новых пользователей, аутентификации по логину и паролю, верификации контактов (email/телефон), прохождения шагов MFA и фиксации consent. | In-process |
+| gRPC Server | OAuth & Token Service | OAuth 2.0 / OIDC. Координирует шаги OAuth 2.0 / OIDC авторизации: Authorize, ContinueAuthorization, обмен authorization code на токены, обмен refresh-токена с ротацией семейства, обнаружение reuse, отзыв токенов и сборку UserInfo. | In-process |
+| Authentication & Registration Service | External Integration Adapter | Внешняя аутентификация. Адаптер для внешних интеграций: взаимодействие с внешним Identity Provider по OIDC, валидация внешних токенов, запрос UserInfo, связывание external subjects с локальными identities платформы. | In-process |
+| Authentication & Registration Service | Credential Security Service | Проверка пароля (Argon2id). Реализует хеширование паролей Argon2id с криптографической солью, проверку хешей за константное время, генерацию случайных криптографических токенов и хеширование SHA-256 для refresh-токенов и authorization codes. | In-process |
+| OAuth & Token Service | Credential Security Service | Генерация / хеширование токенов. Реализует хеширование паролей Argon2id с криптографической солью, проверку хешей за константное время, генерацию случайных криптографических токенов и хеширование SHA-256 для refresh-токенов и authorization codes. | In-process |
+| OAuth & Token Service | Token Minting & Key Service | Подпись Access и ID токенов. Формирует полезную нагрузку JWT Access Token по профилю RFC 9068 и OIDC ID Token, подписывает приватным Ed25519 ключом, публикует JWKS и осуществляет ротацию ключей. | In-process |
+| Token Minting & Key Service | OAuth Client & Keys Repo | Signing keys. Загружает настройки зарегистрированных OAuth-клиентов, разрешённые redirect URIs, scopes, ранее выданные пользователем гранты и активные/устаревающие signing keys. | In-process |
+| Authentication & Registration Service | Identity Repo | Identity и контакты. Сохраняет и загружает агрегаты Identity, подтверждённые и основные Email и Phone, а также связи внешних провайдеров ExternalIdentityAccount. | In-process |
+| Authentication & Registration Service | Credential & Auth State Repo | Credentials и lockout. Сохраняет хеши паролей IdentityPasswordCredential, отслеживает счётчик неудачных попыток входа и временную блокировку аккаунта в IdentityPasswordAuthState. | In-process |
+| Authentication & Registration Service | Authorization Transaction Repo | Шаги авторизации. Хранит в Redis краткоживущие транзакции авторизации AuthorizationTransaction и одноразовые authorization codes AuthorizationCode с атомарным погашением. | In-process |
+| Authentication & Registration Service | Transactional Outbox | События профиля. Фиксирует интеграционные и аудиторные события безопасности в PostgreSQL в той же транзакции, что и изменение доменного состояния. Доставка в Kafka выполняется платформенным Debezium CDC через чтение PostgreSQL WAL. | In-process |
+| OAuth & Token Service | Session & Token Family Repo | Сессии и ротация семейств. Сохраняет сущности Session, назначенные SessionScopes, агрегаты RefreshTokenFamily и цепочки одноразовых RefreshToken. Выполняет атомарную блокировку семейства токенов при ротации. | In-process |
+| OAuth & Token Service | OAuth Client & Keys Repo | Клиенты и гранты. Загружает настройки зарегистрированных OAuth-клиентов, разрешённые redirect URIs, scopes, ранее выданные пользователем гранты и активные/устаревающие signing keys. | In-process |
+| OAuth & Token Service | Authorization Transaction Repo | Коды и транзакции. Хранит в Redis краткоживущие транзакции авторизации AuthorizationTransaction и одноразовые authorization codes AuthorizationCode с атомарным погашением. | In-process |
+| OAuth & Token Service | Transactional Outbox | События сессий и reuse. Фиксирует интеграционные и аудиторные события безопасности в PostgreSQL в той же транзакции, что и изменение доменного состояния. Доставка в Kafka выполняется платформенным Debezium CDC через чтение PostgreSQL WAL. | In-process |
+| Identity Repo | Identity DB | identities, accounts. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Credential & Auth State Repo | Identity DB | passwords, auth_state. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Session & Token Family Repo | Identity DB | sessions, token families. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| OAuth Client & Keys Repo | Identity DB | clients, keys. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Transactional Outbox | Identity DB | Transactional outbox (CDC). Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Authorization Transaction Repo | Identity Redis | transactions, codes (TTL). | Redis Protocol / TCP |
+| External Integration Adapter | Identity Provider | OIDC Discovery, Tokens / UserInfo. | HTTPS / OIDC |
+
+<!-- /excerpt -->
 
 ## Статус описания и границы ответственности
 
@@ -19,6 +76,8 @@
 - **Credential Security Service** — безопасное хеширование и верификация паролей алгоритмом Argon2id, защита от подбора, криптографическая генерация случайных токенов высокой энтропии и их хеширование SHA-256 для безопасного хранения.
 
 Это компоненты одного контейнера, а не отдельно развёртываемые микросервисы. Все они работают in-process в одном рантайме Go.
+
+<p align="right">Таблица - Статус описания и границы ответственности (Identity Service (L3))</p>
 
 | Данные / действие | Владелец | Граница ответственности |
 |---|---|---|
@@ -38,6 +97,8 @@
 
 ### Компоненты внутри Identity Service
 
+<p align="right">Таблица - Компоненты внутри Identity Service (Identity Service (L3))</p>
+
 | Элемент | Технология / слой | Ответственность | Основные зависимости |
 |---|---|---|---|
 | gRPC Server | Go / gRPC, входной адаптер | Предоставляет API сервисов `RegistrationService`, `AuthenticationService`, `OAuthService`, `IdentitySessionService`, `IdentityMetadataService` и Admin API. Проверяет структуру входных DTO, валидирует форматы, переводит доменные ошибки в gRPC Status Codes. | Authentication & Registration Service, OAuth & Token Service |
@@ -55,6 +116,8 @@
 
 ### Соседние контейнеры и границы
 
+<p align="right">Таблица - Соседние контейнеры и границы (Identity Service (L3))</p>
+
 | Элемент | Принадлежность | Роль в сценариях |
 |---|---|---|
 | Careeria | Граница нашей системы | Включает прикладные контейнеры и платформенную инфраструктуру системы, отделяя их от внешних систем. |
@@ -65,6 +128,8 @@
 | Identity Provider | Внешняя система вне границы Careeria | Внешний OIDC IdP: обеспечивает корпоративную федерацию, единую точку входа и внешнюю аутентификацию пользователей. Расположен вне границы системы Careeria. |
 
 ## Каталог юзкейсов
+
+<p align="right">Таблица - Каталог юзкейсов (Identity Service (L3))</p>
 
 | № | Юзкейс | Прикладной компонент | Статус контракта | Итоговый результат |
 |---|---|---|---|---|
@@ -340,6 +405,8 @@ Careeria поддерживает гибридную схему аутентиф
 
 В сервисе **нет отдельного outbox-воркера**: фоновый поллинг БД не выполняется. Платформенный коннектор Debezium CDC считывает события напрямую из журнала упреждающей записи PostgreSQL (WAL) и надёжно публикует их в топик Kafka `identity.events` с гарантией At-Least-Once. Это исключает накладные расходы на периодические SELECT-запросы и конкурентные блокировки строк в рантайме сервиса.
 
+<p align="right">Таблица - Транзакции, outbox и Debezium CDC (Identity Service (L3))</p>
+
 | Событие | Назначение / триггер | Содержимое полезной нагрузки (Payload) |
 |---|---|---|
 | `IdentityCreated` | Первичная регистрация пользователя | `identity_id`, `status = 'pending'`, `created_at` |
@@ -371,6 +438,8 @@ Careeria поддерживает гибридную схему аутентиф
 
 ## Что требуется закрепить перед реализацией
 
+<p align="right">Таблица - Что требуется закрепить перед реализацией (Identity Service (L3))</p>
+
 | Вопрос | Предлагаемое решение / следующий этап проектирования |
 |---|---|
 | Полное удаление учётной записи | Текущий сценарий выполняет мягкое удаление. Полная физическая очистка данных требует координации распределённой саги с Candidate, Company, Hiring и File Service. |
@@ -385,3 +454,5 @@ Careeria поддерживает гибридную схему аутентиф
 ## Следующий уровень · L4
 
 - [Identity Service — диаграмма классов регистрации и аутентификации (L4)](identity-authentication-service%28L4%29/index.md)
+
+[Диаграмма кода. Identity Service - обновление токенов и обнаружение reuse (L4)](identity-token-rotation%28L4%29/index.md)

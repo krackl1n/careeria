@@ -11,7 +11,7 @@ System_Boundary(careeria, "Careeria") {
 
         together {
             Component(auth_svc, "Authentication & Registration Service", "Go Application Service", "Регистрация, проверка паролей (Argon2id), валидация email/phone OTP, MFA и управление consent")
-            Component(oauth_svc, "OAuth & Token Service", "Go Application Service", "OAuth 2.0/OIDC: Authorize, Continue, Token Exchange, ротация refresh токенов, отзыв и UserInfo")
+            Component(oauth_svc, "OAuth & Token Service", "Go Application Service", "OAuth 2.0/OIDC: Authorize, Continue, Token Exchange, ротация refresh токенов, отзыв и UserInfo", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/identity-service(L3)/identity-token-rotation(L4)/")
         }
 
         together {

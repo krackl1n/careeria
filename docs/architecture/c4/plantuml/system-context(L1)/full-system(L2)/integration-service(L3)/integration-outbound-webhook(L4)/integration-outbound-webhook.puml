@@ -1,0 +1,87 @@
+@startuml integration-outbound-webhook
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title Integration Service - исходящие вебхуки и повторная доставка (L4)
+
+package "Прикладной слой" {
+    class OutboundWebhookService <<Application Service>> {
+        + Plan(event: DomainEvent): error
+        + Execute(deliveryID: UUID, leaseToken: UUID): error
+        + Cancel(deliveryID: UUID): error
+    }
+}
+package "Доменная модель" {
+    class WebhookSubscription <<Aggregate Root>> {
+        - id: UUID
+        - connectionID: UUID
+        - currentRevisionID: UUID
+        - status: SubscriptionStatus
+        + ValidateForDelivery(): error
+    }
+    class SubscriptionRevision <<Aggregate Root>> {
+        - id: UUID
+        - subscriptionID: UUID
+        - endpointURL: String
+        - contractVersion: Int
+        - eventTypes: List<String>
+    }
+    class WebhookDelivery <<Aggregate Root>> {
+        - id: UUID
+        - subscriptionID: UUID
+        - revisionID: UUID
+        - sourceEventID: UUID
+        - payloadBytes: Bytes
+        - leaseToken: UUID
+        - deadline: Timestamp
+        + RecordResult(token: UUID, result: HTTPResult): error
+    }
+    class WebhookDeliveryAttempt <<Entity>> {
+        - id: UUID
+        - deliveryID: UUID
+        - ordinal: Int
+        - leaseToken: UUID
+        - signingKeyID: UUID
+        - httpStatus: Int
+    }
+}
+package "Выходные интерфейсы" {
+    interface IntegrationRepository <<Port>> {
+        + FindSubscriptions(eventType: String, companyID: UUID): List<WebhookSubscription>
+        + CreateDelivery(delivery: WebhookDelivery): error
+        + ClaimDue(now: Timestamp): WebhookDelivery
+        + SaveResult(delivery: WebhookDelivery, leaseToken: UUID): error
+    }
+    interface OutboundWebhookAdapter <<Port>> {
+        + Encode(event: DomainEvent, revision: SubscriptionRevision): Bytes
+        + Sign(payload: Bytes, keyID: UUID): String
+    }
+    interface WebhookHTTPClient <<Port>> {
+        + Post(endpoint: String, payload: Bytes, signature: String): HTTPResult
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+}
+OutboundWebhookService ..> WebhookSubscription : проверяет подписку
+WebhookSubscription --> SubscriptionRevision : редакция
+OutboundWebhookService ..> WebhookDelivery : ведёт доставку
+WebhookDelivery --> SubscriptionRevision : параметры
+WebhookDelivery --> WebhookDeliveryAttempt : попытки
+OutboundWebhookService ..> IntegrationRepository : использует
+OutboundWebhookService ..> OutboundWebhookAdapter : использует
+OutboundWebhookService ..> WebhookHTTPClient : использует
+OutboundWebhookService ..> TransactionManager : использует
+
+WebhookSubscription -[hidden]right- SubscriptionRevision
+WebhookDelivery -[hidden]right- WebhookDeliveryAttempt
+WebhookSubscription -[hidden]down- WebhookDelivery
+IntegrationRepository -[hidden]right- OutboundWebhookAdapter
+WebhookHTTPClient -[hidden]right- TransactionManager
+IntegrationRepository -[hidden]down- WebhookHTTPClient
+@enduml

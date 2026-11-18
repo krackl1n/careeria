@@ -1,15 +1,64 @@
 # Сквозной динамический процесс оценки компетенций и realtime-оповещения (Dynamic Diagram)
 
-Динамическая диаграмма C4 (**Dynamic Diagram**) фиксирует поведение программной системы во времени, наглядно раскрывая хронологическую последовательность взаимодействия компонентов, сервисов и внешних платформ при выполнении критически важного пользовательского сценария.
+<!-- excerpt -->
 
-В рамках домена оценки и коммуникаций (**Assessment & Communication Domain**, зона ответственности **Member 3**) ключевым сквозным процессом выступает:  
-**«Отправка соискателем решения практического задания (`SubmitTaskSolution`), ReBAC-авторизация и валидация жизненного цикла сессии (`SessionLifecyclePolicy`), изолированное исполнение кода и юнит-тестов в защищенной песочнице (`Code Execution Runner`), вычисление итогового балла с применением доменного паттерна "Стратегия" (`ScoringStrategy`), атомарный переход конечного автомата (FSM) сессии в состояние `EVALUATED` с фиксацией в `Assessment DB`, возврат синхронного подтверждения с детальным отчетом тестов пользователю (200 OK) и гарантированная доставка доменного события через `Transactional Outbox` (CDC Debezium / Apache Kafka) с мгновенным push-оповещением нанимающей команды через `Realtime Publisher` и `Centrifugo` (WebSocket), продвижением кандидата в воронке `Hiring Service` и нотификацией соискателя»**.
+Кандидат отправляет решение в Assessment Service. Сервис получает отчёт раннера и сохраняет оценку. Нанимающая команда получает обновление через Centrifugo.
+
+Сначала Assessment Service проверяет право кандидата на отправку решения и передаёт код с тестами в раннер. По полученному отчёту сервис рассчитывает оценку и фиксирует её вместе с событием. Через Debezium и Kafka результат достигает подписчиков. Realtime Publisher обновляет интерфейс нанимающей команды, Hiring Service и Notification Service выполняют дальнейшую обработку.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/dynamic/member3-dynamic.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Проверка решения и доставка результата</p>
+
+<p align="right">Таблица - Элементы. Проверка решения и доставка результата</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| Кандидат | Пользователь | Проходит техническое испытание, отправляет решение в веб-интерфейсе и получает вердикт. |
+| Рекрутер / Нанимающий менеджер | Пользователь | Отслеживает прогресс кандидата в реальном времени и получает WebSocket-уведомление об успешной сдаче. |
+| Web Application | Next.js, React, TypeScript, Tailwind CSS | Интерфейс React работает в браузере. Серверный BFF обрабатывает пользовательскую сессию и обращается к API Gateway. Страницы и BFF развёртываются вместе в одном приложении Next.js. |
+| API Gateway | Go, grpc-gateway | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| Assessment Service | Go, gRPC, Protobuf, pgx, sqlc | Assessment Service управляет шаблонами заданий и попытками кандидатов. Для проверки кода он вызывает Code Execution Runner, затем рассчитывает балл и сохраняет результат в Assessment DB. |
+| OpenFGA | OpenFGA, PostgreSQL | Сервис проверки доступа на основе отношений между субъектом и ресурсом. Доменные сервисы запрашивают решение о доступе, а обработчик синхронизации обновляет отношения по событиям платформы. |
+| Code Execution Runner | Go, gRPC, Docker / gVisor | Code Execution Runner запускает решение и тесты в изолированной среде с ограничениями времени и памяти. Отчёт получает Assessment Service, который рассчитывает итоговый балл. |
+| Assessment DB | PostgreSQL 16 | Сессии, решения, оценки и transactional outbox. |
+| Debezium | Debezium PostgreSQL Connector | Компонент захвата зафиксированных изменений PostgreSQL. Читает transactional outbox через журнал WAL и публикует доменные события в Kafka. |
+| Kafka | Apache Kafka, KRaft | Событийная шина платформы. Хранит доменные сообщения в топиках и передаёт их группам потребителей для независимой асинхронной обработки. |
+| Realtime Publisher | Go, Kafka Consumer, Centrifugo HTTP API | Realtime Publisher читает события из Kafka, определяет канал получателя и публикует сообщение в Centrifugo. Centrifugo доставляет его в браузер по WebSocket. |
+| Centrifugo | Centrifugo, WebSocket, JWT | Сервис подключений браузеров и каналов обновления интерфейса. Принимает публикации Realtime Publisher и доставляет сообщения авторизованным подписчикам по WebSocket. |
+| Hiring Service | Go, gRPC, Protobuf, pgx, sqlc | Hiring Service ведёт отклик от первого этапа отбора до предложения о работе. Компоненты откликов, интервью и предложений согласуют переходы между этапами и сохраняют историю в Hiring DB. |
+| Notification Service | Go, Kafka Consumer | Notification Service принимает команды и события из Kafka, выбирает шаблон и создаёт задачу доставки. Обработчики сохраняют уведомления в личном кабинете или передают их провайдерам email, push и SMS. |
+| Notification Providers | Система | Внешние поставщики доставки сообщений. SendGrid обрабатывает email, Firebase Cloud Messaging доставляет push, Twilio отправляет SMS по запросам сервиса уведомлений. |
+
+<p align="right">Таблица - Связи. Проверка решения и доставка результата</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| Кандидат | Web Application | 1-2. Отправляет решение с сессионной cookie. | HTTPS / UI |
+| Web Application | API Gateway | 3. BFF передаёт авторизованный запрос. | HTTP / JSON |
+| API Gateway | Assessment Service | 4. Вызывает метод SubmitTaskSolution(). Запрос и ответ передаются как сообщения Protobuf. | gRPC / HTTP2, порт 50055 |
+| Assessment Service | OpenFGA | 5. Проверяет права кандидата (can_submit). Запрос и ответ передаются как сообщения Protobuf. | gRPC / mTLS, порт 8081 |
+| Assessment Service | Code Execution Runner | 6. Направляет код и тесты на изолированное исполнение. Запрос и ответ передаются как сообщения Protobuf. | gRPC / HTTP2, порт 50060 |
+| Code Execution Runner | Assessment Service | 7. Возвращает статус прохождения тестов и метрики CPU/RAM. Запрос и ответ передаются как сообщения Protobuf. | gRPC response |
+| Assessment Service | Assessment DB | 8. Применяет ScoringStrategy, переводит FSM в EVALUATED и пишет Outbox. Получатель выполняет чтение или запись в базе данных сервиса. | SQL Transaction, порт 5432 |
+| Assessment Service | API Gateway | 9. Возвращает статус OK, итоговый балл и протокол тестов. Запрос и ответ передаются как сообщения Protobuf. | gRPC response |
+| API Gateway | Web Application | 10. Возвращает ответ серверному BFF. | HTTP / JSON |
+| Web Application | Кандидат | 11-12. Возвращает и отображает результаты проверки. | UI Render |
+| Assessment DB | Debezium | 13. Считывает запись Outbox из журнала транзакций WAL (CDC). Коннектор читает зафиксированные изменения из журнала PostgreSQL. | PostgreSQL WAL (pgoutput) |
+| Debezium | Kafka | 14. Публикует AssessmentCompletedEvent в топик assessment.events. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro, порт 9092 |
+| Kafka | Realtime Publisher | 15. Вычитывает событие завершения испытания. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| Realtime Publisher | Centrifugo | 16. Публикует realtime-событие в канал компании (publish API). | Centrifugo HTTP API, порт 8000 |
+| Centrifugo | Web Application | 17. Мгновенно доставляет WebSocket-пуш в открытую сессию рекрутера. Данные передаются по постоянному соединению с браузером. | WSS / JSON |
+| Web Application | Рекрутер / Нанимающий менеджер | 18. Обновляет статус кандидата в воронке найма без перезагрузки страницы. | UI Render |
+| Kafka | Hiring Service | 19. Автоматически переводит отклик в воронке на следующий этап. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| Kafka | Notification Service | 20. Доставляет событие для формирования мультиканального уведомления. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| Notification Service | Notification Providers | 21. Отправляет email кандидату с подтверждением сдачи. | HTTPS / REST API |
+
+<!-- /excerpt -->
 
 ---
 
@@ -21,7 +70,7 @@
 
 В цепочке задействованы следующие контейнеры и узлы:
 * **Web Application** (Next.js / React) — фронтенд-интерфейс соискателя (редактор кода и таймер) и нанимающей команды (канбан-доска и журнал откликов).
-* **BFF (Backend for Frontend)** — сессионный фасад, валидирующий `HttpOnly`-куки, CSRF-токены и формирующий авторизованный gRPC-контекст.
+* **BFF (Backend for Frontend)** — серверная часть Next.js, проверяющая `HttpOnly`-куки, CSRF-токены и передающая токен доступа в API Gateway.
 * **API Gateway** — шлюз платформы, обеспечивающий rate limiting, сквозную W3C-трассировку (`traceparent`) и инжекцию доверенного identity context.
 * **Assessment Service** — микросервис управления библиотекой испытаний, сессиями кандидатов, скоринговыми стратегиями и фиксацией оценок на Go 1.23+.
 * **OpenFGA** — движок авторизации на основе отношений (ReBAC), проверяющий права соискателя на сдачу решений в рамках активной сессии.
@@ -61,14 +110,14 @@
 * **Получатель**: `BFF (Backend for Frontend)`.
 * **Протокол и порт**: `HTTPS / JSON`, порт `443` (внутренняя сеть).
 * **Операция**: `POST /api/assessment/sessions/{sessionId}/submit`.
-* **Логика**: BFF валидирует сессионную куку `__Host-Careeria-Session`, извлекает CSRF-токен из заголовка `X-CSRF-Token`, обогащает вызов токеном доступа и формирует внутренний RPC-запрос.
+* **Логика**: BFF валидирует сессионную куку `__Host-Careeria-Session`, извлекает CSRF-токен из заголовка `X-CSRF-Token`, обогащает вызов токеном доступа и формирует HTTP-запрос к шлюзу.
 
 #### Шаг 3. Авторизованный вызов шлюза платформы (API Gateway)
 * **Инициатор**: `BFF`.
 * **Получатель**: `API Gateway`.
-* **Протокол и порт**: `gRPC / HTTP2`, порт `50051`.
-* **Операция**: `careeria.api.v1.GatewayService/RouteAssessmentCall`.
-* **Логика**: API Gateway проверяет rate limit по IP и пользователю, генерирует `X-Request-ID`, считывает трассировочные заголовки W3C Trace Context и пробрасывает доверенные метаданные (`x-user-id`, `x-candidate-id`, `x-roles`).
+* **Протокол и порт**: `HTTP / JSON`, порт `8080`.
+* **Операция**: Отправка решения через HTTP API с токеном доступа.
+* **Логика**: API Gateway проверяет rate limit по IP и пользователю, генерирует `X-Request-ID`, считывает трассировочные заголовки W3C Trace Context и передаёт идентификатор аутентифицированного субъекта в метаданных gRPC.
 
 #### Шаг 4. Вызов RPC-метода Assessment Service
 * **Инициатор**: `API Gateway`.
@@ -153,7 +202,7 @@
 #### Шаг 10. Трансляция ответа шлюзом платформы
 * **Инициатор**: `API Gateway`.
 * **Получатель**: `BFF`.
-* **Протокол и порт**: `gRPC / HTTP2`.
+* **Протокол и порт**: HTTP / JSON, порт 8080.
 * **Логика**: Шлюз закрывает OpenTelemetry span, валидирует статус `codes.OK` и пересылает структурированный ответ в BFF.
 
 #### Шаг 11. Формирование HTTP-ответа клиенту (BFF)
@@ -251,18 +300,20 @@
 
 ## 3. Сводная спецификация параметров динамического процесса
 
+<p align="right">Таблица - Сводная спецификация параметров динамического процесса (Сквозной динамический процесс оценки компетенций и realtime-оповещения (Dynamic Diagram))</p>
+
 | № шага | Направление | Инициатор вызова | Целевой элемент | Вызываемый интерфейс / операция | Протокол / Порт | Формат данных | Тип взаимодействия | SLA / Таймаут |
 |:---:|:---:|---|---|---|:---:|---|:---:|:---:|
 | **1** | Запрос | Кандидат | Web Application | `submitSolution()` | HTTPS / 443 | JSON DTO | Синхронный | < 50 мс |
 | **2** | Запрос | Web Application | BFF | `POST /api/assessment/sessions/{id}/submit` | HTTPS / 443 | JSON + Cookie | Синхронный | < 100 мс |
-| **3** | Запрос | BFF | API Gateway | `GatewayService/RouteAssessmentCall` | gRPC / 50051 | Protobuf + Metadata | Синхронный | < 150 мс |
+| **3** | Запрос | BFF | API Gateway | Отправка решения | HTTP / 8080 | JSON | Синхронный | < 150 мс |
 | **4** | Запрос | API Gateway | Assessment Service | `AssessmentService/SubmitTaskSolution` | gRPC / 50055 | Protobuf DTO | Синхронный | < 200 мс |
 | **5** | Запрос | Assessment Service | OpenFGA | `OpenFGAService/Check` | gRPC / 8081 | ReBAC Tuple | Синхронный | < 20 мс |
 | **6** | Запрос | Assessment Service | Code Execution Runner | `RunnerService/ExecuteCode` | gRPC / 50060 | Protobuf (Source + Tests) | Синхронный | < 3000 мс |
 | **7** | Ответ | Code Execution Runner | Assessment Service | `ExecuteCodeResponse` | gRPC / 50060 | Protobuf (Report & Metrics) | Синхронный | < 50 мс |
 | **8** | Запрос | Assessment Service | Assessment DB | `SQL Transaction (BEGIN ... COMMIT)` | SQL / 5432 | SQL Statements | Синхронный | < 50 мс |
 | **9** | **Ответ** | **Assessment Service** | **API Gateway** | **`SubmitTaskSolutionResponse`** | **gRPC / 50055** | **Protobuf Response** | **Синхронный** | **< 30 мс** |
-| **10** | **Ответ** | **API Gateway** | **BFF** | **gRPC Response forward** | **gRPC / 50051** | **Protobuf Response** | **Синхронный** | **< 30 мс** |
+| **10** | **Ответ** | **API Gateway** | **BFF** | Ответ шлюза | HTTP / 8080 | JSON | **Синхронный** | **< 30 мс** |
 | **11** | **Ответ** | **BFF** | **Web Application** | **`HTTP 200 OK (JSON Verdict)`** | **HTTPS / 443** | **JSON Payload** | **Синхронный** | **< 50 мс** |
 | **12** | **Ответ** | **Web Application** | **Кандидат** | **Рендеринг UI (Score, Results, Toast)** | **UI Event** | **DOM / React State** | **Клиентский** | **< 16 мс** |
 | **13** | Событие | Assessment DB | Debezium Connector | Потоковое чтение PostgreSQL WAL | WAL / 5432 | Бинарный pgoutput WAL | Асинхронный (CDC) | < 100 мс |
@@ -278,6 +329,8 @@
 ---
 
 ## 4. Граничные сценарии и матрица обработки ошибок
+
+<p align="right">Таблица - Граничные сценарии и матрица обработки ошибок (Сквозной динамический процесс оценки компетенций и realtime-оповещения (Dynamic Diagram))</p>
 
 | Возникающая исключительная ситуация | Слой обнаружения | Доменная ошибка | HTTP / gRPC код ответа | Архитектурная реакция и компенсация |
 |---|---|---|---|---|

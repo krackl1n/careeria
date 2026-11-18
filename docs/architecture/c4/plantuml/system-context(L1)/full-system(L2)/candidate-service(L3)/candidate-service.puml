@@ -11,7 +11,7 @@ System_Boundary(careeria, "Careeria") {
 
         together {
             Component(profile_svc, "Candidate Profile Service", "Go Application Service", "Профиль, опыт, навыки, предпочтения, статус поиска и видимость")
-            Component(resume_svc, "Resume Service", "Go Application Service", "Загрузка, версии, основное резюме, скачивание и удаление")
+            Component(resume_svc, "Resume Service", "Go Application Service", "Загрузка, версии, основное резюме, скачивание и удаление", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/candidate-service(L3)/candidate-resume(L4)/")
         }
 
         Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "ReBAC-проверки; бизнес-политики остаются в сервисах и домене")

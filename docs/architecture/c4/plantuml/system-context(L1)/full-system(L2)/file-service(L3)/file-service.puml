@@ -1,0 +1,43 @@
+@startuml file-service-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title File Service (C4 L3)
+Container_Boundary(subject, "File Service") {
+    Component(api, "Файловый API", "gRPC", "Принимает команды и проверяет полномочия.")
+    Component(upload, "Управление загрузкой", "Go", "Открывает и завершает сеанс загрузки.", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-upload(L4)/")
+    Component(check, "Проверка файла", "Go", "Проверяет содержимое загруженной версии.")
+    Component(binding, "Управление привязками", "Go", "Связывает файл с ресурсом сервиса.", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-binding(L4)/")
+    Component(cleanup, "Обработчик очистки", "Go", "Завершает прерванные операции.")
+    Component(repo, "Репозиторий метаданных", "Go / SQL", "Хранит состояние операций и привязок.")
+    Component(storage, "Клиент хранилища", "MinIO Go SDK", "Работает с версиями объектов.")
+}
+
+CandidateServiceContainer("")
+ComponentApiGateway()
+ComponentOpenFga()
+ComponentObjectStorage()
+FileDatabase("managedInfrastructure")
+Container(scanner, "Антивирусный сканер", "Интерфейс сканирования", "Проверяет содержимое переданной версии.")
+
+Rel(candidateService, api, "Оформляет загрузки резюме", "gRPC")
+Rel(apiGateway, api, "Вызывает файловые операции", "gRPC")
+Rel(api, openFga, "Проверяет права", "OpenFGA API")
+Rel(api, upload, "Передаёт команды загрузки")
+Rel(api, binding, "Передаёт команды привязки")
+Rel(upload, check, "Передаёт версию на проверку")
+Rel(check, scanner, "Запрашивает заключение")
+Rel(upload, repo, "Сохраняет сеанс")
+Rel(check, repo, "Фиксирует заключение")
+Rel(binding, repo, "Изменяет привязки")
+Rel(cleanup, repo, "Захватывает задачу")
+Rel(upload, storage, "Управляет загрузкой")
+Rel(check, storage, "Читает версию")
+Rel(binding, storage, "Запрашивает ссылку")
+Rel(cleanup, storage, "Удаляет объект")
+Rel(repo, fileDb, "Читает и записывает", "SQL")
+Rel(storage, objectStorage, "Управляет объектами", "S3 API")
+
+SHOW_FLOATING_LEGEND()
+@enduml

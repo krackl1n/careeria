@@ -3,6 +3,7 @@
 !include candidate-elements.puml
 !include integration-elements.puml
 !include infrastructure-elements.puml
+!include platform-elements.puml
 
 !unquoted procedure CandidateActor()
     Person(candidate, "Кандидат", "Ищет работу, откликается на вакансии и проходит процесс найма.")
@@ -34,8 +35,8 @@
 
 !unquoted procedure EntryPoints()
     Container_Boundary(entryPoints, "Точки входа") {
-        Container(web, "Web Application", "Next.js, React, TypeScript, Tailwind CSS", "App Router, SSR/CSR и серверный BFF: сессии, CSRF-защита, токены и адаптация API.", $tags="frontend")
-        Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.", $tags="gateway")
+        WebApplicationContainer("frontend")
+        ApiGatewayContainer("gateway")
     }
 !endprocedure
 
@@ -81,9 +82,12 @@
     }
 !endprocedure
 
-!unquoted procedure AssessmentDomain($withDatabase)
+!unquoted procedure AssessmentDomain($withDatabase, $withRunner=0)
     Container_Boundary(assessmentBoundary, "Домен оценки") {
         Container(assessmentService, "Assessment Service", "Go, gRPC, Protobuf, pgx, sqlc", "Тесты, практические задания, Live Coding, submissions, scores и результаты проверки.", $tags="business", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/assessment-service(L3)/")
+        !if ($withRunner == 1)
+            CodeRunnerContainer("platform")
+        !endif
         !if ($withDatabase == 1)
             ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL", "Assessments, sessions, submissions, evaluations и transactional outbox.", $tags="storage")
         !endif
@@ -112,7 +116,7 @@
             ContainerDb(identityDb, "Identity DB", "PostgreSQL", "Пользователи, credentials, refresh sessions и transactional outbox.", $tags="storage")
         !endif
         !if ($withProjection == 1)
-            Container(authzProjection, "AuthZ Synchronization Service", "Go, Kafka consumer, OpenFGA SDK", "Преобразует доменные события в tuples ролей и отношений доступа OpenFGA.", $tags="platform")
+            Container(authzProjection, "AuthZ Synchronization Service", "Go, Kafka consumer, OpenFGA SDK", "Преобразует доменные события в tuples ролей и отношений доступа OpenFGA.", $tags="platform", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/authz-synchronization-service(L3)/")
         !endif
         !if ($withOpenFga == 1)
             OpenFgaContainer("authorization")
@@ -120,9 +124,12 @@
     }
 !endprocedure
 
-!unquoted procedure FilesDomain($withStorage)
+!unquoted procedure FilesDomain($withStorage, $withMetadata=0)
     Container_Boundary(filesBoundary, "Файлы") {
         FileServiceContainer("platform")
+        !if ($withMetadata == 1)
+            FileDatabase("storage")
+        !endif
         !if ($withStorage == 1)
             ObjectStorageContainer("storage")
         !endif
@@ -132,10 +139,10 @@
 !unquoted procedure RealtimeMedia($withPublisher, $withCentrifugo, $withLivekit)
     Container_Boundary(realtimeBoundary, "Realtime и медиа") {
         !if ($withPublisher == 1)
-            Container(realtimePublisher, "Realtime Publisher", "Go, Kafka consumer, Centrifugo HTTP API", "Фильтрует события, формирует пользовательские каналы и публикует realtime-сообщения.", $tags="platform")
+            Container(realtimePublisher, "Realtime Publisher", "Go, Kafka consumer, Centrifugo HTTP API", "Фильтрует события, формирует пользовательские каналы и публикует realtime-сообщения.", $tags="platform", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/realtime-publisher(L3)/")
         !endif
         !if ($withCentrifugo == 1)
-            Container(centrifugo, "Centrifugo", "Centrifugo, WebSocket, JWT", "Управляет WebSocket-подключениями, каналами, presence и доставкой событий.", $tags="realtime")
+            CentrifugoContainer("realtime")
         !endif
         !if ($withLivekit == 1)
             LiveKitContainer("media")

@@ -1,0 +1,30 @@
+@startuml web-application-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title Web Application (C4 L3)
+Container_Boundary(subject, "Web Application") {
+    Component(pages, "Маршруты страниц", "Next.js App Router / SSR", "Готовят страницу на сервере.")
+    Component(ui, "Интерфейс пользователя", "React / TypeScript", "Выполняется в браузере.")
+    Component(bff, "Серверный BFF", "Next.js", "Адаптирует запросы интерфейса к HTTP API.")
+    Component(session, "Управление сессией", "Next.js / HTTP cookies", "Обрабатывает cookie и CSRF.")
+    Component(live, "Клиенты событий и медиа", "WebSocket / WebRTC", "Обслуживают соединения браузера.")
+}
+
+ComponentApiGateway()
+CentrifugoContainer("managedInfrastructure")
+ComponentLiveKit()
+ComponentObjectStorage()
+
+Rel(pages, bff, "Запрашивает данные страницы")
+Rel(ui, bff, "Отправляет команды", "HTTPS / JSON")
+Rel(bff, session, "Получает контекст пользователя")
+Rel(bff, apiGateway, "Вызывает API", "HTTP / JSON")
+Rel(ui, live, "Открывает подписку или комнату")
+Rel(live, centrifugo, "Подписывается на канал", "WebSocket")
+Rel(live, livekit, "Обменивается медиапотоками", "WebRTC")
+Rel(ui, objectStorage, "Передаёт файл по временной ссылке", "HTTPS / S3 API")
+
+SHOW_FLOATING_LEGEND()
+@enduml

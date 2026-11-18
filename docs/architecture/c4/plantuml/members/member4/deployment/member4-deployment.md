@@ -18,9 +18,8 @@
 |---|---|---|
 | Устройство пользователя | Браузер | Выполняет клиентский JavaScript и отображает интерфейс приложения. |
 | Публичный балансировщик | L4 / TCP | Передаёт HTTPS-соединения на Ingress, порт `443`. |
-| `careeria-edge`: Ingress | 2 Pod, Nginx / Envoy | TLS-терминация и маршрутизация страниц в Web Application, запросов `/api/*` — в BFF. |
-| `careeria-apps`: Web Application | Deployment / HPA / ClusterIP, 2–10 Pod | Next.js / React, SSR и доставка интерфейса; HTTP `3000`. |
-| `careeria-apps`: BFF | Deployment / HPA / ClusterIP, 2–10 Pod | Веб-фасад и браузерные сессии; HTTP `8080`. |
+| `careeria-edge`: Ingress | 2 Pod, Nginx / Envoy | TLS-терминация и маршрутизация страниц и запросов к BFF в Web Application. |
+| `careeria-apps`: Web Application | Deployment / HPA / ClusterIP, 2–10 Pod | Next.js / React, SSR, доставка интерфейса и серверный BFF. Порт HTTP `3000`. |
 | `careeria-apps`: API Gateway | Deployment / HPA / ClusterIP, 2–10 Pod | HTTP API на `8080`, преобразование запросов в gRPC. |
 | `careeria-apps`: Identity Service | Deployment / HPA / ClusterIP, 2–10 Pod | Go в `distroless/static-debian12:nonroot`; gRPC и gRPC Health на `50052`. |
 | `careeria-data`: PostgreSQL | StatefulSet / оператор, primary и 2 replicas, PVC | Общая СУБД платформы; Identity использует логическую БД `identity` и собственную роль подключения. |
@@ -36,10 +35,8 @@ PostgreSQL развёрнут общим кластером primary + две rep
 | Источник → получатель | Назначение | Протокол / порт |
 |---|---|---|
 | Browser → Load Balancer → Ingress | Загрузка интерфейса и вызовы API | HTTPS / TCP `443`. |
-| Ingress → Web Application | Страницы и ресурсы | HTTP `3000`. |
-| Ingress → BFF | Запросы `/api/*` | HTTP `8080`. |
-| Web Application → BFF | Данные для серверного рендеринга | HTTP / JSON `8080`. |
-| BFF → API Gateway | Вызовы HTTP API | HTTP / JSON `8080`. |
+| Ingress и Web Application | Страницы, ресурсы и запросы к BFF | HTTP `3000`. |
+| Web Application (BFF) и API Gateway | Вызовы HTTP API | HTTP / JSON `8080`. |
 | API Gateway → Identity | Registration, Authentication, OAuth и Metadata RPC | gRPC / HTTP2 `50052`. |
 | Identity → PostgreSQL | Учётные записи, credentials, профили, челленджи, grants, сессии, token families и outbox | SQL / TCP `5432`. |
 | Identity → Redis | Чтение и обновление временного состояния | Redis RESP / TCP `6379`. |

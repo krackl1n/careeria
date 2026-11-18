@@ -1,0 +1,22 @@
+@startuml code-execution-runner-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title Code Execution Runner (C4 L3)
+Container_Boundary(subject, "Code Execution Runner") {
+    Component(api, "Приём заданий", "gRPC / Protobuf", "Принимает код, тесты и параметры запуска.")
+    Component(exec, "Координатор проверки", "Управление исполнением", "Организует компиляцию и прогоны тестов.")
+    Component(sandbox, "Управление песочницей", "Docker / gVisor", "Изолирует запуск и ограничивает ресурсы.")
+    Component(report, "Формирование отчёта", "Обработка результатов", "Собирает результаты отдельных тестов.")
+}
+
+Container(assessmentService, "Assessment Service", "Go / gRPC", "Управляет попытками и рассчитывает итоговый балл.")
+
+Rel(assessmentService, api, "Передаёт задание и получает отчёт", "gRPC")
+Rel(api, exec, "Поручает проверку попытки")
+Rel(exec, sandbox, "Запускает решение с лимитами")
+Rel(exec, report, "Передаёт результаты прогонов")
+
+SHOW_FLOATING_LEGEND()
+@enduml

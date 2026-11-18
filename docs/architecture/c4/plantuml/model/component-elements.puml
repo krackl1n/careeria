@@ -6,6 +6,7 @@
 !include integration-elements.puml
 !include identity-elements.puml
 !include infrastructure-elements.puml
+!include platform-elements.puml
 
 !unquoted procedure ComponentIdentityDatabase()
     IdentityDatabase("managedInfrastructure")
@@ -16,7 +17,7 @@
 !endprocedure
 
 !unquoted procedure ComponentIdentityProvider()
-    System_Ext(identityProvider, "Identity Provider", "Keycloak, OIDC", "OIDC-провайдер на базе Keycloak; федерация и внешняя аутентификация пользователей.")
+    System_Ext(identityProvider, "Identity Provider", "OIDC-провайдер на базе Keycloak. Федерация и внешняя аутентификация пользователей.")
 !endprocedure
 
 !unquoted procedure ComponentIntegrationDatabase()
@@ -52,7 +53,7 @@
 !endprocedure
 
 !unquoted procedure ComponentApiGateway()
-    Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.")
+    ApiGatewayContainer("")
 !endprocedure
 
 !unquoted procedure ComponentCompanyDatabase()
@@ -76,5 +77,5 @@
 !endprocedure
 
 !unquoted procedure ComponentNotificationProviders()
-    System_Ext(notificationProviders, "Notification Providers", "SendGrid, Firebase Cloud Messaging, Twilio", "Email, push и SMS-провайдеры.")
+    System_Ext(notificationProviders, "Notification Providers", "SendGrid, Firebase Cloud Messaging и Twilio. Доставка email, push и SMS.")
 !endprocedure

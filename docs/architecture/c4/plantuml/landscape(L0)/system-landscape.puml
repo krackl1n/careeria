@@ -27,8 +27,7 @@ Rel(hiringManager, platform, "Оценивает кандидатов и сог�
 Rel(companyAdmin, platform, "Управляет профилем компании, участниками и ролями", "HTTPS")
 Rel(recruiter, employerHrSystem, "Работает с кадровыми заявками и результатами найма", "HTTPS")
 
-Rel_R(platform, employerHrSystem, "Передаёт результаты найма и исходящие webhooks", "HTTPS / REST / Webhooks")
-Rel_L(employerHrSystem, platform, "Передаёт изменения кадровых данных", "HTTPS / Webhooks")
+Rel_R(platform, employerHrSystem, "Обменивается данными найма", "HTTPS / REST / Webhooks")
 Rel(platform, identityProvider, "Аутентифицирует пользователей через федеративный вход", "HTTPS / OAuth 2.0 / OIDC")
 Rel(platform, notificationProviders, "Запрашивает доставку уведомлений", "HTTPS / API")
 Rel_Back(candidate, notificationProviders, "Доставляет приглашения, сообщения и офферы", "Email / Push / SMS")

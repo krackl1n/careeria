@@ -10,7 +10,7 @@ System_Boundary(careeria, "Careeria") {
         Component(grpc_handler, "gRPC Server", "Go / gRPC", "Команды и запросы VacancyService")
 
         Component(vacancy_query_svc, "Vacancy Query Service", "Go Application Service", "GetVacancyByID, ListCompanyVacancies: чтение и выборки вакансий")
-        Component(vacancy_svc, "Vacancy Service", "Go Application Service", "Создание и изменение вакансии; Publish, Close, Archive, Restore через агрегат Vacancy")
+        Component(vacancy_svc, "Vacancy Service", "Go Application Service", "Создание и изменение вакансии; Publish, Close, Archive, Restore через агрегат Vacancy", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/vacancy-service(L3)/vacancy-publication(L4)/")
 
         Component(authorization_client, "Authorization Client", "Go / OpenFGA SDK", "Проверка доступа к компании и вакансии")
         Component(vacancy_repo, "Vacancy Repo", "Go / pgx, sqlc", "Загрузка и сохранение Vacancy и skills; выборки вакансий")

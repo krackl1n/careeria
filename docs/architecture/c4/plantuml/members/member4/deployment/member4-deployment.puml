@@ -22,10 +22,7 @@ Deployment_Node(cluster, "Инфраструктура Careeria", "Production Ku
         }
         Boundary(appNamespace, "Приватный контур приложений — careeria-apps", "Kubernetes namespace") {
             Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
-                Container(web, "Web Application", "Next.js / React", "SSR и клиентский интерфейс входа; HTTP, порт 3000.")
-            }
-            Deployment_Node(bffPods, "BFF Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
-                Container(bff, "BFF", "Go / HTTP", "Веб-фасад и сессии браузера; HTTP, порт 8080.")
+                Container(web, "Web Application", "Next.js / React", "SSR, интерфейс входа и BFF с управлением сессиями. HTTP, порт 3000.")
             }
             Deployment_Node(gatewayPods, "API Gateway Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
                 Container(apiGateway, "API Gateway", "Go / grpc-gateway", "HTTP/JSON → gRPC; HTTP, порт 8080.")
@@ -52,17 +49,14 @@ Deployment_Node(cluster, "Инфраструктура Careeria", "Production Ku
 
 Rel(browser, publicLb, "Открывает страницы и вызывает API", "HTTPS, порт 443")
 Rel(publicLb, ingress, "Передаёт TLS-соединения", "TCP, порт 443")
-Rel(ingress, web, "Страницы, Authentication UI и статика", "HTTP, порт 3000")
-Rel(ingress, bff, "Проксирует запросы /api/*", "HTTP, порт 8080")
-Rel(web, bff, "Получает данные при SSR", "HTTP / JSON, порт 8080")
-Rel(bff, apiGateway, "Вызывает Identity API через шлюз", "HTTP / JSON, порт 8080")
+Rel(ingress, web, "Страницы, статика и запросы к BFF", "HTTP, порт 3000")
+Rel(web, apiGateway, "Вызывает Identity API через шлюз", "HTTP / JSON, порт 8080")
 Rel(apiGateway, identityService, "Registration, Authentication, OAuth, Metadata", "gRPC / HTTP2, порт 50052")
 Rel(identityService, postgresql, "Транзакции данных Identity и обработка outbox", "SQL / TCP, порт 5432")
 Rel(identityService, redis, "Читает и обновляет короткоживущие состояния", "Redis RESP / TCP, порт 6379")
 Rel(identityService, kafka, "Публикует события identity.events", "Kafka / JSON, порт 9092")
 
-Lay_D(web, bff)
-Lay_D(bff, apiGateway)
+Lay_D(web, apiGateway)
 Lay_D(apiGateway, identityService)
 Lay_D(postgresql, redis)
 Lay_D(redis, kafka)

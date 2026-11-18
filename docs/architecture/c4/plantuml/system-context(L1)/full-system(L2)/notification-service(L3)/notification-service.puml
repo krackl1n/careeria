@@ -13,7 +13,7 @@ System_Boundary(careeria, "Careeria") {
         Component(event_consumer, "Events Consumer", "Go / Kafka Client", "Подписка на триггерные события из шины")
         Component(worker_comp, "Worker Pool", "Go Async Workers", "Асинхронный пулинг и запуск задач")
 
-        Component(notification_svc, "Notification Service", "Go Application Service", "Бизнес-сценарии: Schedule, Cancel, FetchPending, Execute")
+        Component(notification_svc, "Notification Service", "Go Application Service", "Бизнес-сценарии: Schedule, Cancel, FetchPending, Execute", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/notification-service(L3)/notification-delivery(L4)/")
 
         Component(template_repo, "Template Repo", "Go / SQL", "Загрузка сырых шаблонов сообщений")
         Component(job_repo, "Job Repo", "Go / SQL", "Конкурентный пулинг фоновых задач")

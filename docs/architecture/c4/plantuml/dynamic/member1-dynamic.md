@@ -1,13 +1,55 @@
 # Сквозной динамический процесс публикации вакансии (Dynamic Diagram)
 
-Динамическая диаграмма C4 (**Dynamic Diagram**) фиксирует хронологическую последовательность взаимодействия компонентов и контейнеров платформы **Careeria** во времени в рамках одного сквозного рантайм-сценария домена **Member 1** (**Кандидаты и вакансии**):
-> *«Инициализация публикации черновика вакансии рекрутером (`PublishVacancy`), ReBAC-авторизация прав публикатора в `OpenFGA`, валидация доменной политики готовности (`PublishingPolicy`), атомарный переход конечного автомата (FSM) вакансии из статуса `DRAFT` (или `ARCHIVED`) в `PUBLISHED` в единой транзакции с записью события `VacancyPublished` в таблицу `outbox_events`, возврат синхронного ответа пользователю (`200 OK`) и гарантированная публикация события через CDC `Debezium` / `Apache Kafka` (`careeria.vacancies.events.v1`) с обновлением ReBAC-правил видимости в `OpenFGA` и рассылкой уведомлений кандидатам через `Notification Service`»*.
+<!-- excerpt -->
+
+Рекрутер публикует вакансию. Vacancy Service проверяет полномочия и сохраняет новый статус, после чего подписчики события обновляют права на просмотр и запускают рассылку.
+
+Команда проходит через серверный BFF и API Gateway в Vacancy Service. После проверки прав и готовности вакансии сервис сохраняет состояние публикации и outbox в одной транзакции. Debezium передаёт событие в Kafka. Обработчик синхронизации доступа обновляет отношения OpenFGA, сервис уведомлений организует рассылку.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/dynamic/member1-dynamic.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Публикация вакансии</p>
+
+<p align="right">Таблица - Элементы. Публикация вакансии</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| Рекрутер | Пользователь | Редактирует черновик, инициирует публикацию вакансии и получает подтверждение в UI. |
+| Web Application | Next.js, React, TypeScript, Tailwind CSS | Интерфейс React работает в браузере. Серверный BFF обрабатывает пользовательскую сессию и обращается к API Gateway. Страницы и BFF развёртываются вместе в одном приложении Next.js. |
+| API Gateway | Go, grpc-gateway | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| Vacancy Service | Go, gRPC, Protobuf, pgx, sqlc | Vacancy Service хранит содержание и условия вакансии. При публикации сервис проверяет права рекрутера и готовность вакансии, затем фиксирует её новый статус в Vacancy DB. |
+| OpenFGA | OpenFGA, PostgreSQL | Сервис проверки доступа на основе отношений между субъектом и ресурсом. Доменные сервисы запрашивают решение о доступе, а обработчик синхронизации обновляет отношения по событиям платформы. |
+| Vacancy DB | PostgreSQL | Вакансии, навыки и transactional outbox. |
+| Debezium | Debezium PostgreSQL Connector | Компонент захвата зафиксированных изменений PostgreSQL. Читает transactional outbox через журнал WAL и публикует доменные события в Kafka. |
+| Kafka | Apache Kafka, KRaft | Событийная шина платформы. Хранит доменные сообщения в топиках и передаёт их группам потребителей для независимой асинхронной обработки. |
+| AuthZ Synchronization Service | Go, Kafka Consumer, OpenFGA SDK | AuthZ Synchronization Service читает доменные события из Kafka и обновляет отношения доступа в OpenFGA. Например, после публикации вакансии сервис добавляет право на чтение её карточки. |
+| Notification Service | Go, Kafka Consumer | Notification Service принимает команды и события из Kafka, выбирает шаблон и создаёт задачу доставки. Обработчики сохраняют уведомления в личном кабинете или передают их провайдерам email, push и SMS. |
+| Notification Providers | Система | Внешние поставщики доставки сообщений. SendGrid обрабатывает email, Firebase Cloud Messaging доставляет push, Twilio отправляет SMS по запросам сервиса уведомлений. |
+
+<p align="right">Таблица - Связи. Публикация вакансии</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| Рекрутер | Web Application | 1-2. Отправляет форму публикации с сессионной cookie. | HTTPS / UI |
+| Web Application | API Gateway | 3. BFF передаёт авторизованный запрос. | HTTP / JSON |
+| API Gateway | Vacancy Service | 4. Вызывает метод PublishVacancy(). Запрос и ответ передаются как сообщения Protobuf. | gRPC / HTTP2, порт 50054 |
+| Vacancy Service | OpenFGA | 5. Проверяет права публикатора (can_publish). Запрос и ответ передаются как сообщения Protobuf. | gRPC / mTLS, порт 8081 |
+| Vacancy Service | Vacancy DB | 6. Фиксирует статус PUBLISHED (после PublishingPolicy) и пишет Outbox. Получатель выполняет чтение или запись в базе данных сервиса. | SQL Transaction, порт 5432 |
+| Vacancy Service | API Gateway | 7. Возвращает статус OK и DTO вакансии. Запрос и ответ передаются как сообщения Protobuf. | gRPC response |
+| API Gateway | Web Application | 8. Возвращает ответ серверному BFF. | HTTP / JSON |
+| Web Application | Рекрутер | 9-10. Возвращает и отображает статус вакансии. | UI Render |
+| Vacancy DB | Debezium | 11. Считывает запись Outbox из журнала транзакций WAL (CDC). Коннектор читает зафиксированные изменения из журнала PostgreSQL. | PostgreSQL WAL (pgoutput) |
+| Debezium | Kafka | 12. Публикует VacancyPublished в топик careeria.vacancies.events.v1. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro, порт 9092 |
+| Kafka | AuthZ Synchronization Service | 13. Доставляет событие публикации вакансии. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| AuthZ Synchronization Service | OpenFGA | 14. Записывает ReBAC-правила публичного доступа к вакансии. Запрос и ответ передаются как сообщения Protobuf. | OpenFGA API / gRPC, порт 8081 |
+| Kafka | Notification Service | 15. Вычитывает событие публикации вакансии. Сообщение передаётся асинхронно через топик Kafka. | Kafka Protocol / TCP |
+| Notification Service | Notification Providers | 16. Инициирует рассылку уведомлений релевантным кандидатам. | HTTPS / REST API |
+
+<!-- /excerpt -->
 
 ---
 
@@ -19,7 +61,7 @@
 
 В цепочке задействованы следующие контейнеры и узлы:
 * **Web Application** (Next.js / React) — фронтенд-интерфейс рекрутера.
-* **BFF (Backend for Frontend)** — сессионный фасад, валидирующий `HttpOnly`-куки и авторизационные заголовки.
+* **BFF (Backend for Frontend)** — серверная часть Next.js, проверяющая `HttpOnly`-куки и авторизационные заголовки.
 * **API Gateway** — шлюз платформы, обеспечивающий rate limiting, распределённую трассировку W3C и передачу доверенного identity context.
 * **Vacancy Service** — микросервис бизнес-логики вакансий на Go 1.23+, управляющий агрегатом `Vacancy`, конечным автоматом FSM и политикой публикации `PublishingPolicy`.
 * **OpenFGA** — специализированный движок авторизации на основе отношений (ReBAC).
@@ -44,15 +86,15 @@
 
 #### Шаг 2. Передача команды на сессионный фасад (`BFF`)
 * **Инициатор**: `Web Application`.
-* **Получатель**: `BFF` (Go / `net/http`).
+* **Получатель**: серверный BFF приложения Next.js.
 * **Протокол и порт**: `HTTPS / JSON`, порт `443`.
 * **Операция**: `POST /api/vacancies/{vacancyId}/publish`. `BFF` валидирует защищённую cookie `__Host-Careeria-Session`, проверяет `X-CSRF-Token` и извлекает идентификатор пользователя из сессии.
 
 #### Шаг 3. Авторизованный вызов шлюза (`API Gateway`)
 * **Инициатор**: `BFF`.
 * **Получатель**: `API Gateway` (`grpc-gateway`).
-* **Протокол и порт**: `gRPC / HTTP2`, порт `50051`.
-* **Операция**: Вызов `GatewayService/RouteVacancyCall` с передачей доверенного контекста в gRPC-метаданных (`x-user-id`, `x-company-id`, `x-request-id`, `x-idempotency-key`).
+* **Протокол и порт**: `HTTP / JSON`, порт `8080`.
+* **Операция**: BFF передаёт шлюзу команду публикации вакансии с токеном доступа в HTTP-заголовке Authorization.
 
 #### Шаг 4. Маршрутизация команды в домен вакансий (`Vacancy Service`)
 * **Инициатор**: `API Gateway`.
@@ -91,7 +133,7 @@
 ### Фаза Б. Синхронный возврат результата клиенту (Шаги 7–10)
 
 * **Шаг 7 (`gRPC response`, порт 50054):** `Vacancy Service` возвращает `PublishVacancyResponse` (идентификатор, статус `PUBLISHED`, `publishedAt`, обновлённую версию) в `API Gateway`.
-* **Шаг 8 (`gRPC response`, порт 50051):** `API Gateway` транслирует ответ в `BFF`.
+* **Шаг 8 (`HTTP / JSON`, порт 8080):** `API Gateway` транслирует ответ в `BFF`.
 * **Шаг 9 (`HTTPS / JSON`, порт 443):** `BFF` возвращает `200 OK` в браузер пользователя.
 * **Шаг 10 (`UI Render`):** `Web Application` обновляет состояние интерфейса (TanStack Query), переводя бейдж вакансии в состояние «Опубликована» и отображая уведомление об успехе.
 
@@ -108,16 +150,18 @@
 
 ## 3. Сводная спецификация параметров динамического процесса
 
+<p align="right">Таблица - Сводная спецификация параметров динамического процесса (Сквозной динамический процесс публикации вакансии (Dynamic Diagram))</p>
+
 | № | Направление | Инициатор | Получатель | Операция / интерфейс | Протокол / Порт | Формат данных | Тип вызова | SLA / Таймаут |
 |:---:|---|---|---|---|---|---|---|---|
 | **1** | Запрос | Рекрутер | Web Application | `publishVacancy()` | HTTPS / 443 | UI Action | Клиентский | < 50 мс |
 | **2** | Запрос | Web Application | BFF | `POST /api/vacancies/{id}/publish` | HTTPS / 443 | JSON + Cookie | Синхронный | < 100 мс |
-| **3** | Запрос | BFF | API Gateway | `GatewayService/RouteVacancyCall` | gRPC / 50051 | Protobuf + Metadata | Синхронный | < 120 мс |
+| **3** | Запрос | BFF | API Gateway | Публикация вакансии | HTTP / 8080 | JSON | Синхронный | < 120 мс |
 | **4** | Запрос | API Gateway | Vacancy Service | `VacancyService/PublishVacancy` | gRPC / 50054 | Protobuf DTO | Синхронный | < 200 мс |
 | **5** | Запрос | Vacancy Service | OpenFGA | `OpenFGAService/Check(can_publish)` | gRPC / 8081 | Protobuf ReBAC Tuple | Синхронный | < 20 мс |
 | **6** | Запрос | Vacancy Service | Vacancy DB | `SQL Transaction (PUBLISHED + Outbox)` | SQL / 5432 | SQL Statements | Синхронный | < 50 мс |
 | **7** | **Ответ** | **Vacancy Service** | **API Gateway** | **`PublishVacancyResponse`** | **gRPC / 50054** | **Protobuf Response** | **Синхронный** | **< 20 мс** |
-| **8** | **Ответ** | **API Gateway** | **BFF** | **gRPC Response forward** | **gRPC / 50051** | **Protobuf Response** | **Синхронный** | **< 20 мс** |
+| **8** | **Ответ** | **API Gateway** | **BFF** | Ответ шлюза | HTTP / 8080 | JSON | **Синхронный** | **< 20 мс** |
 | **9** | **Ответ** | **BFF** | **Web Application** | **`HTTP 200 OK (JSON Status)`** | **HTTPS / 443** | **JSON Payload** | **Синхронный** | **< 40 мс** |
 | **10** | **Ответ** | **Web Application** | **Рекрутер** | **Рендеринг UI (статус PUBLISHED)** | **UI Event** | **DOM / React State** | **Клиентский** | **< 16 мс** |
 | **11** | Событие | Vacancy DB | Debezium Connector | Потоковое чтение PostgreSQL WAL | WAL / 5432 | Бинарный `pgoutput` WAL | Асинхронный (CDC) | < 100 мс |
@@ -130,6 +174,8 @@
 ---
 
 ## 4. Граничные сценарии и матрица обработки ошибок
+
+<p align="right">Таблица - Граничные сценарии и матрица обработки ошибок (Сквозной динамический процесс публикации вакансии (Dynamic Diagram))</p>
 
 | Исключительная ситуация | Слой обнаружения | Доменная ошибка | HTTP / gRPC код ответа | Архитектурная реакция и компенсация |
 |---|---|---|---|---|

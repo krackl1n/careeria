@@ -31,7 +31,7 @@ System_Boundary(careeria, "Careeria") {
         ComponentOpenFga()
         ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL 16", "Шаблоны, сессии, решения, рецензии, outbox и ключи идемпотентности.", $tags="managedInfrastructure")
         ComponentLiveKit()
-        Container(sandboxRunner, "Code Execution Runner", "gRPC, Docker/gVisor", "Изолированная песочница для сборки и прогона тестов на коде соискателей.", $tags="managedInfrastructure")
+        CodeRunnerContainer("")
     }
 }
 
