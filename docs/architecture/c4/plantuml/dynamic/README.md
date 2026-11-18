@@ -4,4 +4,7 @@
 
 - [Доставка доменного события](domain-event.md)
 - [Обработка HR-webhook](hr-integration.md)
-- [Процесс фиксации результатов собеседования и перехода в оффер](member2-dynamic.md)
+- [Процесс публикации вакансии (Member 1)](member1-dynamic.md)
+- [Процесс фиксации результатов собеседования и перехода в оффер (Member 2)](member2-dynamic.md)
+- [Процесс сдачи испытания, скоринга и realtime-оповещения (Member 3)](member3-dynamic.md)
+- [Регистрация пользователя в Identity (Member 4)](member4-dynamic.md)

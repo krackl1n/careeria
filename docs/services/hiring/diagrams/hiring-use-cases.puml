@@ -1,0 +1,34 @@
+@startuml hiring-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Кандидат" as candidate
+actor "Представитель\nработодателя" as employer
+actor "Интервьюер" as interviewer
+actor "Планировщик" as worker
+actor "Внешние события" as events
+rectangle "Hiring Service" {
+  usecase "Подать / отозвать\nотклик" as apply
+  usecase "Посмотреть процесс\nи историю" as view
+  usecase "Изменить этап\nотклика" as stage
+  usecase "Организовать / завершить\nинтервью" as interview
+  usecase "Предоставить оценку" as feedback
+  usecase "Получить доступ\nк интервью" as room
+  usecase "Подготовить / отправить /\nотозвать оффер" as offer
+  usecase "Принять / отклонить\nоффер" as decide
+  usecase "Обработать истечение\nоффера" as expire
+  usecase "Обработать результат оценки\nили внешний статус" as sync
+}
+candidate -- apply
+candidate -- view
+candidate -- room
+candidate -- decide
+employer -- view
+employer -- stage
+employer -- interview
+employer -- offer
+interviewer -- feedback
+interviewer -- room
+worker -- expire
+events -- sync
+@enduml

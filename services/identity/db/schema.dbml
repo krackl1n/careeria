@@ -707,15 +707,15 @@ Table public.outbox_messages {
 }
 
 Ref identity_emails_identity_fk: public.identity_emails.identity_id > public.identities.id [delete: cascade]
-Ref identity_profiles_identity_fk: public.identity_profiles.identity_id - public.identities.id [delete: cascade]
+Ref identity_profiles_identity_fk: public.identities.id - public.identity_profiles.identity_id [delete: cascade]
 Ref identity_phones_identity_fk: public.identity_phones.identity_id > public.identities.id [delete: cascade]
 Ref external_identity_accounts_identity_fk: public.external_identity_accounts.identity_id > public.identities.id [delete: cascade]
-Ref identity_password_credentials_identity_fk: public.identity_password_credentials.identity_id - public.identities.id [delete: cascade]
-Ref identity_password_auth_state_identity_fk: public.identity_password_auth_state.identity_id - public.identities.id [delete: cascade]
+Ref identity_password_credentials_identity_fk: public.identities.id - public.identity_password_credentials.identity_id [delete: cascade]
+Ref identity_password_auth_state_identity_fk: public.identities.id - public.identity_password_auth_state.identity_id [delete: cascade]
 
 Ref mfa_factors_identity_fk: public.mfa_factors.identity_id > public.identities.id [delete: cascade]
-Ref totp_factors_factor_fk: public.totp_factors.(factor_id, factor_type) - public.mfa_factors.(id, factor_type) [delete: cascade]
-Ref webauthn_credentials_factor_fk: public.webauthn_credentials.(factor_id, factor_type) - public.mfa_factors.(id, factor_type) [delete: cascade]
+Ref totp_factors_factor_fk: public.mfa_factors.(id, factor_type) - public.totp_factors.(factor_id, factor_type) [delete: cascade]
+Ref webauthn_credentials_factor_fk: public.mfa_factors.(id, factor_type) - public.webauthn_credentials.(factor_id, factor_type) [delete: cascade]
 Ref recovery_code_sets_identity_fk: public.recovery_code_sets.identity_id > public.identities.id [delete: cascade]
 Ref recovery_codes_set_fk: public.recovery_codes.set_id > public.recovery_code_sets.id [delete: cascade]
 
@@ -737,7 +737,7 @@ Ref oauth_authorization_grant_scopes_grant_fk: public.oauth_authorization_grant_
 Ref sessions_identity_fk: public.sessions.identity_id > public.identities.id [delete: cascade]
 Ref sessions_oauth_client_fk: public.sessions.oauth_client_id > public.oauth_clients.id [delete: restrict]
 Ref session_scopes_session_fk: public.session_scopes.session_id > public.sessions.id [delete: cascade]
-Ref refresh_token_families_session_fk: public.refresh_token_families.session_id - public.sessions.id [delete: cascade]
+Ref refresh_token_families_session_fk: public.sessions.id - public.refresh_token_families.session_id [delete: cascade]
 Ref refresh_tokens_family_fk: public.refresh_tokens.family_id > public.refresh_token_families.id [delete: cascade]
 Ref refresh_tokens_parent_fk: public.refresh_tokens.(parent_token_id, family_id) > public.refresh_tokens.(id, family_id)
 

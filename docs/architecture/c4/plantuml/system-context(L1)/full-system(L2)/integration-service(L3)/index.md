@@ -66,6 +66,8 @@ Tx Manager — общая техническая обвязка транзакц
 
 ## Модель данных и инварианты
 
+Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/integration/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
+
 | Сущность | Основные поля | Правила |
 |---|---|---|
 | IntegrationConnection | ID, company ID, provider type, external tenant reference, lifecycle, inbound route token/ID, allowed inbound types, mapping version, version | Подключение принадлежит одной компании; company ID не принимается из внешнего payload как источник доверия. Route ID не заменяет signing secret. |
@@ -77,7 +79,7 @@ Tx Manager — общая техническая обвязка транзакц
 | DeliveryAttempt | attempt ID, delivery ID, ordinal, lease token, signing key version, startedAt/finishedAt, HTTP status, error class, bounded response metadata | Каждая попытка отдельна. Secrets, подписи и полное содержимое ответа не попадают в журнал. |
 | OutboxEvent | ID, aggregate ID/version, event type/schema version, occurredAt, минимальный payload | Inbox и outbox фиксируются одной SQL-транзакцией. |
 
-Предлагаемые таблицы: `integration_connections`, `webhook_subscriptions`, `signing_keys`, `inbound_receipts`, `processed_events`, `webhook_deliveries`, `webhook_delivery_attempts`, `idempotency_keys`, `outbox`. Config lifecycle и retry FSM реализуются доменными методами Connection/Subscription/Delivery, не установкой произвольного `status` из HTTP handler.
+Предлагаемые таблицы: `integration_connections`, `webhook_subscriptions`, `signing_keys`, `inbound_receipts`, `processed_events`, `webhook_deliveries`, `webhook_delivery_attempts`, `outbox`. Config lifecycle и retry FSM реализуются доменными методами Connection/Subscription/Delivery, не установкой произвольного `status` из HTTP handler.
 
 ### Состояния
 
@@ -171,7 +173,7 @@ Webhook destination — потенциальный SSRF-вход. Требуют
 
 **Вход:** company ID, поддерживаемый provider type, external tenant reference, allowlist входящих событий и mapping version. Пользователь берётся из доверенного identity context. Management проверяет право управления интеграциями именно этой компании, продуктовые лимиты и допустимость provider/контракта.
 
-Создаются connection ID, inbound route и отдельный криптографически случайный inbound signing key. Состояние ACTIVE означает, что настроенный источник может отправлять подписанные сообщения; исходящая подписка создаётся отдельно. Настройки, encrypted key, idempotency record и audit фиксируются атомарно. Signing secret выдаётся один раз по защищённому каналу; GET возвращает только masked metadata/key version.
+Создаются connection ID, inbound route и отдельный криптографически случайный inbound signing key. Состояние ACTIVE означает, что настроенный источник может отправлять подписанные сообщения; исходящая подписка создаётся отдельно. Настройки, encrypted key и audit фиксируются атомарно; идентификатор запроса создания и его хеш хранятся в подключении. Signing secret выдаётся один раз по защищённому каналу; GET возвращает только masked metadata/key version.
 
 Повтор исходной create-команды должен вернуть тот же connection ID. Если одноразовая выдача секрета была потеряна, не предполагается его повторное раскрытие из общего журнала: требуется безопасный протокол выдачи или RotateSigningKey. company ID нельзя менять обычным Update.
 

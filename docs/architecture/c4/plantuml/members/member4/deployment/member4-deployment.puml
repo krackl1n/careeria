@@ -1,0 +1,71 @@
+@startuml member4-deployment
+!include <C4/C4_Deployment>
+!include ../../../common/styles.puml
+SetDefaultLegendEntries("container\nnode\nboundary")
+
+title Careeria — Identity Service: C4 Level 2 Deployment / Production Kubernetes
+LAYOUT_TOP_DOWN()
+skinparam ranksep 40
+skinparam nodesep 30
+
+Deployment_Node(clientNode, "Устройство пользователя", "Workstation / Smart Device") {
+    Node(browser, "Браузер", "Web browser", "Загружает Authentication UI; регистрация, вход и подтверждение контактов.")
+}
+Node(publicLb, "Публичный балансировщик", "L4 / TCP", "Вход в платформу по HTTPS, порт 443.")
+
+Deployment_Node(cluster, "Инфраструктура Careeria", "Production Kubernetes Cluster") {
+    Deployment_Node(appNodes, "Пул узлов приложений × 3..N", "Linux / container runtime") {
+        Boundary(edgeNamespace, "Периметральный контур — careeria-edge", "Kubernetes namespace") {
+            Deployment_Node(ingressPods, "Ingress Controller Pods × 2", "Kubernetes Pod / Nginx или Envoy") {
+                Container(ingress, "Ingress Controller", "HTTP Reverse Proxy", "TLS-терминация и маршрутизация; порт 443.")
+            }
+        }
+        Boundary(appNamespace, "Приватный контур приложений — careeria-apps", "Kubernetes namespace") {
+            Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
+                Container(web, "Web Application", "Next.js / React", "SSR и клиентский интерфейс входа; HTTP, порт 3000.")
+            }
+            Deployment_Node(bffPods, "BFF Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
+                Container(bff, "BFF", "Go / HTTP", "Веб-фасад и сессии браузера; HTTP, порт 8080.")
+            }
+            Deployment_Node(gatewayPods, "API Gateway Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
+                Container(apiGateway, "API Gateway", "Go / grpc-gateway", "HTTP/JSON → gRPC; HTTP, порт 8080.")
+            }
+            Deployment_Node(identityPods, "Identity Service Pods × 2..10", "Kubernetes Deployment / HPA / ClusterIP") {
+                Container(identityService, "Identity Service", "Go / distroless, nonroot", "Регистрация, OAuth/OIDC, JWT и сессии. gRPC и health: 50052. Outbox worker работает в том же процессе.")
+            }
+        }
+    }
+    Deployment_Node(dataNodes, "Пул узлов данных × 3..N", "Linux / persistent volumes") {
+        Boundary(dataNamespace, "Изолированный контур данных — careeria-data", "Kubernetes namespace") {
+            Deployment_Node(pgCluster, "Общий PostgreSQL-кластер", "StatefulSet / primary + 2 replicas / PVC") {
+                ContainerDb(postgresql, "PostgreSQL", "Общая СУБД платформы", "Identity использует логическую БД identity и свою роль: accounts, credentials, сессии, token families, челленджи и outbox. Порт 5432.")
+            }
+            Deployment_Node(redisPods, "Redis Pods", "StatefulSet / HA-топология / PVC") {
+                ContainerDb(redis, "Redis", "Redis / TTL", "Транзакции авторизации и одноразовые authorization codes; порт 6379.")
+            }
+            Deployment_Node(kafkaPods, "Kafka Pods × 3", "StatefulSet / KRaft / PVC на Pod") {
+                ContainerQueue(kafka, "Kafka", "Apache Kafka", "Топик identity.events; replication factor 3, min.insync.replicas 2; порт 9092.")
+            }
+        }
+    }
+}
+
+Rel(browser, publicLb, "Открывает страницы и вызывает API", "HTTPS, порт 443")
+Rel(publicLb, ingress, "Передаёт TLS-соединения", "TCP, порт 443")
+Rel(ingress, web, "Страницы, Authentication UI и статика", "HTTP, порт 3000")
+Rel(ingress, bff, "Проксирует запросы /api/*", "HTTP, порт 8080")
+Rel(web, bff, "Получает данные при SSR", "HTTP / JSON, порт 8080")
+Rel(bff, apiGateway, "Вызывает Identity API через шлюз", "HTTP / JSON, порт 8080")
+Rel(apiGateway, identityService, "Registration, Authentication, OAuth, Metadata", "gRPC / HTTP2, порт 50052")
+Rel(identityService, postgresql, "Транзакции данных Identity и обработка outbox", "SQL / TCP, порт 5432")
+Rel(identityService, redis, "Читает и обновляет короткоживущие состояния", "Redis RESP / TCP, порт 6379")
+Rel(identityService, kafka, "Публикует события identity.events", "Kafka / JSON, порт 9092")
+
+Lay_D(web, bff)
+Lay_D(bff, apiGateway)
+Lay_D(apiGateway, identityService)
+Lay_D(postgresql, redis)
+Lay_D(redis, kafka)
+
+ShowArchitectureLegend()
+@enduml
