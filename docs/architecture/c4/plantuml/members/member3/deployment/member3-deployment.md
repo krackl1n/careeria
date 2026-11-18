@@ -87,4 +87,4 @@
 
 ---
 
-[Ландшафт L0](../landscape/member2-l0-landscape.md) · [Контекст L1](../context%28L1%29/index.md) · [Контейнеры L2](../context%28L1%29/containers%28L2%29/index.md) · [Динамический процесс](../../../dynamic/member3-dynamic.md) · [Раздел Member 3](../README.md)
+[Ландшафт L0](../../../landscape%28L0%29/README.md) · [Контекст L1](../context%28L1%29/index.md) · [Контейнеры L2](../context%28L1%29/containers%28L2%29/index.md) · [Динамический процесс](../../../dynamic/member3-dynamic.md) · [Раздел Member 3](../README.md)
