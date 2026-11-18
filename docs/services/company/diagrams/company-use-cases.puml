@@ -1,0 +1,34 @@
+@startuml company-use-cases
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName sans-serif
+actor "Пользователь\nплатформы" as user
+actor "Представитель\nкомпании" as rep
+actor "Приглашённый\nпользователь" as invitee
+actor "Проверяющий /\nоператор платформы" as operator
+rectangle "Company Service" {
+  usecase "Создать компанию" as create
+  usecase "Просмотреть компанию\nи состав" as view
+  usecase "Изменить данные\nкомпании" as update
+  usecase "Подать компанию\nна проверку" as submit
+  usecase "Рассмотреть заявку\nна проверку" as verify
+  usecase "Заблокировать /\nразблокировать компанию" as block
+  usecase "Управлять приглашениями" as invite
+  usecase "Принять приглашение" as accept
+  usecase "Изменить роль\nили владение" as role
+  usecase "Приостановить / восстановить\nили исключить участника" as member
+  usecase "Покинуть компанию" as leave
+}
+user -- create
+rep -- view
+rep -- update
+rep -- submit
+rep -- invite
+rep -- role
+rep -- member
+rep -- leave
+invitee -- accept
+operator -- verify
+operator -- block
+@enduml

@@ -1,0 +1,134 @@
+Project careeria_assessment {
+  database_type: 'PostgreSQL'
+  Note: 'Проект; не миграция. Инварианты и неопределённости описаны в docs/services/assessment/index.md.'
+}
+Table assessment_templates {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  company_id uuid [not null, note: 'Внешний Company ID']
+  title text [not null]
+  status text [not null]
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+Table template_revisions {
+  id uuid [pk]
+  template_id uuid [not null, ref: > assessment_templates.id]
+  ordinal integer [not null]
+  assessment_type text [not null]
+  scoring_strategy text [not null]
+  time_limit_minutes integer [not null]
+  passing_threshold numeric(5,2) [not null]
+  status text [not null, note: 'Опубликованная редакция неизменяема']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  indexes { (template_id, ordinal) [unique] }
+}
+Table assessment_tasks {
+  id uuid [pk]
+  revision_id uuid [not null, ref: > template_revisions.id]
+  title text [not null]
+  instructions text [not null]
+  test_suite_file_id uuid [note: 'Внешний File ID; привязка и доступ требуют контракта']
+  max_score numeric(10,2) [not null]
+  position integer [not null]
+  allowed_languages text[] [not null, default: '{}', note: 'Допустимые языки решения задачи']
+  indexes {
+    (revision_id, id) [unique]
+    (revision_id, position) [unique]
+  }
+}
+Table assessment_sessions {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  revision_id uuid [not null, ref: > template_revisions.id]
+  candidate_id uuid [not null, note: 'Внешний Candidate ID, не Identity ID']
+  application_id uuid [not null, note: 'Внешний Hiring Application ID']
+  status text [not null]
+  valid_until timestamptz [not null]
+  started_at timestamptz
+  expires_at timestamptz
+  submitted_at timestamptz
+  final_score numeric(5,2)
+  is_passed boolean
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (revision_id, id) [unique]
+    (status, valid_until)
+    (status, expires_at)
+  }
+}
+Table task_submissions {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  revision_id uuid [not null]
+  session_id uuid [not null]
+  task_id uuid [not null]
+  language text [not null]
+  source_code text [not null, note: 'Чувствительные данные; ограничения размера и retention требуют решения']
+  status text [not null]
+  runner_operation_id uuid [not null, unique]
+  execution_time_ms bigint
+  peak_memory_bytes bigint
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (session_id, task_id, created_at, id) }
+}
+Ref: task_submissions.(revision_id, session_id) > assessment_sessions.(revision_id, id)
+Ref: task_submissions.(revision_id, task_id) > assessment_tasks.(revision_id, id)
+Table runner_jobs {
+  submission_id uuid [pk, ref: > task_submissions.id]
+  status text [not null]
+  attempts integer [not null, default: 0]
+  next_attempt_at timestamptz
+  lease_token uuid
+  lease_until timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (status, next_attempt_at) }
+  Note: 'Предлагаемая устойчивая отправка в Runner; worker и контракт необходимо отразить в C4.'
+}
+Table assessment_manual_reviews {
+  id uuid [pk]
+  session_id uuid [not null, ref: > assessment_sessions.id]
+  reviewer_id uuid [not null, note: 'Внешний Identity ID']
+  feedback text
+  version bigint [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (session_id, reviewer_id) [unique] }
+}
+Table review_scores {
+  review_id uuid [not null, ref: > assessment_manual_reviews.id]
+  criterion_key text [not null]
+  score numeric(5,2) [not null]
+  indexes { (review_id, criterion_key) [pk] }
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+}

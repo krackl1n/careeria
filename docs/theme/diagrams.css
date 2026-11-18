@@ -45,3 +45,29 @@
 .md-typeset .idef0-error p {
   margin: 0.5rem 0 0;
 }
+
+
+/* Let every documentation table share the available width according to its content. */
+.md-typeset .md-typeset__table {
+  display: block;
+  width: 100%;
+}
+.md-typeset .md-typeset__table table:not([class]) {
+  display: table;
+  width: 100%;
+  table-layout: auto;
+}
+.md-typeset .md-typeset__table table:not([class]) th {
+  min-width: 0;
+}
+.md-typeset .md-typeset__table table:not([class]) th,
+.md-typeset .md-typeset__table table:not([class]) td {
+  max-width: 12rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.md-typeset .md-typeset__table table:not([class]) th:last-child,
+.md-typeset .md-typeset__table table:not([class]) td:last-child {
+  max-width: none;
+  min-width: 14rem;
+}

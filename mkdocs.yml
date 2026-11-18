@@ -5,6 +5,7 @@ docs_dir: docs
 dev_addr: localhost:18882
 hooks:
   - docs/tools/navigation.py
+  - docs/tools/include_pages.py
   - docs/tools/idef0_render.py
   - docs/tools/idef0_inline.py
 theme:
@@ -45,10 +46,14 @@ extra:
       - contributing
       - project
       - architecture
+      - services
+      - data-model
       - deployment
       - security
       - readme.md
     titles:
+      services: Сервисы
+      data-model: Модели данных
       architecture: Архитектура
       c4: C4
       plantuml: Диаграммы и модели

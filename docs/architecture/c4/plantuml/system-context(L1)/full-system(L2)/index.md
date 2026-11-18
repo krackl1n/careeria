@@ -4,7 +4,7 @@
 
 ## Путь пользовательского запроса
 
-`Browser → Web Application → BFF → API Gateway → доменный сервис → PostgreSQL`.
+`Browser → Web Application (Next.js с BFF) → API Gateway → доменный сервис → PostgreSQL`.
 
 Каждый сервис владеет своими данными. Синхронные обращения идут через API владельца; событийные взаимодействия используют Kafka.
 

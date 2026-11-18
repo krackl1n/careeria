@@ -2,7 +2,7 @@
 
 Область Member 3: оценка и коммуникации. Основные контейнеры: Assessment Service/DB, Communication Service/DB, Realtime Publisher, Centrifugo и LiveKit.
 
-Общий вход в систему: `Пользователь → Web Application → BFF → API Gateway`.
+Общий вход в систему: `Пользователь → Web Application (Next.js с BFF) → API Gateway`.
 
 ```plantuml
 @startuml
