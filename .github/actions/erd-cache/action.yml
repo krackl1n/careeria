@@ -1,0 +1,44 @@
+name: Restore or generate ER diagrams
+description: Cache generated diagrams using the service schema and generator dependencies.
+inputs:
+  service:
+    description: Service owning the data model.
+    required: true
+  schema:
+    description: Path to the DBML schema.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Restore diagram cache
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/erd-cache/${{ inputs.service }}
+        key: ${{ runner.os }}-node22-erd-v2-${{ inputs.service }}-${{ hashFiles('.github/actions/erd-cache/action.yml', 'docs/tools/generate-erd.cjs', 'docs/tools/erd-deps/package-lock.json', inputs.schema) }}
+    - name: Generate diagrams
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        ERD_SERVICE: ${{ inputs.service }}
+        NODE_PATH: ${{ runner.temp }}/diagram-deps/node_modules
+      run: |
+        mkdir -p "$RUNNER_TEMP/erd-cache/$ERD_SERVICE"
+        node docs/tools/generate-erd.cjs
+        if [ "$ERD_SERVICE" = identity ]; then
+          cp docs/data-model/identity/reference/erd-identity_{accounts,oauth,operations}.svg "$RUNNER_TEMP/erd-cache/identity/"
+        else
+          cp "docs/data-model/$ERD_SERVICE/reference/erd.svg" "$RUNNER_TEMP/erd-cache/$ERD_SERVICE/"
+        fi
+    - name: Save diagram cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ runner.temp }}/erd-cache/${{ inputs.service }}
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+    - name: Restore cached diagrams
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        ERD_SERVICE: ${{ inputs.service }}
+      run: cp "$RUNNER_TEMP/erd-cache/$ERD_SERVICE/"*.svg "docs/data-model/$ERD_SERVICE/reference/"
