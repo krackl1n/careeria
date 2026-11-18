@@ -20,8 +20,7 @@
 2. **Асинхронный контур (Event-Driven, Шаги 11–16)**: Фоновая доставка доменного события через Transactional Outbox, CDC Debezium и шину Kafka с оповещением соискателя и обновлением кадровой системы предприятия через Integration Service.
 
 В цепочке задействованы следующие контейнеры и узлы:
-* **Web Application** (Next.js / React) — фронтенд-интерфейс нанимающего менеджера.
-* **BFF (Backend for Frontend)** — сессионный фасад, валидирующий `HttpOnly`-куки и авторизационные заголовки.
+* **Web Application** (Next.js / React) — интерфейс нанимающего менеджера и серверный BFF, обрабатывающий сессию и запросы к API. BFF работает в том же развёртывании.
 * **API Gateway** — шлюз платформы, обеспечивающий rate limiting, распределённую трассировку W3C и передачу доверенного identity context.
 * **Hiring Service** — микросервис бизнес-логики найма на Go 1.23+, управляющий жизненным циклом откликов, собеседований и офферов.
 * **OpenFGA** — специализированный движок авторизации на основе отношений (ReBAC).
@@ -55,17 +54,17 @@
   ```
 
 #### Шаг 2. Проксирование вызова через сессионный слой (BFF)
-* **Инициатор**: `Web Application`.
-* **Получатель**: `BFF (Backend for Frontend)`.
-* **Протокол и порт**: `HTTPS / JSON`, порт `443` (внутренняя сеть).
+* **Инициатор**: клиентский код в браузере.
+* **Получатель**: серверный BFF внутри `Web Application`.
+* **Протокол и порт**: `HTTPS / JSON`, порт `443` через Ingress.
 * **Операция**: `POST /api/hiring/interviews/{interviewId}/feedback`.
-* **Логика**: BFF извлекает сессионную куку `__Host-Careeria-Session`, расшифровывает её, проверяет наличие CSRF-токена в заголовке `X-CSRF-Token`, извлекает действующий access token и формирует внутренний gRPC-запрос.
+* **Логика**: BFF извлекает сессионную куку `__Host-Careeria-Session`, проверяет сессию и CSRF-токен, получает действующий access token и формирует запрос к API Gateway. Конкретное хранение сессии ещё выбирается.
 
 #### Шаг 3. Авторизованный вызов шлюза платформы (API Gateway)
 * **Инициатор**: `BFF`.
 * **Получатель**: `API Gateway`.
-* **Протокол и порт**: `gRPC / HTTP2`, порт `50051`.
-* **Операция**: `careeria.api.v1.GatewayService/RouteHiringCall`.
+* **Протокол и порт**: `HTTP / JSON`, порт `8080`.
+* **Операция**: `POST /api/hiring/interviews/{interviewId}/feedback`.
 * **Логика**: API Gateway генерирует сквозной `X-Request-ID`, считывает заголовки W3C Trace Context (`traceparent`), выполняет проверку rate limiting на основе IP/Tenant и передаёт доверенные метаданные в gRPC Metadata (`x-user-id`, `x-company-id`, `x-roles`).
 
 #### Шаг 4. Вызов RPC-метода Hiring Service
@@ -124,12 +123,12 @@
 #### Шаг 8. Трансляция ответа шлюзом API
 * **Инициатор**: `API Gateway`.
 * **Получатель**: `BFF`.
-* **Протокол и порт**: `gRPC / HTTP2`.
-* **Логика**: Gateway проверяет корректность завершения сеанса, добавляет метрики латентности в OpenTelemetry span и проксирует ответ клиенту BFF.
+* **Протокол и порт**: `HTTP / JSON`.
+* **Логика**: Gateway возвращает ответ серверному BFF с данными трассировки.
 
 #### Шаг 9. Формирование HTTP-ответа клиенту (BFF)
 * **Инициатор**: `BFF`.
-* **Получатель**: `Web Application`.
+* **Получатель**: клиентский код Web Application в браузере.
 * **Протокол и порт**: `HTTPS / JSON`, статус `200 OK`.
 * **Тело ответа (JSON Payload)**:
   ```json
@@ -195,14 +194,14 @@
 | № шага | Направление | Инициатор вызова | Целевой элемент | Вызываемый интерфейс / операция | Протокол / Порт | Формат данных | Тип взаимодействия | SLA / Таймаут |
 |:---:|:---:|---|---|---|:---:|---|:---:|:---:|
 | **1** | Запрос | Нанимающий менеджер | Web Application | `submitFeedbackForm()` | HTTPS / 443 | JSON DTO | Синхронный | < 50 мс |
-| **2** | Запрос | Web Application | BFF | `POST /api/hiring/interviews/{id}/feedback` | HTTPS / 443 | JSON + Cookie | Синхронный | < 100 мс |
-| **3** | Запрос | BFF | API Gateway | `GatewayService/RouteHiringCall` | gRPC / 50051 | Protobuf + Metadata | Синхронный | < 150 мс |
+| **2** | Запрос | Браузер (Web UI) | BFF внутри Next.js | `POST /api/hiring/interviews/{id}/feedback` | HTTPS / 443 | JSON + Cookie | Синхронный | < 100 мс |
+| **3** | Запрос | BFF внутри Next.js | API Gateway | `POST /api/hiring/interviews/{id}/feedback` | HTTP / 8080 | JSON + авторизация | Синхронный | < 150 мс |
 | **4** | Запрос | API Gateway | Hiring Service | `HiringService/SubmitFeedback` | gRPC / 50053 | Protobuf DTO | Синхронный | < 200 мс |
 | **5** | Запрос | Hiring Service | OpenFGA | `OpenFGAService/Check` | gRPC / 8081 | Protobuf ReBAC Tuple | Синхронный | < 20 мс |
 | **6** | Запрос | Hiring Service | Hiring DB | `SQL Transaction (BEGIN ... COMMIT)` | SQL / 5432 | SQL Statements | Синхронный | < 50 мс |
 | **7** | **Ответ** | **Hiring Service** | **API Gateway** | **`SubmitFeedbackResponse`** | **gRPC / 50053** | **Protobuf Response** | **Синхронный** | **< 30 мс** |
-| **8** | **Ответ** | **API Gateway** | **BFF** | **gRPC Response forward** | **gRPC / 50051** | **Protobuf Response** | **Синхронный** | **< 30 мс** |
-| **9** | **Ответ** | **BFF** | **Web Application** | **`HTTP 200 OK (JSON Status)`** | **HTTPS / 443** | **JSON Payload** | **Синхронный** | **< 50 мс** |
+| **8** | **Ответ** | **API Gateway** | **BFF внутри Next.js** | **Ответ API** | **HTTP / 8080** | **JSON** | **Синхронный** | **< 30 мс** |
+| **9** | **Ответ** | **BFF внутри Next.js** | **Браузер (Web UI)** | **`HTTP 200 OK (JSON Status)`** | **HTTPS / 443** | **JSON Payload** | **Синхронный** | **< 50 мс** |
 | **10** | **Ответ** | **Web Application** | **Нанимающий менеджер** | **Рендеринг UI (Toast + воронка)** | **UI Event** | **DOM / React State** | **Клиентский** | **< 16 мс** |
 | **11** | Событие | Hiring DB | Debezium Connector | Потоковое чтение PostgreSQL WAL | WAL / 5432 | Бинарный pgoutput WAL | Асинхронный (CDC) | < 100 мс |
 | **12** | Событие | Debezium Connector | Apache Kafka | `ProduceRecord(hiring.events)` | Kafka / 9092 | Apache Avro Binary | Асинхронный | < 50 мс |

@@ -14,7 +14,7 @@
 
 Оформление повторяет deployment участника Member 2: направление слева направо, синие блоки приложений, отдельные узлы исполнения, общий узел СУБД и подписанные связи. Вложенность показывает размещение экземпляров приложений на worker nodes production-кластера. `Container` — экземпляр именованного логического контейнера L2 (например, Hiring Service), а не Kubernetes Pod или группа сервисов. Для прикладных сервисов кратность Pod указана в технической подписи блока; для Web Application, Ingress, LiveKit и stateful workloads Pod дополнительно раскрыт через `Deployment_Node`. Kubernetes namespace обозначен границей `Boundary`. Кратность `× N` показывает число экземпляров на весь пул, а не на каждый узел.
 
-На application-виде каждый сервис показан отдельно. **Web Application разворачивается внутри Kubernetes**, в `careeria-apps`, как Next.js-приложение в `Web Application Pods × 2..10`. Оно обслуживает страницы, доставляет клиентский JavaScript и обращается к BFF. На устройстве пользователя показан браузер (`Node`), который загружает интерфейс из кластера. Ingress Controller показан как исполняемый proxy-контейнер внутри Pod, публичный Load Balancer — как инфраструктурный `Node`.
+На application-виде каждый сервис показан отдельно. **Web Application разворачивается внутри Kubernetes**, в `careeria-apps`, как Next.js-приложение в `Web Application Pods × 2..10`. Оно обслуживает страницы и клиентский JavaScript; BFF выполняется в серверной части того же Next.js-приложения. На устройстве пользователя показан браузер (`Node`), который загружает интерфейс из кластера. Ingress Controller показан как исполняемый proxy-контейнер внутри Pod, публичный Load Balancer — как инфраструктурный `Node`.
 
 API Gateway связан со всеми десятью прикладными API: Candidate, Company, Vacancy, Hiring, Assessment, Communication, Identity, Integration, File и Notification Service. Candidate Service обращается к File Service для работы с резюме. Восемь сервисов, выполняющих проверки доступа к ресурсам, связаны с OpenFGA; AuthZ Synchronization Service обновляет отношения доступа по событиям Kafka. Kafka также связан с остальными потребителями событий, а Realtime Publisher — с Centrifugo. Сигнализация LiveKit отделена от прямого медиатрафика браузера. Kubernetes Deployment, Service и HPA остаются управляющими объектами и аннотациями. На основной схеме в контуре данных развёрнут один общий PostgreSQL-кластер: к нему показаны SQL-подключения девяти прикладных сервисов и OpenFGA. File Service использует MinIO; его связь с объектным хранилищем раскрыта на следующем виде. Внешние системы показаны на L0/L1.
 
@@ -50,7 +50,7 @@ Debezium подключается к общей СУБД и читает WAL/out
 
 | Workload | Контейнеры модели | Размещение |
 |---|---|---|
-| Пользовательский вход | Web Application, BFF, API Gateway | По отдельному Deployment и ClusterIP Service. Внешний трафик проходит через Ingress controller. |
+| Пользовательский вход | Web Application (включая BFF), API Gateway | Отдельные Deployment и ClusterIP Service для Web Application и API Gateway; BFF развёртывается и масштабируется вместе с Next.js. Внешний трафик проходит через Ingress controller. |
 | Прикладные API | Candidate, Company, Vacancy, Hiring, Assessment, Communication, Identity, Integration, Notification и File Service | 10 независимых Deployments и 10 Service. Для существующих L3 детали доступны через [каталог компонентов](../system-context%28L1%29/full-system%28L2%29/index.md#components); File Service пока раскрыт на L2. |
 | Фоновые обработчики | Notification Service, Realtime Publisher, AuthZ Synchronization Service | Отдельные workloads. API и consumer одного сервиса при необходимости запускаются разными workload-профилями, сохраняя владельца данных. Число Kafka consumers ограничивается числом partitions и поведением consumer group. |
 | Realtime | Centrifugo | Deployment и Service; состояние каналов/presence вынесено в Redis broker. Долгоживущие соединения требуют отдельного профиля масштабирования и drain. |
@@ -61,7 +61,7 @@ Debezium подключается к общей СУБД и читает WAL/out
 
 ### Сеть и внешний трафик
 
-Основной путь: `Browser → public Load Balancer → Ingress controller → Web/BFF → API Gateway → Service → ready API Pods`. Вызовы внутренних сервисов используют ClusterIP/DNS; базы данных и Kafka не публикуются в интернет.
+Основной путь: `Browser → public Load Balancer → Ingress controller → Next.js (BFF) → API Gateway → Service → ready API Pods`. Вызовы внутренних сервисов используют ClusterIP/DNS; базы данных и Kafka не публикуются в интернет.
 
 Отдельные маршруты Ingress обслуживают WebSocket Centrifugo, сигнализацию LiveKit, входящие HR-webhooks и HTTPS-доступ к S3 API для presigned загрузок и скачиваний. Публичным остаётся ограниченный S3 API endpoint, а не административная консоль MinIO.
 
@@ -83,7 +83,7 @@ Debezium подключается к общей СУБД и читает WAL/out
 
 | Workload | Стартовый диапазон | Сигнал масштабирования |
 |---|---|---|
-| Web, BFF, API Gateway | 2–10 Pod **на каждый Deployment** | CPU: целевой уровень 70% от `requests.cpu`. RPS и latency используются для наблюдения; включение custom metrics требует отдельного решения. |
+| Web Application (с BFF), API Gateway | 2–10 Pod **на каждый из двух Deployments** | CPU: целевой уровень 70% от `requests.cpu`. RPS и latency используются для наблюдения; включение custom metrics требует отдельного решения. |
 | Прикладные API | 2–10 Pod **на каждый из 10 Deployments** | CPU 70% как начальная настройка; профиль корректируется отдельно для каждого сервиса. |
 | Kafka consumers | 2–8 Pod на workload как проектный диапазон | Consumer lag через custom/external metrics. Реальный максимум не выше полезного параллелизма partitions; один workload управляется одним механизмом масштабирования. |
 | Centrifugo | Минимум 2 Pod; максимум после замеров | Активные соединения, сообщения и CPU через прикладные метрики. Снижение числа реплик требует drain и корректного переподключения клиентов. |

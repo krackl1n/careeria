@@ -34,8 +34,7 @@
 
 !unquoted procedure EntryPoints()
     Container_Boundary(entryPoints, "Точки входа") {
-        Container(web, "Web Application", "Next.js, React, TypeScript, Tailwind CSS", "App Router, SSR/CSR, TanStack Query, React Hook Form и Zod; интерфейс кандидатов и сотрудников компаний.", $tags="frontend")
-        Container(bff, "BFF", "Go, net/http, grpc-go, OIDC", "HttpOnly-сессии, CSRF-защита, обновление токенов и агрегация ответов для Next.js.", $tags="edge")
+        Container(web, "Web Application", "Next.js, React, TypeScript, Tailwind CSS", "App Router, SSR/CSR и серверный BFF: сессии, CSRF-защита, токены и адаптация API.", $tags="frontend")
         Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.", $tags="gateway")
     }
 !endprocedure

@@ -1,165 +1,132 @@
 # База данных сервиса File
 
-Источник: проектная [DBML-схема](../schema.dbml). Смысл сценариев и незакрытые решения — в [описании сервиса](../../../services/file/index.md).
+База данных File хранит метаданные файлов, сессии загрузки, результаты проверок и привязки файлов к ресурсам платформы. Отдельные задания используются для очистки данных. Содержимое файлов размещается в объектном хранилище, а база содержит сведения для управления доступом и жизненным циклом файла.
 
 ## ER-диаграмма
 
-Таблицы показаны со всеми полями из DBML. PK — первичный ключ, FK — внешний ключ, звёздочка — обязательное поле. Связи обозначены нотацией «воронья лапка»: круг — необязательная связь, черта — один, лапка — многие. Линии подходят к строкам полей; для составного FK линия подходит к последнему полю, а все поля перечислены ниже. Кратность выведена из FK, NOT NULL и уникальных ключей DBML; дополнительные SQL-ограничения смотрите в миграциях или проекте ограничений. Внешние идентификаторы других сервисов не соединены межбазовыми FK.
+
 
 ![ER-диаграмма File](erd.svg)
+
+<p align="center">Рисунок - Модель данных сервиса File</p>
 
 [Открыть SVG полностью](erd.svg)
 
 ## Сущности
 
-Здесь сущность — таблица локальной базы, включая технические таблицы. Название на русском — поясняющий псевдоним; физическое имя приведено в первом столбце.
+<p align="right">Таблица - Сущности сервиса File</p>
 
 | Таблица | Псевдоним | Описание | Особенности |
 |---|---|---|---|
 | files | Файл | Владелец, состояние и проверенные метаданные файла. | PK: id |
 | upload_sessions | Сессия загрузки | Состояние отдельной попытки загрузки файла. | PK: id |
 | file_checks | Проверка файла | Результат отдельной проверки загруженного файла. | PK: id |
-| file_bindings | Привязка файла | Связь файла с ресурсом другого сервиса. | PK: id; Одна стабильная запись на связь; повторная активация освобождённой записи не допускается. |
+| file_bindings | Привязка файла | Связь файла с ресурсом другого сервиса. | PK: id |
 | file_cleanup_jobs | Очистка файла | Задание удаления объекта или незавершённой загрузки. | PK: id |
-| outbox_messages | Исходящее событие | Сообщение transactional outbox для последующей публикации. | PK: id; Предложение; необходимость событий и совместимость с общей реализацией требуют согласования. |
+| outbox_messages | Исходящее событие | Сообщение transactional outbox для последующей публикации. | PK: id |
 
 ## Связи
 
-Одна строка соответствует одному локальному FK. Кратность указана в двух направлениях: сколько дочерних записей может относиться к одной родительской и сколько родительских — к одной дочерней. Минимум дочерних записей равен нулю: FK не требует наличия дочерней записи. Для составного nullable FK значение 0..1 означает, что ссылка может отсутствовать; частично заполненный ключ при стандартном MATCH SIMPLE также не проверяется. Указана кратность по DBML без учёта частичных уникальных индексов: 0..N — верхняя оценка, которую дополнительные ограничения могут сузить. В Identity приоритет имеют миграции.
+<p align="right">Таблица - Связи сущностей сервиса File</p>
 
-| Родительская сущность и ключ | Дочерняя сущность и FK | Дочерних на родителя | Родителей на дочернюю | Комментарий |
+| Родительская сущность и ключ | Дочерняя сущность и FK | Дочерних записей на одну родительскую | Родительских записей на одну дочернюю | Комментарий |
 |---|---|---|---|---|
-| files (id) | upload_sessions (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не указано в DBML. |
-| files (id) | file_checks (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не указано в DBML. |
-| files (id) | file_bindings (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не указано в DBML. |
-| files (id) | file_cleanup_jobs (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не указано в DBML. |
+| files (id) | upload_sessions (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не задано. |
+| files (id) | file_checks (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не задано. |
+| files (id) | file_bindings (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не задано. |
+| files (id) | file_cleanup_jobs (file_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не задано. |
 
 ## Атрибуты
 
-В описании указаны обязательность по DBML, ключи, значение по умолчанию и смысл поля. «Необязательно / не указано» не исключает дополнительных SQL-ограничений. UNIQUE отмечен для отдельного поля; составные ключи и индексы перечислены под таблицей.
+<p align="right">Таблица - Атрибуты сущностей сервиса File</p>
 
-### files
+<div class="md-typeset__scrollwrap attribute-dictionary"><div class="md-typeset__table"><table><thead><tr><th>Сущность</th><th>Поле</th><th>Тип</th><th>Описание</th></tr></thead><tbody>
+<tr><td class="attribute-name" rowspan="15">files</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">owner_identity_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Внешний Identity ID; не межсервисный FK</td></tr>
+<tr><td class="attribute-name">purpose</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Назначение файла.</td></tr>
+<tr><td class="attribute-name">state</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">declared_filename</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Недоверенное имя для отображения, не object key</td></tr>
+<tr><td class="attribute-name">verified_mime_type</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Подтверждённый MIME-тип файла.</td></tr>
+<tr><td class="attribute-name">verified_size_bytes</td><td class="attribute-type">bigint</td><td class="attribute-description">Необязательно / не указано; Подтверждённый размер файла в байтах.</td></tr>
+<tr><td class="attribute-name">verified_checksum</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Подтверждённая контрольная сумма файла.</td></tr>
+<tr><td class="attribute-name">storage_object_key</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; UNIQUE; Генерируется сервером, не возвращается клиенту</td></tr>
+<tr><td class="attribute-name">storage_version_id</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Неизменяемая версия байтов, подтверждённая при проверке</td></tr>
+<tr><td class="attribute-name">version</td><td class="attribute-type">bigint</td><td class="attribute-description">Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+<tr><td class="attribute-name">ready_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время перехода в готовое состояние.</td></tr>
+<tr><td class="attribute-name">deleted_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время удаления.</td></tr>
+<tr><td class="attribute-name" rowspan="12">upload_sessions</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">file_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; FK; Идентификатор файла.</td></tr>
+<tr><td class="attribute-name">caller_service</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Сервис из доверенной service identity</td></tr>
+<tr><td class="attribute-name">begin_operation_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса.</td></tr>
+<tr><td class="attribute-name">request_hash</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Хеш запроса для проверки повторов.</td></tr>
+<tr><td class="attribute-name">state</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">multipart_upload_id</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Внутренний ID хранилища; может отсутствовать до ответа хранилища</td></tr>
+<tr><td class="attribute-name">expires_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время истечения.</td></tr>
+<tr><td class="attribute-name">last_upload_url_expires_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Для безопасной очистки после истечения ранее выданных прав записи</td></tr>
+<tr><td class="attribute-name">version</td><td class="attribute-type">bigint</td><td class="attribute-description">Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+<tr><td class="attribute-name" rowspan="10">file_checks</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">file_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; FK; Идентификатор файла.</td></tr>
+<tr><td class="attribute-name">check_type</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Тип проверки.</td></tr>
+<tr><td class="attribute-name">operation_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; UNIQUE; Идентификатор идемпотентной операции.</td></tr>
+<tr><td class="attribute-name">storage_version_id</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Проверка относится к точной версии объекта</td></tr>
+<tr><td class="attribute-name">status</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">safe_result_code</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Безопасный код результата проверки.</td></tr>
+<tr><td class="attribute-name">started_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время начала.</td></tr>
+<tr><td class="attribute-name">completed_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name" rowspan="11">file_bindings</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">file_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; FK; Идентификатор файла.</td></tr>
+<tr><td class="attribute-name">owner_service</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Устанавливается по доверенной service identity</td></tr>
+<tr><td class="attribute-name">resource_type</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Тип внешнего ресурса.</td></tr>
+<tr><td class="attribute-name">resource_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Внешний ID ресурса владельца</td></tr>
+<tr><td class="attribute-name">bind_operation_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; UNIQUE; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса.</td></tr>
+<tr><td class="attribute-name">release_operation_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Необязательно / не указано; UNIQUE; Устойчивый ID освобождения</td></tr>
+<tr><td class="attribute-name">status</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">version</td><td class="attribute-type">bigint</td><td class="attribute-description">Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">released_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name" rowspan="13">file_cleanup_jobs</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">file_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; FK; Идентификатор файла.</td></tr>
+<tr><td class="attribute-name">operation_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; UNIQUE; Идентификатор идемпотентной операции.</td></tr>
+<tr><td class="attribute-name">reason</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Причина действия или перехода.</td></tr>
+<tr><td class="attribute-name">state</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">attempts</td><td class="attribute-type">integer</td><td class="attribute-description">Обязательно; По умолчанию: 0; Количество попыток.</td></tr>
+<tr><td class="attribute-name">not_before</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Включает срок ранее выданных прав записи</td></tr>
+<tr><td class="attribute-name">next_attempt_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время следующей попытки.</td></tr>
+<tr><td class="attribute-name">lease_token</td><td class="attribute-type">uuid</td><td class="attribute-description">Необязательно / не указано; Токен захвата работы.</td></tr>
+<tr><td class="attribute-name">lease_until</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Окончание срока захвата.</td></tr>
+<tr><td class="attribute-name">version</td><td class="attribute-type">bigint</td><td class="attribute-description">Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+<tr><td class="attribute-name" rowspan="18">outbox_messages</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">event_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; UNIQUE; Идентификатор события.</td></tr>
+<tr><td class="attribute-name">aggregate_type</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Обязательно; Тип агрегата — источника события.</td></tr>
+<tr><td class="attribute-name">aggregate_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса.</td></tr>
+<tr><td class="attribute-name">aggregate_version</td><td class="attribute-type">bigint</td><td class="attribute-description">Необязательно / не указано; Версия агрегата — источника события.</td></tr>
+<tr><td class="attribute-name">event_type</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Обязательно; Тип события.</td></tr>
+<tr><td class="attribute-name">payload</td><td class="attribute-type">jsonb</td><td class="attribute-description">Обязательно; Содержимое события или операции.</td></tr>
+<tr><td class="attribute-name">headers</td><td class="attribute-type">jsonb</td><td class="attribute-description">Обязательно; По умолчанию: {}; Заголовки события.</td></tr>
+<tr><td class="attribute-name">partition_key</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Необязательно / не указано; Ключ распределения события.</td></tr>
+<tr><td class="attribute-name">status</td><td class="attribute-type">varchar(32)</td><td class="attribute-description">Обязательно; По умолчанию: PENDING; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">attempts</td><td class="attribute-type">integer</td><td class="attribute-description">Обязательно; По умолчанию: 0; Количество попыток.</td></tr>
+<tr><td class="attribute-name">occurred_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время события.</td></tr>
+<tr><td class="attribute-name">processing_started_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name">published_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время публикации.</td></tr>
+<tr><td class="attribute-name">next_attempt_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время следующей попытки.</td></tr>
+<tr><td class="attribute-name">last_error</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Последняя зафиксированная ошибка.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+</tbody></table></div></div>
 
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| owner_identity_id | uuid | Обязательно; Внешний Identity ID; не межсервисный FK |
-| purpose | text | Обязательно; Назначение файла. |
-| state | text | Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| declared_filename | text | Обязательно; Недоверенное имя для отображения, не object key |
-| verified_mime_type | text | Необязательно / не указано; Подтверждённый MIME-тип файла. |
-| verified_size_bytes | bigint | Необязательно / не указано; Подтверждённый размер файла в байтах. |
-| verified_checksum | text | Необязательно / не указано; Подтверждённая контрольная сумма файла. |
-| storage_object_key | text | Обязательно; UNIQUE; Генерируется сервером, не возвращается клиенту |
-| storage_version_id | text | Необязательно / не указано; Неизменяемая версия байтов, подтверждённая при проверке |
-| version | bigint | Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-| ready_at | timestamptz | Необязательно / не указано; Время перехода в готовое состояние. |
-| deleted_at | timestamptz | Необязательно / не указано; Время удаления. |
+## Ограничения данных
 
-Составные ключи и индексы DBML: `INDEX (state, updated_at)`.
+- Готовый файл содержит проверенные тип, положительный размер, контрольную сумму, версию объекта и время готовности. Для удалённого файла фиксируется время удаления.
+- Срок загрузки заканчивается после её создания. Завершение проверки не предшествует её началу.
+- Для освобождённой привязки фиксируются время и идентификатор операции освобождения.
 
-### upload_sessions
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| file_id | uuid | Обязательно; FK; Идентификатор файла. |
-| caller_service | text | Обязательно; Сервис из доверенной service identity |
-| begin_operation_id | uuid | Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса. |
-| request_hash | text | Обязательно; Хеш запроса для проверки повторов. |
-| state | text | Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| multipart_upload_id | text | Необязательно / не указано; Внутренний ID хранилища; может отсутствовать до ответа хранилища |
-| expires_at | timestamptz | Обязательно; Время истечения. |
-| last_upload_url_expires_at | timestamptz | Необязательно / не указано; Для безопасной очистки после истечения ранее выданных прав записи |
-| version | bigint | Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-
-Составные ключи и индексы DBML: `UNIQUE (caller_service, begin_operation_id)`.
-
-### file_checks
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| file_id | uuid | Обязательно; FK; Идентификатор файла. |
-| check_type | text | Обязательно; Тип проверки. |
-| operation_id | uuid | Обязательно; UNIQUE; Идентификатор идемпотентной операции. |
-| storage_version_id | text | Обязательно; Проверка относится к точной версии объекта |
-| status | text | Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| safe_result_code | text | Необязательно / не указано; Безопасный код результата проверки. |
-| started_at | timestamptz | Необязательно / не указано; Время начала. |
-| completed_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-| created_at | timestamptz | Обязательно; Время создания. |
-
-Составные ключи и индексы DBML: `INDEX (file_id, check_type, created_at)`.
-
-### file_bindings
-
-Одна стабильная запись на связь; повторная активация освобождённой записи не допускается.
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| file_id | uuid | Обязательно; FK; Идентификатор файла. |
-| owner_service | text | Обязательно; Устанавливается по доверенной service identity |
-| resource_type | text | Обязательно; Тип внешнего ресурса. |
-| resource_id | uuid | Обязательно; Внешний ID ресурса владельца |
-| bind_operation_id | uuid | Обязательно; UNIQUE; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса. |
-| release_operation_id | uuid | Необязательно / не указано; UNIQUE; Устойчивый ID освобождения |
-| status | text | Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| version | bigint | Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| released_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-
-Составные ключи и индексы DBML: `UNIQUE (file_id, owner_service, resource_type, resource_id)`; `UNIQUE (file_id, id)`.
-
-### file_cleanup_jobs
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| file_id | uuid | Обязательно; FK; Идентификатор файла. |
-| operation_id | uuid | Обязательно; UNIQUE; Идентификатор идемпотентной операции. |
-| reason | text | Обязательно; Причина действия или перехода. |
-| state | text | Обязательно; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| attempts | integer | Обязательно; По умолчанию: 0; Количество попыток. |
-| not_before | timestamptz | Обязательно; Включает срок ранее выданных прав записи |
-| next_attempt_at | timestamptz | Необязательно / не указано; Время следующей попытки. |
-| lease_token | uuid | Необязательно / не указано; Токен захвата работы. |
-| lease_until | timestamptz | Необязательно / не указано; Окончание срока захвата. |
-| version | bigint | Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-
-Составные ключи и индексы DBML: `INDEX (state, next_attempt_at)`.
-
-### outbox_messages
-
-Предложение; необходимость событий и совместимость с общей реализацией требуют согласования.
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| event_id | uuid | Обязательно; UNIQUE; Идентификатор события. |
-| aggregate_type | varchar(255) | Обязательно; Тип агрегата — источника события. |
-| aggregate_id | uuid | Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса. |
-| aggregate_version | bigint | Необязательно / не указано; Версия агрегата — источника события. |
-| event_type | varchar(255) | Обязательно; Тип события. |
-| payload | jsonb | Обязательно; Содержимое события или операции. |
-| headers | jsonb | Обязательно; По умолчанию: {}; Заголовки события. |
-| partition_key | varchar(255) | Необязательно / не указано; Ключ распределения события. |
-| status | varchar(32) | Обязательно; По умолчанию: PENDING; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| attempts | integer | Обязательно; По умолчанию: 0; Количество попыток. |
-| occurred_at | timestamptz | Обязательно; Время события. |
-| processing_started_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-| published_at | timestamptz | Необязательно / не указано; Время публикации. |
-| next_attempt_at | timestamptz | Необязательно / не указано; Время следующей попытки. |
-| last_error | text | Необязательно / не указано; Последняя зафиксированная ошибка. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-
-Составные ключи и индексы DBML: `INDEX (aggregate_type, aggregate_id, aggregate_version)`.
+- Файлом и его байтами управляет File Service; другие сервисы используют внешние идентификаторы и привязки, а доступ зависит от проверки полномочий.
 
