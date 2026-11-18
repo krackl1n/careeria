@@ -47,27 +47,37 @@
 }
 
 
-/* Let every documentation table share the available width according to its content. */
+/* Tables fit the content area and distribute columns according to their contents. */
+.md-typeset .md-typeset__scrollwrap,
+.md-typeset .furps-requirements {
+  max-width: 100%;
+  overflow-x: auto;
+}
 .md-typeset .md-typeset__table {
   display: block;
   width: 100%;
 }
-.md-typeset .md-typeset__table table:not([class]) {
+.md-typeset table:not([class]) {
   display: table;
   width: 100%;
+  max-width: 100%;
   table-layout: auto;
 }
-.md-typeset .md-typeset__table table:not([class]) th {
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
   min-width: 0;
-}
-.md-typeset .md-typeset__table table:not([class]) th,
-.md-typeset .md-typeset__table table:not([class]) td {
-  max-width: 12rem;
-  overflow-wrap: anywhere;
+  padding: .6em .7em;
   white-space: normal;
+  overflow-wrap: break-word;
+  vertical-align: top;
 }
-.md-typeset .md-typeset__table table:not([class]) th:last-child,
-.md-typeset .md-typeset__table table:not([class]) td:last-child {
-  max-width: none;
-  min-width: 14rem;
+/* FURPS uses six compact metadata columns and one detailed description. */
+.md-typeset .furps-requirements table:not([class]) th:not(:nth-child(2)),
+.md-typeset .furps-requirements table:not([class]) td:not(:nth-child(2)) {
+  width: 1%;
+  overflow-wrap: normal;
+}
+.md-typeset .attribute-dictionary .attribute-name,
+.md-typeset .attribute-dictionary .attribute-type {
+  overflow-wrap: anywhere;
 }
