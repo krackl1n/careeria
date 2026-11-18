@@ -1,0 +1,793 @@
+{
+    "auto_close": false,
+    "auto_open": false,
+    "auto_start": false,
+    "drawing_grid_size": 25,
+    "grid_size": 75,
+    "name": "Careeria-infrastructure-detailed",
+    "project_id": "abd02ea8-4d60-45f1-b003-ad03c10726c2",
+    "revision": 9,
+    "scene_height": 1500,
+    "scene_width": 2600,
+    "show_grid": false,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": false,
+    "supplier": null,
+    "topology": {
+        "computes": [],
+        "drawings": [
+            {
+                "drawing_id": "28ffda47-f76e-47ed-8aaf-2d6c99c84c80",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1860\" height=\"1080\"><rect width=\"1860\" height=\"1080\" fill=\"#ffffff\" fill-opacity=\"0\" stroke=\"#849bab\" stroke-width=\"2\" /></svg>",
+                "x": 650,
+                "y": 55,
+                "z": -2
+            },
+            {
+                "drawing_id": "ceab063d-71a2-4503-89a2-1f798abed46d",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"18\" fill=\"#173b56\" font-weight=\"bold\">Облачная инфраструктура Careeria</text></svg>",
+                "x": 675,
+                "y": 66,
+                "z": 3
+            },
+            {
+                "drawing_id": "50a222b1-3335-4e65-8645-9f3a0d23c7c6",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1530\" height=\"940\"><rect width=\"1530\" height=\"940\" fill=\"#ffffff\" fill-opacity=\"0\" stroke=\"#849bab\" stroke-width=\"2\" /></svg>",
+                "x": 930,
+                "y": 135,
+                "z": -2
+            },
+            {
+                "drawing_id": "afa8a9e8-47fd-43e8-b9e5-554525678037",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"17\" fill=\"#173b56\" font-weight=\"bold\">Кластер Kubernetes</text></svg>",
+                "x": 955,
+                "y": 145,
+                "z": 3
+            },
+            {
+                "drawing_id": "d2272304-60af-4849-9e82-698ed80bb4c0",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1170\" height=\"275\"><rect width=\"1170\" height=\"275\" fill=\"#ffffff\" fill-opacity=\"0\" stroke=\"#849bab\" stroke-width=\"2\" /></svg>",
+                "x": 1120,
+                "y": 205,
+                "z": -2
+            },
+            {
+                "drawing_id": "82124d58-5810-43d3-ae6b-2dff62a2887f",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"16\" fill=\"#173b56\" font-weight=\"bold\">Пул данных</text></svg>",
+                "x": 1145,
+                "y": 215,
+                "z": 3
+            },
+            {
+                "drawing_id": "79035c02-9a1d-4962-9b83-36e420ae63f7",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"940\" height=\"410\"><rect width=\"940\" height=\"410\" fill=\"#ffffff\" fill-opacity=\"0\" stroke=\"#849bab\" stroke-width=\"2\" /></svg>",
+                "x": 1120,
+                "y": 565,
+                "z": -2
+            },
+            {
+                "drawing_id": "5051b7c3-f16f-481e-b23c-68c01a619476",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"16\" fill=\"#173b56\" font-weight=\"bold\">Пул приложений</text></svg>",
+                "x": 1145,
+                "y": 575,
+                "z": 3
+            },
+            {
+                "drawing_id": "3fd7161e-e7eb-48c1-89c5-dd25cbf97189",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"280\" height=\"410\"><rect width=\"280\" height=\"410\" fill=\"#ffffff\" fill-opacity=\"0\" stroke=\"#849bab\" stroke-width=\"2\" /></svg>",
+                "x": 2110,
+                "y": 565,
+                "z": -2
+            },
+            {
+                "drawing_id": "0168c7cd-f20c-40cd-b323-03cdb11c4196",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"16\" fill=\"#173b56\" font-weight=\"bold\">Медиаузлы</text></svg>",
+                "x": 2135,
+                "y": 575,
+                "z": 3
+            },
+            {
+                "drawing_id": "285ef08e-a3ef-4ccd-82fc-c91cc619ce5d",
+                "locked": false,
+                "rotation": 0,
+                "svg": "0239dfbc2073c63f472ede621213ec96.png",
+                "x": 40,
+                "y": 510,
+                "z": 2
+            },
+            {
+                "drawing_id": "95f0676d-e2cb-4ef6-9a51-a8cd186bdd5b",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\">ПК пользователя</text></svg>",
+                "x": 26,
+                "y": 605,
+                "z": 3
+            },
+            {
+                "drawing_id": "f9fcfef1-89a1-4840-8f11-60b8ff9c866b",
+                "locked": false,
+                "rotation": 0,
+                "svg": "087826b8f87a3c4d5b415cf706727795.png",
+                "x": 35,
+                "y": 735,
+                "z": 2
+            },
+            {
+                "drawing_id": "706b0b18-0fe9-4bfe-9951-017f2fe805e2",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\">Ноутбук пользователя</text></svg>",
+                "x": 12,
+                "y": 818,
+                "z": 3
+            },
+            {
+                "drawing_id": "4f971325-a394-420f-9654-3a92bbeb019d",
+                "locked": false,
+                "rotation": 0,
+                "svg": "24f13aa43974811bdec2ebeeacc19592.png",
+                "x": 320,
+                "y": 580,
+                "z": 2
+            },
+            {
+                "drawing_id": "e12161f3-a299-42e0-9a3c-93bc96ef7d18",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"15\" fill=\"#173b56\" font-weight=\"bold\">Интернет</text></svg>",
+                "x": 353,
+                "y": 546,
+                "z": 3
+            },
+            {
+                "drawing_id": "eb6fab7d-e74c-4a61-bef7-ab054576177f",
+                "locked": false,
+                "rotation": 0,
+                "svg": "24f13aa43974811bdec2ebeeacc19592.png",
+                "x": 265,
+                "y": 155,
+                "z": 2
+            },
+            {
+                "drawing_id": "3b8e2da4-281c-4d17-a9f8-a29744fbe764",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"15\" fill=\"#173b56\" font-weight=\"bold\">Внешние системы</text></svg>",
+                "x": 265,
+                "y": 100,
+                "z": 3
+            },
+            {
+                "drawing_id": "bf7f6a0d-21cd-4355-8e80-e5f092bff382",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"13\" fill=\"#173b56\">HR и провайдеры</text></svg>",
+                "x": 267,
+                "y": 127,
+                "z": 3
+            },
+            {
+                "drawing_id": "f02329e8-c758-46b0-8500-9a0ddc5d8afc",
+                "locked": false,
+                "rotation": 0,
+                "svg": "815584c12ea8b331869ef0adf2de99e4.png",
+                "x": 710,
+                "y": 580,
+                "z": 2
+            },
+            {
+                "drawing_id": "2f457fb5-3834-43f7-91ff-8d1f6c288b53",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Публичный</text></svg>",
+                "x": 688,
+                "y": 678,
+                "z": 3
+            },
+            {
+                "drawing_id": "e17b1a5e-fc2c-4a66-80de-ae8b95cf4e03",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">балансировщик L4</text></svg>",
+                "x": 677,
+                "y": 700,
+                "z": 3
+            },
+            {
+                "drawing_id": "b0b2a227-c681-4ff0-bb32-2279782dbbbd",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 965,
+                "y": 585,
+                "z": 2
+            },
+            {
+                "drawing_id": "1961216d-d39e-4d49-a387-924e7647641f",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Ingress</text></svg>",
+                "x": 958,
+                "y": 678,
+                "z": 3
+            },
+            {
+                "drawing_id": "f7bb44c2-faa2-4909-9576-034442416135",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">TLS-терминация</text></svg>",
+                "x": 936,
+                "y": 700,
+                "z": 3
+            },
+            {
+                "drawing_id": "20994288-65fe-4c25-92f5-b95df5309cdd",
+                "locked": false,
+                "rotation": 0,
+                "svg": "383077b63a2b23b3103c5bbfab679ae9.png",
+                "x": 1190,
+                "y": 270,
+                "z": 2
+            },
+            {
+                "drawing_id": "b830ea77-2271-47c0-a2de-0b84dfe33659",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">PostgreSQL</text></svg>",
+                "x": 1177,
+                "y": 344,
+                "z": 3
+            },
+            {
+                "drawing_id": "90f9d2f8-8847-4bc9-90ef-7e7df2fb2bce",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">основной + 2 реплики</text></svg>",
+                "x": 1158,
+                "y": 367,
+                "z": 3
+            },
+            {
+                "drawing_id": "8c96a00d-9d88-4ad1-8ac0-39082837f4f2",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 1450,
+                "y": 260,
+                "z": 2
+            },
+            {
+                "drawing_id": "684b2894-670d-4028-8637-34c21796d343",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Kafka</text></svg>",
+                "x": 1440,
+                "y": 344,
+                "z": 3
+            },
+            {
+                "drawing_id": "27b03da8-ab73-46be-bec5-e2b785d30ddb",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">3 брокера</text></svg>",
+                "x": 1431,
+                "y": 367,
+                "z": 3
+            },
+            {
+                "drawing_id": "a5b7df2e-60a3-42d3-b1e2-5e47209b704e",
+                "locked": false,
+                "rotation": 0,
+                "svg": "383077b63a2b23b3103c5bbfab679ae9.png",
+                "x": 1710,
+                "y": 270,
+                "z": 2
+            },
+            {
+                "drawing_id": "2e0e416a-0454-4045-b3ad-4dc3f8b275bb",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Redis</text></svg>",
+                "x": 1720,
+                "y": 344,
+                "z": 3
+            },
+            {
+                "drawing_id": "59084000-7e84-4303-874e-7d2a23021ef5",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">3 отдельных контура</text></svg>",
+                "x": 1685,
+                "y": 367,
+                "z": 3
+            },
+            {
+                "drawing_id": "52885f3d-2816-45a6-9dd1-35ea97dfd416",
+                "locked": false,
+                "rotation": 0,
+                "svg": "383077b63a2b23b3103c5bbfab679ae9.png",
+                "x": 2000,
+                "y": 270,
+                "z": 2
+            },
+            {
+                "drawing_id": "f5a92bcc-be67-471d-8faf-d5bd0c525f20",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">MinIO</text></svg>",
+                "x": 2011,
+                "y": 344,
+                "z": 3
+            },
+            {
+                "drawing_id": "2812e476-fdf7-46aa-be0c-5ed884f060a8",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">объектное хранилище</text></svg>",
+                "x": 1975,
+                "y": 367,
+                "z": 3
+            },
+            {
+                "drawing_id": "ff3137e0-34ac-452c-923f-987902a819e9",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 1160,
+                "y": 680,
+                "z": 2
+            },
+            {
+                "drawing_id": "c5216e05-8490-473b-a1a9-63c3d873be03",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Web Application</text></svg>",
+                "x": 1135,
+                "y": 772,
+                "z": 3
+            },
+            {
+                "drawing_id": "b672eb4d-7749-48de-a240-d09d4ac61e5e",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">Next.js + BFF</text></svg>",
+                "x": 1139,
+                "y": 795,
+                "z": 3
+            },
+            {
+                "drawing_id": "56358424-a3d3-4ba3-a445-ee8507510101",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 1580,
+                "y": 680,
+                "z": 2
+            },
+            {
+                "drawing_id": "15be0d24-e29b-4cac-874d-80ac266c7797",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">API Gateway</text></svg>",
+                "x": 1553,
+                "y": 772,
+                "z": 3
+            },
+            {
+                "drawing_id": "93cdea1f-b697-49ea-919d-c255e64c4cbe",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">маршрутизация API</text></svg>",
+                "x": 1540,
+                "y": 795,
+                "z": 3
+            },
+            {
+                "drawing_id": "ede7d8a5-c9ae-4f7d-91e6-5b3ece7c24c9",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 1790,
+                "y": 680,
+                "z": 2
+            },
+            {
+                "drawing_id": "ee99f5aa-6d8d-48e7-973b-6acfb656855c",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"14\" fill=\"#173b56\" font-weight=\"bold\">Прикладные сервисы</text></svg>",
+                "x": 1745,
+                "y": 772,
+                "z": 3
+            },
+            {
+                "drawing_id": "c387265f-c90b-419c-859b-bdfd7c999063",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">10 независимых API</text></svg>",
+                "x": 1750,
+                "y": 795,
+                "z": 3
+            },
+            {
+                "drawing_id": "ee04829a-5d82-4259-9c9f-407691871e50",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">Также в пуле: OpenFGA, Centrifugo,</text></svg>",
+                "x": 1145,
+                "y": 862,
+                "z": 3
+            },
+            {
+                "drawing_id": "79b18e0c-a2b8-47e2-9eb1-a71f0a9a6719",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">Debezium, Registry и обработчики</text></svg>",
+                "x": 1145,
+                "y": 883,
+                "z": 3
+            },
+            {
+                "drawing_id": "94ba27a8-7080-4671-9335-16dd95d71f83",
+                "locked": false,
+                "rotation": 0,
+                "svg": "9f3022c494a40308b7a245abe5c9b665.png",
+                "x": 2215,
+                "y": 690,
+                "z": 2
+            },
+            {
+                "drawing_id": "20e7a71a-80e7-4395-9e60-d563b19d1ed7",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"15\" fill=\"#173b56\" font-weight=\"bold\">LiveKit</text></svg>",
+                "x": 2211,
+                "y": 790,
+                "z": 3
+            },
+            {
+                "drawing_id": "9612e68b-717e-460d-8654-d8352514c326",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">WebRTC SFU</text></svg>",
+                "x": 2186,
+                "y": 815,
+                "z": 3
+            },
+            {
+                "drawing_id": "fc9c5659-14b0-4a98-8ab8-563a5f75a31d",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"105\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"105\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 135,
+                "y": 555,
+                "z": 0
+            },
+            {
+                "drawing_id": "f0c4ff70-352e-49b7-bb7a-3a484fef6641",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"70\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"70\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 240,
+                "y": 555,
+                "z": 0
+            },
+            {
+                "drawing_id": "adcf4f49-61bf-4118-9a0d-8ebe06fa254d",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"80\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"80\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 240,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "3ae69fc4-ae8e-4bf3-b1ec-f916e0aa83af",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"100\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 140,
+                "y": 770,
+                "z": 0
+            },
+            {
+                "drawing_id": "fae52045-77f2-4949-b586-e12ea00c5baf",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"145\"><line x1=\"0\" y1=\"145\" x2=\"0\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 240,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "58213555-470f-4803-89e8-01dc1ecce9e0",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"207\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"207\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 340,
+                "y": 243,
+                "z": 0
+            },
+            {
+                "drawing_id": "ae1609a6-b0fa-43c3-acfd-b171dbd11685",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"55\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"55\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 340,
+                "y": 450,
+                "z": 0
+            },
+            {
+                "drawing_id": "d209aab2-0861-4538-9f54-046731fcdb53",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"130\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"130\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 395,
+                "y": 450,
+                "z": 0
+            },
+            {
+                "drawing_id": "27312d98-8198-4562-adc7-a6391040058a",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"240\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"240\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 470,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "d04a25f0-7004-4f56-9872-4357b4554fd0",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">HTTPS / WSS</text></svg>",
+                "x": 520,
+                "y": 592,
+                "z": 3
+            },
+            {
+                "drawing_id": "7fbb9ca9-7ae5-4eb2-aba9-48469acc1905",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"75\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"75\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 775,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "9edd815d-4f53-46e3-a593-3bb6ae29a459",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 850,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "ba2ecfd5-b16b-46db-901b-ee5103d7fb02",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"115\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"115\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 850,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "905cbe3f-7a4e-43c6-bed9-ae44e5f68f27",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">TCP 443</text></svg>",
+                "x": 811,
+                "y": 592,
+                "z": 3
+            },
+            {
+                "drawing_id": "33f148e2-ed77-465a-ac87-21691b69a660",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"58\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"58\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1022,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "d357e640-6d04-499a-b3ce-6ed19334c656",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"96\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"96\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1080,
+                "y": 625,
+                "z": 0
+            },
+            {
+                "drawing_id": "31537366-bcf9-481a-a589-24f4a67d880b",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"80\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"80\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1080,
+                "y": 721,
+                "z": 0
+            },
+            {
+                "drawing_id": "1ee86ceb-4176-4f54-9d14-318b762db00b",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"362\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"362\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1218,
+                "y": 721,
+                "z": 0
+            },
+            {
+                "drawing_id": "a61e6b1f-920d-4559-9b6e-7ce916dd1684",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">HTTP / JSON</text></svg>",
+                "x": 1360,
+                "y": 690,
+                "z": 3
+            },
+            {
+                "drawing_id": "176b1aa4-e8cf-43ed-be27-b40737ab6611",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"152\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"152\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1638,
+                "y": 721,
+                "z": 0
+            },
+            {
+                "drawing_id": "59fbb180-ae96-4b11-b25b-39c68baa6893",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">gRPC</text></svg>",
+                "x": 1685,
+                "y": 690,
+                "z": 3
+            },
+            {
+                "drawing_id": "e14d1e11-5514-4f55-bc30-abb00f50b1f1",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"200\"><line x1=\"0\" y1=\"200\" x2=\"0\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 1819,
+                "y": 480,
+                "z": 0
+            },
+            {
+                "drawing_id": "0f385adb-1def-4b87-adb5-d85207a77280",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">Данные и события</text></svg>",
+                "x": 1830,
+                "y": 510,
+                "z": 3
+            },
+            {
+                "drawing_id": "636a49f0-6f24-42d4-a9c2-cb4fa6ec4e7a",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"50\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"50\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 2060,
+                "y": 845,
+                "z": 0
+            },
+            {
+                "drawing_id": "ce8258f6-92c5-4a70-800d-eb0e209444be",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">LiveKit API</text></svg>",
+                "x": 2030,
+                "y": 812,
+                "z": 3
+            },
+            {
+                "drawing_id": "0d201cf7-5c89-4f43-8c15-6448d901e5e5",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"85\"><line x1=\"0\" y1=\"85\" x2=\"0\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" /></svg>",
+                "x": 2250,
+                "y": 480,
+                "z": 0
+            },
+            {
+                "drawing_id": "27c6dca4-5887-4022-80f8-7de98b84bce5",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"12\" fill=\"#173b56\">Redis LiveKit</text></svg>",
+                "x": 2260,
+                "y": 506,
+                "z": 3
+            },
+            {
+                "drawing_id": "bc15a125-fbb9-46b5-82e4-382f14b85277",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"552\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"552\" stroke=\"#456276\" stroke-width=\"2\" stroke-dasharray=\"10,8\" /></svg>",
+                "x": 395,
+                "y": 668,
+                "z": 0
+            },
+            {
+                "drawing_id": "8dbb03b4-fb75-498c-b291-af187a91615e",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1855\" height=\"1\"><line x1=\"0\" y1=\"0\" x2=\"1855\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" stroke-dasharray=\"10,8\" /></svg>",
+                "x": 395,
+                "y": 1220,
+                "z": 0
+            },
+            {
+                "drawing_id": "620650f8-91d5-4b57-86a7-240b8be3c8c2",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"1\" height=\"245\"><line x1=\"0\" y1=\"245\" x2=\"0\" y2=\"0\" stroke=\"#456276\" stroke-width=\"2\" stroke-dasharray=\"10,8\" /></svg>",
+                "x": 2250,
+                "y": 975,
+                "z": 0
+            },
+            {
+                "drawing_id": "3adde1fd-1d03-49bf-a797-2312660beb87",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"400\" height=\"65\"><text font-family=\"Arial\" font-size=\"13\" fill=\"#173b56\">WebRTC / ICE / TURN</text></svg>",
+                "x": 1130,
+                "y": 1185,
+                "z": 3
+            },
+            {
+                "drawing_id": "8a5dcbcb-3335-4181-832d-a95e623923c1",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"450\" height=\"30\"><text font-family=\"Arial\" font-size=\"11\" fill=\"#173b56\">Identity, Candidate, Company,</text></svg>",
+                "x": 1550,
+                "y": 850,
+                "z": 3
+            },
+            {
+                "drawing_id": "997bfe2c-578b-4cc7-8fa8-a57c59788bbb",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"450\" height=\"30\"><text font-family=\"Arial\" font-size=\"11\" fill=\"#173b56\">Vacancy, Hiring, Assessment,</text></svg>",
+                "x": 1550,
+                "y": 872,
+                "z": 3
+            },
+            {
+                "drawing_id": "b1ac73a4-3b39-41e4-8ad1-ce5e03ef6607",
+                "locked": false,
+                "rotation": 0,
+                "svg": "<svg width=\"450\" height=\"30\"><text font-family=\"Arial\" font-size=\"11\" fill=\"#173b56\">Communication, Integration, Notification, File</text></svg>",
+                "x": 1550,
+                "y": 894,
+                "z": 3
+            }
+        ],
+        "links": [],
+        "nodes": []
+    },
+    "type": "topology",
+    "variables": null,
+    "version": "2.2.54",
+    "zoom": 100
+}

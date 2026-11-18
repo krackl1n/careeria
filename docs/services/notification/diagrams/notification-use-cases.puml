@@ -1,0 +1,27 @@
+@startuml notification-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Сервис-инициатор" as caller
+actor "Пользователь" as user
+actor "События Kafka" as event
+actor "Worker Pool" as worker
+actor "Провайдер доставки" as provider
+rectangle "Notification Service" {
+  usecase "Запланировать\nуведомление" as schedule
+  usecase "Отменить задачу" as cancel
+  usecase "Обработать событие" as consume
+  usecase "Получить готовые\nзадачи" as fetch
+  usecase "Выполнить доставку\nили повтор" as execute
+  usecase "Просмотреть inbox" as inbox
+  usecase "Подключить in-app\nstream" as stream
+}
+caller -- schedule
+caller -- cancel
+event -- consume
+worker -- fetch
+worker -- execute
+provider -- execute
+user -- inbox
+user -- stream
+@enduml

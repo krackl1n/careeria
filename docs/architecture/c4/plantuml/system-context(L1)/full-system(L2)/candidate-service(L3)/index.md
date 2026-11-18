@@ -62,6 +62,8 @@ Repository и outbox получают один transaction handle от прик�
 
 ## Доменная модель и хранение
 
+Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/candidate/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
+
 | Сущность | Основные данные | Инварианты |
 |---|---|---|
 | CandidateProfile | candidate ID, уникальный user ID, имя для показа, headline, about, location, timezone, профессиональные ссылки, lifecycle, search status, visibility, contact visibility, version, timestamps | Один профиль на user ID. Только разрешённые поля; нельзя подменить user ID. Статус поиска не меняется как побочный эффект обычного редактирования. |
@@ -77,7 +79,7 @@ Repository и outbox получают один transaction handle от прик�
 
 Профиль с опытом/образованием/навыками сохраняется как агрегат CandidateProfile. Resume — отдельный агрегат, чтобы загрузка файла не блокировала редактирование описания. Межагрегатный инвариант «одно основное резюме» обеспечивается SQL-транзакцией и частичным уникальным индексом по candidate ID для `is_primary = true AND lifecycle = 'ACTIVE'`, а не одним предварительным SELECT.
 
-Предлагаемые таблицы: `candidate_profiles`, `candidate_experiences`, `candidate_educations`, `candidate_skills`, `candidate_preferences`, `resumes`, `candidate_resume_preferences`, `resume_versions`, `resume_cleanup_jobs`, `idempotency_keys`, `outbox`. Внутри Candidate DB используются внешние ключи и ограничения. Между сервисами — только идентификаторы и согласованные контракты, без cross-database FK.
+Предлагаемые таблицы: `candidate_profiles`, `candidate_experiences`, `candidate_educations`, `candidate_skills`, `candidate_preferences`, `resumes`, `candidate_resume_preferences`, `resume_versions`, `resume_cleanup_jobs`, `outbox`. Внутри Candidate DB используются внешние ключи и ограничения. Между сервисами — только идентификаторы и согласованные контракты, без cross-database FK.
 
 В S3 — только бинарный документ. Candidate DB не хранит файл, base64, постоянный публичный URL, credentials или копию upload session. S3 key и технические ссылки принадлежат File Service; Candidate Service использует стабильный file ID. Имя файла от клиента — недоверенная отображаемая строка, не путь хранения.
 
@@ -157,7 +159,7 @@ Repository и outbox получают один transaction handle от прик�
 
 Сервис проверяет владельца, ACTIVE, обязательные поля, интервалы дат и правило текущей работы. Обновление/удаление выполняется по паре candidate ID + experience ID. Несколько одновременных мест работы разрешены, если продукт не установит иное; пересечение дат само по себе не ошибка. Company ID — ссылка, а не доказательство работы или членства.
 
-Коллекция меняется через агрегат и фиксируется вместе с новой version и CandidateProfileUpdated. Ошибка одной записи не оставляет частичное изменение. Повтор Add с тем же idempotency key не создаёт второй опыт; Remove отсутствующей записи возвращает согласованный NotFound, повтор исходной команды восстанавливается из записи идемпотентности.
+Коллекция меняется через агрегат и фиксируется вместе с новой version и CandidateProfileUpdated. Ошибка одной записи не оставляет частичное изменение. Повтор Add с тем же idempotency key не создаёт второй опыт; Remove отсутствующей записи возвращает согласованный NotFound, повтор удаления обрабатывается по согласованному правилу состояния; отдельной записи идемпотентности нет.
 
 ### 5. Add / Update / RemoveEducation — образование
 
