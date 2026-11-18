@@ -1,0 +1,94 @@
+@startuml notification-delivery
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title Notification Service - планирование и исполнение доставки (L4)
+
+package "Прикладной слой" {
+    class NotificationApplicationService <<Application Service>> {
+        + Schedule(input: ScheduleNotification): UUID
+        + Cancel(jobID: UUID): error
+        + FetchPending(now: Timestamp): List<DeliveryJob>
+        + Execute(jobID: UUID, leaseToken: UUID): error
+    }
+}
+package "Доменная модель" {
+    class DeliveryJob <<Aggregate Root>> {
+        - id: UUID
+        - recipientID: UUID
+        - revisionID: UUID
+        - status: DeliveryStatus
+        - leaseToken: UUID
+        - leaseUntil: Timestamp
+        + Complete(token: UUID): error
+        + RetryAt(token: UUID, time: Timestamp): error
+    }
+    class DeliveryAttempt <<Entity>> {
+        - id: UUID
+        - jobID: UUID
+        - ordinal: Int
+        - leaseToken: UUID
+        - providerMessageID: String
+        - status: AttemptStatus
+    }
+    class TemplateRevision <<Aggregate Root>> {
+        - id: UUID
+        - channel: Channel
+        - locale: String
+        - revision: Int
+        - bodyTemplate: String
+    }
+    class InAppNotification <<Entity>> {
+        - id: UUID
+        - deliveryJobID: UUID
+        - recipientID: UUID
+        - title: String
+        - body: String
+    }
+}
+package "Выходные интерфейсы" {
+    interface TemplateRepository <<Port>> {
+        + GetRevision(id: UUID): TemplateRevision
+    }
+    interface JobRepository <<Port>> {
+        + ClaimDue(now: Timestamp): DeliveryJob
+        + SaveResult(job: DeliveryJob, leaseToken: UUID): error
+    }
+    interface TemplateEngine <<Port>> {
+        + Render(revision: TemplateRevision, payload: Map): RenderedMessage
+    }
+    interface ProviderAdapter <<Port>> {
+        + Send(jobID: UUID, message: RenderedMessage): DeliveryResult
+    }
+    interface InAppRepository <<Port>> {
+        + Save(notification: InAppNotification): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+}
+NotificationApplicationService ..> DeliveryJob : ведёт задачу
+DeliveryJob --> DeliveryAttempt : попытки
+DeliveryJob --> TemplateRevision : редакция
+NotificationApplicationService ..> InAppNotification : сохраняет в Inbox
+NotificationApplicationService ..> TemplateRepository : использует
+NotificationApplicationService ..> JobRepository : использует
+NotificationApplicationService ..> TemplateEngine : использует
+NotificationApplicationService ..> ProviderAdapter : использует
+NotificationApplicationService ..> InAppRepository : использует
+NotificationApplicationService ..> TransactionManager : использует
+
+DeliveryJob -[hidden]right- DeliveryAttempt
+TemplateRevision -[hidden]right- InAppNotification
+DeliveryJob -[hidden]down- TemplateRevision
+TemplateRepository -[hidden]right- JobRepository
+TemplateEngine -[hidden]right- ProviderAdapter
+InAppRepository -[hidden]right- TransactionManager
+TemplateRepository -[hidden]down- TemplateEngine
+TemplateEngine -[hidden]down- InAppRepository
+@enduml

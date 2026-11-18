@@ -1,0 +1,88 @@
+@startuml file-upload
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title File Service - сеанс загрузки и подготовка проверки (L4)
+
+package "Прикладной слой" {
+    class FileUploadService <<Application Service>> {
+        + Begin(input: BeginUpload): UploadGrant
+        + Complete(operationID: UUID): error
+        + Cancel(operationID: UUID): error
+        + Reconcile(operationID: UUID): error
+    }
+}
+package "Доменная модель" {
+    class File <<Aggregate Root>> {
+        - id: UUID
+        - ownerIdentityID: UUID
+        - purpose: String
+        - state: FileState
+        - storageVersionID: String
+        - version: Int64
+        + BeginCheck(versionID: String): error
+        + Reject(reason: String): error
+    }
+    class UploadSession <<Aggregate Root>> {
+        - id: UUID
+        - fileID: UUID
+        - beginOperationID: UUID
+        - requestHash: String
+        - state: UploadState
+        - multipartUploadID: String
+        - expiresAt: Timestamp
+        + Complete(): error
+        + Cancel(): error
+    }
+}
+package "Выходные интерфейсы" {
+    interface UploadRepository <<Port>> {
+        + FindOperation(caller: String, operationID: UUID): UploadSession
+        + Save(session: UploadSession, expectedVersion: Int64): error
+    }
+    interface FileRepository <<Port>> {
+        + Get(id: UUID): File
+        + Save(file: File, expectedVersion: Int64): error
+    }
+    interface ObjectStorageClient <<Port>> {
+        + BeginMultipart(fileID: UUID): StorageUpload
+        + Complete(uploadID: String): ObjectVersion
+        + Presign(uploadID: String, expiresAt: Timestamp): UploadGrant
+    }
+    interface ValidationPort <<Port>> {
+        + Check(fileID: UUID, versionID: String): UUID
+    }
+    interface CleanupJobRepository <<Port>> {
+        + Schedule(fileID: UUID, notBefore: Timestamp): error
+    }
+    interface AuthorizationPort <<Port>> {
+        + Check(actorID: UUID, resourceID: UUID, action: String): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+}
+FileUploadService ..> File : управляет файлом
+FileUploadService ..> UploadSession : ведёт загрузку
+UploadSession --> File : файл
+FileUploadService ..> UploadRepository : использует
+FileUploadService ..> FileRepository : использует
+FileUploadService ..> ObjectStorageClient : использует
+FileUploadService ..> ValidationPort : использует
+FileUploadService ..> CleanupJobRepository : использует
+FileUploadService ..> AuthorizationPort : использует
+FileUploadService ..> TransactionManager : использует
+
+File -[hidden]right- UploadSession
+UploadRepository -[hidden]right- FileRepository
+ObjectStorageClient -[hidden]right- ValidationPort
+CleanupJobRepository -[hidden]right- AuthorizationPort
+UploadRepository -[hidden]down- ObjectStorageClient
+ObjectStorageClient -[hidden]down- CleanupJobRepository
+CleanupJobRepository -[hidden]down- TransactionManager
+@enduml

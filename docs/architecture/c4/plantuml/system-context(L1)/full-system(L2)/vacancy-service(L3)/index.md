@@ -281,3 +281,5 @@ Kafka/Registry не добавлены как прямые исходящие к
 | Публикации и события | publishedAt перезаписывается; история и события Archive/Restore не определены | Семантика временных меток, история и единые Avro-схемы. |
 
 [Все L3](../index.md#components) · [Контейнеры кандидатов и вакансий](../../../members/member1/context%28L1%29/containers%28L2%29/index.md) · [Company Service](../company-service%28L3%29/index.md) · [Hiring Service](../hiring-service%28L3%29/index.md) · [Notification Service](../notification-service%28L3%29/index.md)
+
+[Диаграмма кода. Vacancy Service - публикация и жизненный цикл вакансии (L4)](vacancy-publication%28L4%29/index.md)

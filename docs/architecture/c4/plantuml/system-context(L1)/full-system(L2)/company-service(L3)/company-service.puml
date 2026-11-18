@@ -8,8 +8,8 @@ System_Boundary(careeria, "Careeria") {
 
     Container_Boundary(company_container, "Company Service") {
         Component(grpc_handler, "gRPC Server", "Go / gRPC", "Обработка синхронных команд и запросов CompanyService")
-        Component(company_svc, "Company Service", "Go Application Service", "Сценарии компании: Create, Get, Update, SubmitForVerification, Verify, Block")
-        Component(membership_svc, "Membership Service", "Go Application Service", "Сценарии участников: Invite, Activate, ChangeRole, Suspend, Remove, List")
+        Component(company_svc, "Company Service", "Go Application Service", "Сценарии компании: Create, Get, Update, SubmitForVerification, Verify, Block", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/company-service(L3)/company-management(L4)/")
+        Component(membership_svc, "Membership Service", "Go Application Service", "Сценарии участников: Invite, Activate, ChangeRole, Suspend, Remove, List", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/company-service(L3)/company-membership(L4)/")
         Component(company_repo, "Company Repo", "Go / SQL", "Загрузка и сохранение агрегата Company")
         Component(member_repo, "Member Repo", "Go / SQL", "Загрузка и сохранение агрегата Member и выборки состава компании")
         Component(outbox, "Transactional Outbox", "Go / SQL", "Атомарная запись интеграционных событий вместе с изменением состояния")

@@ -412,3 +412,7 @@ Management после авторизации помечает PENDING/RETRY_WAIT
 | Не-webhook интеграции | Polling стороннего REST API, импорт файлов, SFTP и сторонние SDK не включены в первую версию. |
 
 [Все L3](../index.md#components) · [Платформенные контейнеры · L2](../../../members/member4/context%28L1%29/containers%28L2%29/index.md) · [Приём HR-webhook](../../../dynamic/hr-integration.md) · [Hiring Service](../hiring-service%28L3%29/index.md)
+
+[Диаграмма кода. Integration Service - проверка и приём вебхуков (L4)](integration-inbound-webhook%28L4%29/index.md)
+
+[Диаграмма кода. Integration Service - исходящие вебхуки и повторная доставка (L4)](integration-outbound-webhook%28L4%29/index.md)

@@ -46,7 +46,17 @@
 
 <!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/identity-service(L3)/identity-authentication-service(L4)/index.md excerpt headings -->
 
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/identity-service(L3)/identity-token-rotation(L4)/index.md excerpt headings -->
+
 <!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/candidate-service(L3)/candidate-profile-service(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/candidate-service(L3)/candidate-resume(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/company-service(L3)/company-management(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/company-service(L3)/company-membership(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/vacancy-service(L3)/vacancy-publication(L4)/index.md excerpt headings -->
 
 <!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/hiring-service(L3)/hiring-application-service(L4)/index.md excerpt headings -->
 
@@ -57,6 +67,16 @@
 <!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/assessment-service(L3)/assessment-service(L4)/index.md excerpt headings -->
 
 <!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/communication-service(L3)/communication-service(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/notification-service(L3)/notification-delivery(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/integration-service(L3)/integration-inbound-webhook(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/integration-service(L3)/integration-outbound-webhook(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-upload(L4)/index.md excerpt headings -->
+
+<!-- include-page: architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-binding(L4)/index.md excerpt headings -->
 
 ## Диаграмма системного ландшафта
 

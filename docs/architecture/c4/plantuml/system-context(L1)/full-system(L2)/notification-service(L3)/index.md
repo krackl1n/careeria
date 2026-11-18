@@ -220,3 +220,5 @@ Job Repo и In-App Repo не должны начинать независимы�
 - Подтверждения доставки, read receipts и настройки пользователя — отдельные расширения, пока не показанные на диаграмме.
 
 [Компонентные диаграммы](../index.md#components) · [Company Service](../company-service%28L3%29/index.md) · [Hiring Service](../hiring-service%28L3%29/index.md) · [L2 платформенных сервисов](../../../members/member4/context%28L1%29/containers%28L2%29/index.md)
+
+[Диаграмма кода. Notification Service - планирование и исполнение доставки (L4)](notification-delivery%28L4%29/index.md)

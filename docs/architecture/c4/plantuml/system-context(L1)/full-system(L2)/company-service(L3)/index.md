@@ -233,3 +233,7 @@ Membership Service проверяет право приглашать и пра�
 - Каталог интеграционных событий и модель согласованности с OpenFGA.
 
 [Контейнеры компаний и найма](../../../members/member2/context%28L1%29/containers%28L2%29/index.md) · [Событийное взаимодействие](../../../event-driven%28L2%29/index.md) · [Все L3](../index.md#components) · [Notification Service](../notification-service%28L3%29/index.md) · [Hiring Service](../hiring-service%28L3%29/index.md)
+
+[Диаграмма кода. Company Service - управление компанией и верификацией (L4)](company-management%28L4%29/index.md)
+
+[Диаграмма кода. Company Service - членство и приглашения (L4)](company-membership%28L4%29/index.md)

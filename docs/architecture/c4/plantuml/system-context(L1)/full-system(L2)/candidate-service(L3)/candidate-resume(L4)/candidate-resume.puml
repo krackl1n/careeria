@@ -1,0 +1,89 @@
+@startuml candidate-resume
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title Candidate Service - версии резюме и файловые операции (L4)
+
+package "Прикладной слой" {
+    class ResumeService <<Application Service>> {
+        + BeginUpload(input: BeginResumeUpload): UUID
+        + CompleteUpload(input: CompleteResumeUpload): error
+        + SetActiveVersion(input: ActivateResumeVersion): error
+        + Delete(input: DeleteResume): error
+    }
+}
+package "Доменная модель" {
+    class Resume <<Aggregate Root>> {
+        - id: UUID
+        - candidateID: UUID
+        - lifecycle: ResumeLifecycle
+        - activeVersionID: UUID
+        - version: Int64
+        + SetActiveVersion(versionID: UUID): error
+        + Delete(): error
+    }
+    class ResumeVersion <<Entity>> {
+        - id: UUID
+        - resumeID: UUID
+        - fileID: UUID
+        - operationID: UUID
+        - status: ResumeVersionStatus
+        + MarkReady(fileID: UUID): error
+        + Cancel(): error
+    }
+    class ResumeCleanupJob <<Entity>> {
+        - id: UUID
+        - uploadOperationID: UUID
+        - fileID: UUID
+        - leaseToken: UUID
+        - nextAttemptAt: Timestamp
+    }
+}
+package "Выходные интерфейсы" {
+    interface ResumeRepository <<Port>> {
+        + Get(id: UUID): Resume
+        + Save(resume: Resume, expectedVersion: Int64): error
+    }
+    interface FileServiceClient <<Port>> {
+        + BeginUpload(operationID: UUID): UploadGrant
+        + GetOperation(operationID: UUID): FileOperation
+        + Bind(fileID: UUID, resourceID: UUID): error
+        + Release(bindingID: UUID, operationID: UUID): error
+    }
+    interface CleanupJobRepository <<Port>> {
+        + Schedule(job: ResumeCleanupJob): error
+    }
+    interface AuthorizationPort <<Port>> {
+        + Check(actorID: UUID, resourceID: UUID, action: String): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+    interface OutboxWriter <<Port>> {
+        + Append(event: DomainEvent): error
+    }
+}
+ResumeService ..> Resume : управляет
+Resume *-- ResumeVersion : версии
+ResumeService ..> ResumeVersion : согласует загрузку
+ResumeService ..> ResumeCleanupJob : планирует очистку
+ResumeService ..> ResumeRepository : использует
+ResumeService ..> FileServiceClient : использует
+ResumeService ..> CleanupJobRepository : использует
+ResumeService ..> AuthorizationPort : использует
+ResumeService ..> TransactionManager : использует
+ResumeService ..> OutboxWriter : использует
+
+Resume -[hidden]right- ResumeVersion
+Resume -[hidden]down- ResumeCleanupJob
+ResumeRepository -[hidden]right- FileServiceClient
+CleanupJobRepository -[hidden]right- AuthorizationPort
+TransactionManager -[hidden]right- OutboxWriter
+ResumeRepository -[hidden]down- CleanupJobRepository
+CleanupJobRepository -[hidden]down- TransactionManager
+@enduml

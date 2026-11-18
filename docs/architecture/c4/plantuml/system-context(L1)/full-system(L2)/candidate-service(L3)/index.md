@@ -412,3 +412,5 @@ Hiring Service должен хранить выбранные resume ID + **не
 ## Следующий уровень · L4
 
 - [Candidate Profile Service — детализация кода L4](candidate-profile-service%28L4%29/index.md)
+
+[Диаграмма кода. Candidate Service - версии резюме и файловые операции (L4)](candidate-resume%28L4%29/index.md)

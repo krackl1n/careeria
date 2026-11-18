@@ -1,0 +1,96 @@
+@startuml identity-token-rotation
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title Identity Service - обновление токенов и обнаружение reuse (L4)
+
+package "Прикладной слой" {
+    class "oauth.Service" as OAuthService <<Application Service>> {
+        + RefreshAccessToken(ctx: Context,\n  input: RefreshAccessTokenInput): (RefreshAccessTokenOutput, error)
+    }
+}
+package "Доменная модель" {
+    class Session <<Aggregate Root>> {
+        - ID: SessionID
+        - IdentityID: IdentityID
+        - OAuthClientID: OAuthClientID
+        + ValidateForUse(now: Timestamp): error
+        + RecordActivity(now: Timestamp, idleExpiresAt: Timestamp): error
+        + Revoke(reason: String, now: Timestamp): error
+    }
+    class RefreshTokenFamily <<Aggregate Root>> {
+        - ID: FamilyID
+        - SessionID: SessionID
+        - AbsoluteExpiresAt: Timestamp
+        + TokenIDByHash(hash: TokenHash): TokenID
+        + Rotate(presentedTokenID: TokenID, nextTokenID: TokenID,\n nextTokenHash: TokenHash, nextTokenExpiresAt: Timestamp,\n createdFromIP: IPAddress*, createdUserAgent: String*,\n now: Timestamp): (RotationOutcome, error)
+    }
+    class RefreshToken <<Entity>> {
+        - ID: TokenID
+        - Hash: TokenHash
+        + ValidateForRotation(now: Timestamp): error
+        + MarkRotated(now: Timestamp): error
+        + RecordReuseDetected(now: Timestamp): error
+    }
+}
+package "Выходные интерфейсы" {
+    interface OAuthClientRepository <<Port>> {
+        + GetByClientID(clientID: ClientID): OAuthClient
+    }
+    interface SessionRepository <<Port>> {
+        + Get(id: SessionID): Session
+        + Update(session: Session): error
+    }
+    interface RefreshTokenFamilyRepository <<Port>> {
+        + GetByTokenHashForUpdate(hash: TokenHash): RefreshTokenFamily
+        + Update(family: RefreshTokenFamily): error
+    }
+    interface TokenGenerator <<Port>> {
+        + New(): (String, String, error)
+        + Hash(raw: String): String
+    }
+    interface AccessTokenIssuer <<Port>> {
+        + Issue(input: IssueInput): IssuedToken
+    }
+    interface ClientSecretVerifier <<Port>> {
+        + Verify(raw: String, encoded: String): (Bool, error)
+    }
+    interface OutboxWriter <<Port>> {
+        + Create(message: Message): error
+    }
+    interface SecurityEventWriter <<Port>> {
+        + Create(event: SecurityEvent): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+}
+OAuthService ..> Session : проверяет и отзывает
+OAuthService ..> RefreshTokenFamily : ротирует
+RefreshTokenFamily *-- RefreshToken : история токенов
+OAuthService ..> OAuthClientRepository : использует
+OAuthService ..> SessionRepository : использует
+OAuthService ..> RefreshTokenFamilyRepository : использует
+OAuthService ..> TokenGenerator : использует
+OAuthService ..> AccessTokenIssuer : использует
+OAuthService ..> ClientSecretVerifier : использует
+OAuthService ..> OutboxWriter : использует
+OAuthService ..> SecurityEventWriter : использует
+OAuthService ..> TransactionManager : использует
+
+Session -[hidden]right- RefreshTokenFamily
+Session -[hidden]down- RefreshToken
+OAuthClientRepository -[hidden]right- SessionRepository
+RefreshTokenFamilyRepository -[hidden]right- TokenGenerator
+AccessTokenIssuer -[hidden]right- ClientSecretVerifier
+OutboxWriter -[hidden]right- SecurityEventWriter
+OAuthClientRepository -[hidden]down- RefreshTokenFamilyRepository
+RefreshTokenFamilyRepository -[hidden]down- AccessTokenIssuer
+AccessTokenIssuer -[hidden]down- OutboxWriter
+OutboxWriter -[hidden]down- TransactionManager
+@enduml

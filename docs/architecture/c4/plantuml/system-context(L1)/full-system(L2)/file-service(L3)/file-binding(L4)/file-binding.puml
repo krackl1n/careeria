@@ -1,0 +1,77 @@
+@startuml file-binding
+skinparam classAttributeIconSize 0
+skinparam roundcorner 6
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ranksep 40
+skinparam nodesep 35
+skinparam packagePadding 15
+hide empty members
+title File Service - привязки и разрешённое скачивание (L4)
+
+package "Прикладной слой" {
+    class FileBindingService <<Application Service>> {
+        + Bind(input: BindFile): UUID
+        + Release(input: ReleaseBinding): error
+        + GetDownload(input: DownloadFile): DownloadGrant
+    }
+}
+package "Доменная модель" {
+    class FileBinding <<Aggregate Root>> {
+        - id: UUID
+        - fileID: UUID
+        - ownerService: String
+        - resourceType: String
+        - resourceID: UUID
+        - bindOperationID: UUID
+        - releaseOperationID: UUID
+        - status: BindingStatus
+        + Activate(): error
+        + Release(operationID: UUID): error
+    }
+    class File <<Aggregate Root>> {
+        - id: UUID
+        - state: FileState
+        - storageVersionID: String
+        - version: Int64
+        + ValidateReady(): error
+    }
+}
+package "Выходные интерфейсы" {
+    interface BindingRepository <<Port>> {
+        + Find(fileID: UUID, owner: ResourceOwner): FileBinding
+        + Save(binding: FileBinding, expectedVersion: Int64): error
+    }
+    interface FileRepository <<Port>> {
+        + GetForUpdate(fileID: UUID): File
+    }
+    interface ObjectStorageClient <<Port>> {
+        + PresignDownload(fileID: UUID, versionID: String,\n  expiresAt: Timestamp): DownloadGrant
+    }
+    interface CleanupJobRepository <<Port>> {
+        + Schedule(fileID: UUID, notBefore: Timestamp): error
+    }
+    interface AuthorizationPort <<Port>> {
+        + Check(actorID: UUID, resourceID: UUID, action: String): error
+    }
+    interface TransactionManager <<Port>> {
+        + Do(operation: Transaction): error
+    }
+}
+FileBindingService ..> FileBinding : управляет привязкой
+FileBindingService ..> File : проверяет готовность
+FileBinding --> File : файл
+FileBindingService ..> BindingRepository : использует
+FileBindingService ..> FileRepository : использует
+FileBindingService ..> ObjectStorageClient : использует
+FileBindingService ..> CleanupJobRepository : использует
+FileBindingService ..> AuthorizationPort : использует
+FileBindingService ..> TransactionManager : использует
+
+FileBinding -[hidden]right- File
+BindingRepository -[hidden]right- FileRepository
+ObjectStorageClient -[hidden]right- CleanupJobRepository
+AuthorizationPort -[hidden]right- TransactionManager
+BindingRepository -[hidden]down- ObjectStorageClient
+ObjectStorageClient -[hidden]down- AuthorizationPort
+@enduml

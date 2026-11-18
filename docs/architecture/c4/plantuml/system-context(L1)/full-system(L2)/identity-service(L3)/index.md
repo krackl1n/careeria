@@ -454,3 +454,5 @@ Careeria поддерживает гибридную схему аутентиф
 ## Следующий уровень · L4
 
 - [Identity Service — диаграмма классов регистрации и аутентификации (L4)](identity-authentication-service%28L4%29/index.md)
+
+[Диаграмма кода. Identity Service - обновление токенов и обнаружение reuse (L4)](identity-token-rotation%28L4%29/index.md)

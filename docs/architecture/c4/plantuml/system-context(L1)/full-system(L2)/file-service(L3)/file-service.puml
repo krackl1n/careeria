@@ -6,9 +6,9 @@
 title File Service (C4 L3)
 Container_Boundary(subject, "File Service") {
     Component(api, "Файловый API", "gRPC", "Принимает команды и проверяет полномочия.")
-    Component(upload, "Управление загрузкой", "Go", "Открывает и завершает сеанс загрузки.")
+    Component(upload, "Управление загрузкой", "Go", "Открывает и завершает сеанс загрузки.", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-upload(L4)/")
     Component(check, "Проверка файла", "Go", "Проверяет содержимое загруженной версии.")
-    Component(binding, "Управление привязками", "Go", "Связывает файл с ресурсом сервиса.")
+    Component(binding, "Управление привязками", "Go", "Связывает файл с ресурсом сервиса.", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/file-service(L3)/file-binding(L4)/")
     Component(cleanup, "Обработчик очистки", "Go", "Завершает прерванные операции.")
     Component(repo, "Репозиторий метаданных", "Go / SQL", "Хранит состояние операций и привязок.")
     Component(storage, "Клиент хранилища", "MinIO Go SDK", "Работает с версиями объектов.")
