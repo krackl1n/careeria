@@ -1,0 +1,24 @@
+@startuml communication-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Участник\nдиалога" as user
+actor "Управляющий\nдиалогом" as manager
+actor "Планировщик" as timer
+rectangle "Communication Service" {
+  usecase "Создать диалог\nи управлять составом" as conv
+  usecase "Посмотреть диалоги\nи историю сообщений" as view
+  usecase "Скрыть диалог\nдля себя" as archive
+  usecase "Отправить / изменить /\nудалить сообщение" as message
+  usecase "Отметить прочтение\nи управлять реакциями" as reactions
+  usecase "Скачать вложение" as download
+  usecase "Освободить отвязанные\nфайлы" as cleanup
+}
+user -- view
+user -- archive
+user -- message
+user -- reactions
+user -- download
+manager -- conv
+timer -- cleanup
+@enduml

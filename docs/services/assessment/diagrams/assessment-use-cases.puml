@@ -1,0 +1,32 @@
+@startuml assessment-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Рекрутер /\nпредставитель компании" as recruiter
+actor "Кандидат" as candidate
+actor "Интервьюер" as reviewer
+actor "Hiring Service" as hiring
+actor "Планировщик" as timer
+rectangle "Assessment Service" {
+  usecase "Управлять шаблонами\nи редакциями" as template
+  usecase "Назначить испытание" as assign
+  usecase "Просмотреть назначение\nи начать сессию" as start
+  usecase "Отправить решение\nи посмотреть проверку" as submit
+  usecase "Завершить сессию" as finish
+  usecase "Подключиться к\nLive Coding" as live
+  usecase "Оценить вручную" as review
+  usecase "Посмотреть отчёт" as report
+  usecase "Обработать истечение\nсессии" as expire
+}
+recruiter -- template
+recruiter -- assign
+recruiter -- report
+hiring -- assign
+candidate -- start
+candidate -- submit
+candidate -- finish
+candidate -- live
+reviewer -- live
+reviewer -- review
+timer -- expire
+@enduml

@@ -1,0 +1,29 @@
+@startuml file-use-cases
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName sans-serif
+actor "Доменный сервис" as service
+actor "Пользователь\nчерез доменный сервис" as user
+actor "Планировщик" as timer
+actor "Object Storage" as storage
+actor "Сканер" as scanner
+rectangle "File Service" {
+  usecase "Начать / завершить\nзагрузку" as upload
+  usecase "Отменить / восстановить\nоперацию загрузки" as recovery
+  usecase "Проверить файл" as verify
+  usecase "Привязать / освободить\nфайл" as binding
+  usecase "Получить разрешённую\nссылку скачивания" as download
+  usecase "Очистить неиспользуемые\nобъекты" as cleanup
+}
+service -- upload
+service -- recovery
+service -- binding
+service -- download
+user -- upload
+user -- download
+timer -- cleanup
+storage -- upload
+storage -- cleanup
+scanner -- verify
+service -- verify
+@enduml

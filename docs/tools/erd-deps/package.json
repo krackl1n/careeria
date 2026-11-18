@@ -1,0 +1,9 @@
+{
+  "name": "careeria-erd-tools",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@dbml/core": "12.1.0",
+    "elkjs": "0.12.1"
+  }
+}

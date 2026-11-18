@@ -1,0 +1,213 @@
+Project careeria_candidate {
+  database_type: 'PostgreSQL'
+  Note: 'Проект Candidate Service; инварианты и ограничения, не выражаемые DBML, описаны в docs/services/candidate/index.md. Не является миграцией.'
+}
+
+Enum profile_lifecycle {
+  ACTIVE
+  ARCHIVED
+}
+Enum job_search_status {
+  OPEN_TO_WORK
+  OPEN_TO_OFFERS
+  NOT_LOOKING
+}
+Enum profile_visibility {
+  PRIVATE
+  RECRUITERS
+}
+Enum contact_visibility {
+  HIDDEN
+  AUTHORIZED_RECRUITERS
+}
+Enum resume_lifecycle {
+  ACTIVE
+  DELETED
+}
+Enum resume_version_status {
+  UPLOADING
+  CHECKING
+  READY
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+Table candidate_profiles {
+  id uuid [pk]
+  identity_id uuid [not null, unique, note: 'Внешний Identity ID; не межсервисный FK']
+  display_name text [not null]
+  headline text
+  about text
+  location text
+  timezone text
+  lifecycle profile_lifecycle [not null, default: 'ACTIVE']
+  search_status job_search_status [not null, default: 'NOT_LOOKING']
+  visibility profile_visibility [not null, default: 'PRIVATE']
+  contact_visibility contact_visibility [not null, default: 'HIDDEN']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (lifecycle, visibility, search_status) }
+}
+
+Table candidate_profile_links {
+  id uuid [pk]
+  candidate_id uuid [not null, ref: > candidate_profiles.id]
+  label text [not null]
+  url text [not null]
+  position integer [not null]
+  indexes { (candidate_id, position) [unique] }
+  Note: 'Ограниченная коллекция внутри CandidateProfile.'
+}
+
+Table work_experiences {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  candidate_id uuid [not null, ref: > candidate_profiles.id]
+  company_name text [not null]
+  company_id uuid [note: 'Необязательная ссылка на Company Service']
+  title text [not null]
+  description text
+  started_on date [not null]
+  ended_on date [note: 'NULL означает продолжающийся опыт']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (candidate_id, started_on) }
+}
+
+Table educations {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  candidate_id uuid [not null, ref: > candidate_profiles.id]
+  institution text [not null]
+  program text
+  degree text
+  field_of_study text
+  started_on date
+  ended_on date
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (candidate_id, started_on) }
+}
+
+Table candidate_skill_sets {
+  candidate_id uuid [pk, ref: > candidate_profiles.id]
+  version bigint [not null, default: 1]
+  updated_at timestamptz [not null]
+  Note: 'Корень ограниченного набора; SetSkills заменяет набор атомарно.'
+}
+Table candidate_skills {
+  candidate_id uuid [not null, ref: > candidate_skill_sets.candidate_id]
+  skill_key text [not null]
+  display_name text [not null]
+  self_assessed_level text
+  indexes { (candidate_id, skill_key) [pk] }
+}
+
+Table career_preferences {
+  candidate_id uuid [pk, ref: > candidate_profiles.id]
+  desired_roles text[] [not null, default: '{}', note: 'Желаемые роли; пустой массив означает отсутствие предпочтений']
+  seniority_levels text[] [not null, default: '{}', note: 'Предпочитаемые уровни']
+  employment_types text[] [not null, default: '{}', note: 'Предпочитаемые виды занятости']
+  work_formats text[] [not null, default: '{}', note: 'Предпочитаемые форматы работы']
+  preferred_locations text[] [not null, default: '{}', note: 'Предпочитаемые места работы']
+  willing_to_relocate boolean
+  compensation_min numeric(18,2)
+  compensation_max numeric(18,2)
+  compensation_currency char(3)
+  compensation_period text
+  version bigint [not null, default: 1]
+  updated_at timestamptz [not null]
+}
+
+Table resumes {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  candidate_id uuid [not null, ref: > candidate_profiles.id]
+  title text [not null]
+  language text
+  lifecycle resume_lifecycle [not null, default: 'ACTIVE']
+  active_version_id uuid [note: 'Композитный FK с id гарантирует принадлежность версии']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (candidate_id, id) [unique] }
+}
+Table resume_versions {
+  id uuid [pk]
+  resume_id uuid [not null, ref: > resumes.id]
+  ordinal integer [not null]
+  operation_id uuid [not null, unique, note: 'Идентификатор операции загрузки']
+  request_hash text [not null, note: 'Хеш канонического запроса загрузки']
+  file_id uuid [unique, note: 'Внешний ID; может отсутствовать до ответа File Service']
+  status resume_version_status [not null]
+  original_filename text [not null, note: 'Недоверенное отображаемое имя, не путь']
+  verified_mime_type text
+  verified_size_bytes bigint
+  verified_checksum text
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  ready_at timestamptz
+  indexes {
+    (resume_id, ordinal) [unique]
+    (resume_id, id) [unique]
+    (status, updated_at)
+  }
+}
+Ref: resumes.(id, active_version_id) > resume_versions.(resume_id, id)
+
+Table candidate_resume_preferences {
+  candidate_id uuid [pk, ref: > candidate_profiles.id]
+  primary_resume_id uuid [note: 'Композитный FK гарантирует принадлежность кандидату']
+  version bigint [not null, default: 1]
+  updated_at timestamptz [not null]
+}
+Ref: candidate_resume_preferences.(candidate_id, primary_resume_id) > resumes.(candidate_id, id)
+
+Table resume_cleanup_jobs {
+  id uuid [pk]
+  resume_version_id uuid [not null, unique, ref: > resume_versions.id]
+  operation_id uuid [not null, unique, note: 'Идемпотентная операция освобождения привязки']
+  file_id uuid
+  reason text [not null]
+  status text [not null]
+  attempts integer [not null, default: 0]
+  next_attempt_at timestamptz
+  lease_token uuid
+  lease_until timestamptz
+  last_error text [note: 'Без секретов и содержимого документа']
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (status, next_attempt_at) }
+}
+
+
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+  Note: 'Форма по текущей миграции Identity; режим публикации требует согласования с packages/go/outbox.'
+}

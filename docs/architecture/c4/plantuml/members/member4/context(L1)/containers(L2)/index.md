@@ -4,7 +4,7 @@
 
 Integration Service принимает подписанные вебхуки через raw HTTP route API Gateway и доставляет исходящие HTTPS webhooks внешним системам. Integration DB хранит подключения, inbox, subscriptions, deliveries и attempts. Входящее нормализованное событие фиксируется в outbox вместе с inbox и публикуется через Debezium; прямой небезопасный publish после SQL commit не используется. Kafka Events Consumer планирует исходящие доставки, Schema Registry предоставляет ему схемы. Управление подключениями компании проверяется через OpenFGA; подпись стороннего отправителя проверяется отдельно от пользовательской аутентификации.
 
-Общий вход в систему: `Пользователь → Web Application → BFF → API Gateway`.
+Общий вход в систему: `Пользователь → Web Application (Next.js с BFF) → API Gateway`.
 
 ```plantuml
 @startuml

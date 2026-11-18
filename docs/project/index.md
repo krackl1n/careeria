@@ -16,6 +16,8 @@
 - [2.2. Разработка концептуальной модели ПО "как есть"](02-business-services/02-as-is.md)
 - [2.3. Разработка концептуальной модели ПО "как должно быть"](02-business-services/03-to-be.md)
 
-### [3. Требования к программному обеспечению](03-platform-services/index.md)
+### [3. Требования к ПО: классификация и влияние по методологии FURPS+DEEP](03-platform-services/index.md)
+- [3.1. Классификация требований ПО FURPS+](03-platform-services/01-classification-requirements-furps.md)
 
-### [4. ](04-technology-infrastructure/index.md)
+### [4. Технологическая инфраструктура](04-technology-infrastructure/index.md)
+- [4.3. Сетевая архитектура программного обеспечения](04-technology-infrastructure/03-network-architecture/index.md)
