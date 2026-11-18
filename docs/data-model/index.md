@@ -26,9 +26,9 @@ ER-диаграммы показывают таблицы, поля, ключи 
 Обновить справочники после изменения DBML можно из корня репозитория:
 
 ```sh
-npm install --prefix /tmp/careeria-dbml-tools --no-save @dbml/core@12.1.0 elkjs@0.12.1
-NODE_PATH=/tmp/careeria-dbml-tools/node_modules node docs/tools/generate-erd.cjs
-NODE_PATH=/tmp/careeria-dbml-tools/node_modules node docs/tools/generate-data-dictionaries.cjs
+(cd docs/tools/erd-deps && npm ci)
+NODE_PATH="$PWD/docs/tools/erd-deps/node_modules" node docs/tools/generate-erd.cjs
+NODE_PATH="$PWD/docs/tools/erd-deps/node_modules" node docs/tools/generate-data-dictionaries.cjs
 ```
 
 Генераторы перезаписывают `reference/index.md` и `reference/erd*.svg`; описания сущностей хранятся в `docs/tools/data-model-entities.cjs`, пояснения полей — в DBML и генераторе, а бизнес-правила — в описании сервиса. Не редактируйте только сгенерированную страницу.

@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   plantuml:
     name: PlantUML diagrams
@@ -17,14 +21,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install Graphviz and download PlantUML
-        env:
-          PLANTUML_VERSION: '1.2026.8'
+      - name: Cache PlantUML
+        id: plantuml-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/plantuml.jar
+          key: plantuml-1.2026.8-${{ runner.os }}
+      - name: Install Graphviz
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz
+      - name: Download PlantUML
+        if: steps.plantuml-cache.outputs.cache-hit != 'true'
+        run: |
           curl --fail --location --retry 3 --silent --show-error \
-            "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar" \
+            https://github.com/plantuml/plantuml/releases/download/v1.2026.8/plantuml-1.2026.8.jar \
             --output "$RUNNER_TEMP/plantuml.jar"
       - name: Check syntax and render SVG diagrams
         run: |
@@ -49,18 +60,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+      - name: Cache PlantUML
+        id: plantuml-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/plantuml.jar
+          key: plantuml-1.2026.8-${{ runner.os }}
+      - name: Download PlantUML
+        if: steps.plantuml-cache.outputs.cache-hit != 'true'
+        run: |
+          curl --fail --location --retry 3 --silent --show-error \
+            https://github.com/plantuml/plantuml/releases/download/v1.2026.8/plantuml-1.2026.8.jar \
+            --output "$RUNNER_TEMP/plantuml.jar"
       - name: Install documentation dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz ruby
           python -m pip install -r docs/requirements.txt
-          curl --fail --location --retry 3 --silent --show-error \
-            https://github.com/plantuml/plantuml/releases/download/v1.2026.8/plantuml-1.2026.8.jar \
-            --output "$RUNNER_TEMP/plantuml.jar"
       - name: Test documentation tools and validate diagrams
         env:
           PLANTUML_JAR: ${{ runner.temp }}/plantuml.jar
@@ -86,17 +108,73 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-diagram-deps-node22-${{ runner.os }}-${{ hashFiles('docs/tools/erd-deps/package-lock.json') }}
       - name: Install DBML and layout dependencies
-        run: npm install --prefix "$RUNNER_TEMP/diagram-deps" --no-save @dbml/core@12.1.0 elkjs@0.12.1
-      - name: Validate DBML and generate ER diagrams
+        run: |
+          mkdir -p "$RUNNER_TEMP/diagram-deps"
+          cp docs/tools/erd-deps/package*.json "$RUNNER_TEMP/diagram-deps/"
+          cd "$RUNNER_TEMP/diagram-deps"
+          npm ci
+      - name: Validate DBML schemas
         env:
           NODE_PATH: ${{ runner.temp }}/diagram-deps/node_modules
         run: |
           find . -type f -name '*.dbml' -not -path './.git/*' -print0 |
             xargs -0 -r -n 1 node -e 'const fs = require("fs"); require("@dbml/core").Parser.parse(fs.readFileSync(process.argv[1], "utf8"), "dbml"); console.log("Valid:", process.argv[1]);'
-          if [ -f docs/tools/generate-erd.cjs ]; then
-            node docs/tools/generate-erd.cjs
-          fi
+      - name: Generate or restore identity diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: identity
+          schema: services/identity/db/schema.dbml
+      - name: Generate or restore candidate diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: candidate
+          schema: docs/data-model/candidate/schema.dbml
+      - name: Generate or restore company diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: company
+          schema: docs/data-model/company/schema.dbml
+      - name: Generate or restore vacancy diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: vacancy
+          schema: docs/data-model/vacancy/schema.dbml
+      - name: Generate or restore hiring diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: hiring
+          schema: docs/data-model/hiring/schema.dbml
+      - name: Generate or restore assessment diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: assessment
+          schema: docs/data-model/assessment/schema.dbml
+      - name: Generate or restore communication diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: communication
+          schema: docs/data-model/communication/schema.dbml
+      - name: Generate or restore notification diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: notification
+          schema: docs/data-model/notification/schema.dbml
+      - name: Generate or restore integration diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: integration
+          schema: docs/data-model/integration/schema.dbml
+      - name: Generate or restore file diagrams
+        uses: ./.github/actions/erd-cache
+        with:
+          service: file
+          schema: docs/data-model/file/schema.dbml
       - name: Validate SVG files
         run: |
           python3 - <<'PY'
@@ -121,7 +199,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.work
-          cache: false
+          cache: true
+          cache-dependency-path: |
+            go.work
+            go.work.sum
+            **/go.mod
+            **/go.sum
       - name: Test all Go modules
         run: make test
       - name: Run go vet
@@ -137,6 +220,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: '1.69.0'
+          github_token: ${{ github.token }}
       - name: Check vendored dependencies
         run: make proto-vendor-check
       - name: Lint protobuf definitions
