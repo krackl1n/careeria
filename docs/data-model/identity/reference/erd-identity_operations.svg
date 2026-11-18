@@ -1,0 +1,324 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1810" height="1315" viewBox="0 0 1810 1315" role="img" aria-label="ERD identity">
+<rect width="100%" height="100%" fill="#f7f9fc"/>
+<text x="35" y="35" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="21" font-weight="600" fill="#142c46">Сервисные учётные записи, аудит и outbox</text>
+<text x="35" y="61" xml:space="preserve" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="13" fill="#52687e">PK: первичный ключ   FK: внешний ключ   *: обязательно</text>
+<path data-ref="e2" data-parent="identities" data-parent-field="id" data-child="service_account_credentials" data-child-field="created_by_identity_id" d="M 805.0 286.0 L 915.0 286.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 813.0,280.0 L 813.0,292.0"/><circle cx="824.0" cy="286.0" r="4" fill="#f7f9fc"/><path d="M 915.0,286.0 L 903.0,280.0 M 915.0,286.0 L 903.0,292.0"/><circle cx="896.0" cy="286.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e3" data-parent="identities" data-parent-field="id" data-child="security_events" data-child-field="identity_id" d="M 805.0 289.0 L 825.0 289.0 L 825.0 642.0 L 915.0 642.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 813.0,283.0 L 813.0,295.0"/><circle cx="824.0" cy="289.0" r="4" fill="#f7f9fc"/><path d="M 915.0,642.0 L 903.0,636.0 M 915.0,642.0 L 903.0,648.0"/><circle cx="896.0" cy="642.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e6" data-parent="oauth_clients" data-parent-field="id" data-child="security_events" data-child-field="oauth_client_id" d="M 805.0 952.0 L 815.0 952.0 L 815.0 711.0 L 915.0 711.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 813.0,946.0 L 813.0,958.0"/><circle cx="824.0" cy="952.0" r="4" fill="#f7f9fc"/><path d="M 915.0,711.0 L 903.0,705.0 M 915.0,711.0 L 903.0,717.0"/><circle cx="896.0" cy="711.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e5" data-parent="sessions" data-parent-field="id" data-child="security_events" data-child-field="session_id" d="M 805.0 504.0 L 815.0 504.0 L 815.0 688.0 L 915.0 688.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 813.0,498.0 L 813.0,510.0"/><circle cx="824.0" cy="504.0" r="4" fill="#f7f9fc"/><path d="M 915.0,688.0 L 903.0,682.0 M 915.0,688.0 L 903.0,694.0"/><circle cx="896.0" cy="688.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e4" data-parent="service_accounts" data-parent-field="id" data-child="security_events" data-child-field="service_account_id" d="M 1395.0 665.0 L 1285.0 665.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1387.0,671.0 L 1387.0,659.0"/><circle cx="1376.0" cy="665.0" r="4" fill="#f7f9fc"/><path d="M 1285.0,665.0 L 1297.0,671.0 M 1285.0,665.0 L 1297.0,659.0"/><circle cx="1304.0" cy="665.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e1" data-parent="service_accounts" data-parent-field="id" data-child="service_account_credentials" data-child-field="service_account_id" d="M 1395.0 662.0 L 1295.0 662.0 L 1295.0 171.0 L 1285.0 171.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 1387.0,668.0 L 1387.0,656.0"/><path d="M 1378.0,668.0 L 1378.0,656.0"/><path d="M 1285.0,171.0 L 1297.0,177.0 M 1285.0,171.0 L 1297.0,165.0"/><circle cx="1304.0" cy="171.0" r="4" fill="#f7f9fc"/></g>
+<path data-ref="e0" data-parent="identities" data-parent-field="id" data-child="service_accounts" data-child-field="created_by_identity_id" d="M 435.0 283.0 L 425.0 283.0 L 425.0 1279.0 L 1775.0 1279.0 L 1775.0 801.0 L 1765.0 801.0" fill="none" stroke="#657e96" stroke-width="1.6" stroke-linejoin="round"/>
+<g fill="none" stroke="#516a82" stroke-width="1.6"><path d="M 427.0,289.0 L 427.0,277.0"/><circle cx="416.0" cy="283.0" r="4" fill="#f7f9fc"/><path d="M 1765.0,801.0 L 1777.0,807.0 M 1765.0,801.0 L 1777.0,795.0"/><circle cx="1784.0" cy="801.0" r="4" fill="#f7f9fc"/></g>
+<g data-table="sessions" transform="translate(435,451)">
+<rect width="370" height="393" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">sessions</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">identity_id *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">oauth_client_id *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">authentication_level *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">authentication_level</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">authenticated_methods *</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text[]</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">ip_address</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">inet</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">user_agent</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">device_name</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">authenticated_at *</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">last_seen_at</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">idle_expires_at *</text>
+<text x="358" y="311" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">absolute_expires_at *</text>
+<text x="358" y="334" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">revoked_at</text>
+<text x="358" y="357" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="380" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="380" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">revoke_reason</text>
+<text x="358" y="380" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+</g>
+<g data-table="security_events" transform="translate(915,497)">
+<rect width="370" height="370" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">security_events</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">event_type *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">result *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">security_event_result</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">actor_type *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">security_actor_type</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">identity_id</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">service_account_id</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">session_id</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">oauth_client_id</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">identifier_hash</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">bytea</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">ip_address</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">inet</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">user_agent</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">correlation_id</text>
+<text x="358" y="311" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">occurred_at *</text>
+<text x="358" y="334" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">metadata *</text>
+<text x="358" y="357" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">jsonb</text>
+</g>
+<g data-table="identities" transform="translate(435,233)">
+<rect width="370" height="163" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">identities</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">status *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">identity_status</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">updated_at *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">deleted_at</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+</g>
+<g data-table="oauth_clients" transform="translate(435,899)">
+<rect width="370" height="370" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">oauth_clients</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">client_id *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">client_type *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">oauth_client_type</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12" textLength="180" lengthAdjust="spacingAndGlyphs" fill="#203951">token_endpoint_auth_method *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">oauth_token_endpoint_auth_method</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">name *</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">description</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">require_pkce *</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">boolean</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">consent_mode *</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">oauth_consent_mode</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">status *</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">oauth_client_status</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_by_identity_id</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">updated_at *</text>
+<text x="358" y="311" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">disabled_at</text>
+<text x="358" y="334" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">deleted_at</text>
+<text x="358" y="357" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+</g>
+<g data-table="service_account_credentials" transform="translate(915,95)">
+<rect width="370" height="347" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">service_account_credentials</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">service_account_id *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">credential_type *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">service_account_credential_type</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">secret_hash *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">secret_prefix</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">name</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_by_identity_id</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">updated_at *</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">expires_at</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">revoked_at</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">revoke_reason</text>
+<text x="358" y="311" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">last_used_at</text>
+<text x="358" y="334" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+</g>
+<g data-table="outbox_messages" transform="translate(35,95)">
+<rect width="370" height="462" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">outbox_messages</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">event_id *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">aggregate_type *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">varchar(255)</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">aggregate_id *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">aggregate_version</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">bigint</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">event_type *</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">varchar(255)</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">payload *</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">jsonb</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">headers *</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">jsonb</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">partition_key</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">varchar(255)</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">status *</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">varchar(32)</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">attempts *</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">integer</text>
+<text x="12" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="311" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">occurred_at *</text>
+<text x="358" y="311" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="334" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">processing_started_at</text>
+<text x="358" y="334" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="357" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">published_at</text>
+<text x="358" y="357" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="380" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="380" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">next_attempt_at</text>
+<text x="358" y="380" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="403" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="403" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">last_error</text>
+<text x="358" y="403" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="426" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="426" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="426" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="449" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="449" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">updated_at *</text>
+<text x="358" y="449" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+</g>
+<g data-table="service_accounts" transform="translate(1395,610)">
+<rect width="370" height="301" rx="7" fill="#fff" stroke="#b9cbdc" stroke-width="1.2"/>
+<path d="M 7 0 H 363 Q 370 0 370 7 V 37 H 0 V 7 Q 0 0 7 0" fill="#173b5e"/>
+<text x="14" y="25" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#fff">service_accounts</text>
+<text x="12" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">PK</text>
+<text x="64" y="58" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">id *</text>
+<text x="358" y="58" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="81" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">organization_id *</text>
+<text x="358" y="81" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="104" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">account_key *</text>
+<text x="358" y="104" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="127" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">name *</text>
+<text x="358" y="127" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="150" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">description</text>
+<text x="358" y="150" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">text</text>
+<text x="12" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="173" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">status *</text>
+<text x="358" y="173" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" textLength="90" lengthAdjust="spacingAndGlyphs" fill="#657c91">service_account_status</text>
+<text x="12" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78">FK</text>
+<text x="64" y="196" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_by_identity_id</text>
+<text x="358" y="196" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">uuid</text>
+<text x="12" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="219" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">created_at *</text>
+<text x="358" y="219" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="242" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">updated_at *</text>
+<text x="358" y="242" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="265" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">disabled_at</text>
+<text x="358" y="265" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+<text x="12" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#337e78"></text>
+<text x="64" y="288" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="12"  fill="#203951">deleted_at</text>
+<text x="358" y="288" text-anchor="end" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="11"  fill="#657c91">timestamptz</text>
+</g>
+</svg>

@@ -96,7 +96,7 @@ Careeria объединяет полный процесс найма:
 | Web Application | Next.js, React, TypeScript, Tailwind CSS | App Router, SSR/CSR, пользовательский интерфейс и адаптивная вёрстка |
 | Работа с API во frontend | TanStack Query, React Hook Form, Zod | server state, формы и runtime-валидация DTO |
 | Realtime и интервью во frontend | WebSocket client, LiveKit React SDK | сообщения, статусы, видеосвязь и демонстрация экрана |
-| BFF | Go, `net/http`, `grpc-go`, OAuth 2.0/OIDC | HttpOnly-сессии, CSRF-защита, token refresh и агрегация API |
+| BFF в Web Application | Next.js, TypeScript, OAuth 2.0/OIDC | Серверные сессии, CSRF-защита, token refresh и адаптация API; развёртывается вместе с Next.js |
 | API Gateway | Go, `grpc-gateway`, `grpc-go`, OpenTelemetry | REST-to-gRPC, rate limiting, request ID и distributed tracing |
 | Микросервисы | Go, gRPC, Protobuf | Типизированные синхронные контракты между контейнерами |
 | Доступ к PostgreSQL | `pgx`, `sqlc`, Goose | Пулы соединений, типобезопасные запросы и миграции |
@@ -154,7 +154,7 @@ Careeria объединяет полный процесс найма:
 - пользователи: все четыре роли Careeria;
 - ответственность: authentication, authorization, уведомления, файлы, события и внешние интеграции.
 
-В каждом L2 повторяется общий путь `Пользователь → Web Application → BFF → API Gateway`. Для областей Member 1–3 также показывается общая зависимость `API Gateway → Identity Service → Identity Provider`.
+В каждом L2 повторяется общий путь `Пользователь → Web Application (Next.js с BFF) → API Gateway`. Для областей Member 1–3 также показывается общая зависимость `API Gateway → Identity Service → Identity Provider`.
 
 ## Контейнеры и конкретные обязанности
 
@@ -176,7 +176,7 @@ Careeria объединяет полный процесс найма:
 Синхронные пользовательские запросы проходят по цепочке:
 
 ```text
-Browser → Next.js → Go BFF → Go API Gateway → Go gRPC service → PostgreSQL
+Browser → Next.js (серверный BFF) → Go API Gateway → Go gRPC service → PostgreSQL
 ```
 
 Контракты внутренних API описываются в Protobuf. Внешний HTTP API преобразуется в gRPC через `grpc-gateway`.

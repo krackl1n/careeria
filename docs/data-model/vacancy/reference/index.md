@@ -1,113 +1,103 @@
 # База данных сервиса Vacancy
 
-Источник: проектная [DBML-схема](../schema.dbml). Смысл сценариев и незакрытые решения — в [описании сервиса](../../../services/vacancy/index.md).
+База данных Vacancy предназначена для хранения вакансий компаний, условий работы, требований к кандидатам и связанных навыков. В модели отражаются состояние вакансии, публикация и закрытие, а также сведения, необходимые для поиска и просмотра предложений.
 
 ## ER-диаграмма
 
-Таблицы показаны со всеми полями из DBML. PK — первичный ключ, FK — внешний ключ, звёздочка — обязательное поле. Связи обозначены нотацией «воронья лапка»: круг — необязательная связь, черта — один, лапка — многие. Линии подходят к строкам полей; для составного FK линия подходит к последнему полю, а все поля перечислены ниже. Кратность выведена из FK, NOT NULL и уникальных ключей DBML; дополнительные SQL-ограничения смотрите в миграциях или проекте ограничений. Внешние идентификаторы других сервисов не соединены межбазовыми FK.
+
 
 ![ER-диаграмма Vacancy](erd.svg)
+
+<p align="center">Рисунок - Модель данных сервиса Vacancy</p>
 
 [Открыть SVG полностью](erd.svg)
 
 ## Сущности
 
-Здесь сущность — таблица локальной базы, включая технические таблицы. Название на русском — поясняющий псевдоним; физическое имя приведено в первом столбце.
+<p align="right">Таблица - Сущности сервиса Vacancy</p>
 
 | Таблица | Псевдоним | Описание | Особенности |
 |---|---|---|---|
 | vacancies | Вакансия | Содержание вакансии, условия и состояние публикации. | PK: id |
-| vacancy_skills | Навык вакансии | Ключ и отображаемое название требуемого навыка. | PK: vacancy_id, skill_key; Ограниченный набор значений внутри Vacancy, заменяется атомарно. |
-| outbox_messages | Исходящее событие | Сообщение transactional outbox для последующей публикации. | PK: id; Предлагаемая форма по миграции Identity; способ публикации и дополнительные индексы требуют согласования. |
+| vacancy_skills | Навык вакансии | Ключ и отображаемое название требуемого навыка. | PK: vacancy_id, skill_key |
+| outbox_messages | Исходящее событие | Сообщение transactional outbox для последующей публикации. | PK: id |
 
 ## Связи
 
-Одна строка соответствует одному локальному FK. Кратность указана в двух направлениях: сколько дочерних записей может относиться к одной родительской и сколько родительских — к одной дочерней. Минимум дочерних записей равен нулю: FK не требует наличия дочерней записи. Для составного nullable FK значение 0..1 означает, что ссылка может отсутствовать; частично заполненный ключ при стандартном MATCH SIMPLE также не проверяется. Указана кратность по DBML без учёта частичных уникальных индексов: 0..N — верхняя оценка, которую дополнительные ограничения могут сузить. В Identity приоритет имеют миграции.
+<p align="right">Таблица - Связи сущностей сервиса Vacancy</p>
 
-| Родительская сущность и ключ | Дочерняя сущность и FK | Дочерних на родителя | Родителей на дочернюю | Комментарий |
+| Родительская сущность и ключ | Дочерняя сущность и FK | Дочерних записей на одну родительскую | Родительских записей на одну дочернюю | Комментарий |
 |---|---|---|---|---|
-| vacancies (id) | vacancy_skills (vacancy_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не указано в DBML. |
+| vacancies (id) | vacancy_skills (vacancy_id) | 0..N | 1 | Безусловная уникальность FK не указана; ссылка обязательна. Удаление родителя: не задано. |
 
 ## Атрибуты
 
-В описании указаны обязательность по DBML, ключи, значение по умолчанию и смысл поля. «Необязательно / не указано» не исключает дополнительных SQL-ограничений. UNIQUE отмечен для отдельного поля; составные ключи и индексы перечислены под таблицей.
+<p align="right">Таблица - Атрибуты сущностей сервиса Vacancy</p>
 
-### vacancies
-
-| Поле | Тип | Описание |
-|---|---|---|
-| create_request_id | uuid | Необязательно / не указано; UNIQUE; UUID операции создания; уникален в пределах этой таблицы |
-| create_request_hash | text | Необязательно / не указано; Хеш канонического запроса создания |
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| company_id | uuid | Обязательно; Внешний ID Company Service, не FK |
-| author_id | uuid | Обязательно; Внешний ID Identity, устанавливается из доверенного контекста |
-| title | text | Обязательно; Название. |
-| description | text | Обязательно; Описание. |
-| status | vacancy_status | Обязательно; По умолчанию: DRAFT; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| required_experience | text | Необязательно / не указано; Требуемый опыт. |
-| employment_type | text | Необязательно / не указано; Тип занятости. |
-| work_format | work_format | Обязательно; Формат работы. |
-| location | text | Необязательно / не указано; Местоположение. |
-| compensation_min | numeric(18,2) | Необязательно / не указано; Нижняя граница компенсации. |
-| compensation_max | numeric(18,2) | Необязательно / не указано; Верхняя граница компенсации. |
-| compensation_currency | char(3) | Необязательно / не указано; Валюта компенсации. |
-| compensation_period | text | Необязательно / не указано; Период компенсации. |
-| compensation_tax_basis | text | Необязательно / не указано; GROSS или NET, если указано |
-| compensation_bonus | text | Необязательно / не указано; Описание бонусной части компенсации. |
-| version | bigint | Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений. |
-| first_published_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-| published_at | timestamptz | Необязательно / не указано; Время последней публикации или восстановления |
-| closed_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-
-Составные ключи и индексы DBML: `INDEX (company_id, status, created_at, id)`; `INDEX (status, published_at, id)`.
-
-### vacancy_skills
-
-Ограниченный набор значений внутри Vacancy, заменяется атомарно.
-
-| Поле | Тип | Описание |
-|---|---|---|
-| vacancy_id | uuid | Обязательно; PK, FK; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса. |
-| skill_key | text | Обязательно; PK; Нормализованный ключ навыка. |
-| display_name | text | Обязательно; Имя для отображения. |
-
-Составные ключи и индексы DBML: `PK (vacancy_id, skill_key)`.
-
-### outbox_messages
-
-Предлагаемая форма по миграции Identity; способ публикации и дополнительные индексы требуют согласования.
-
-| Поле | Тип | Описание |
-|---|---|---|
-| id | uuid | Обязательно; PK; Идентификатор записи. |
-| event_id | uuid | Обязательно; UNIQUE; Идентификатор события. |
-| aggregate_type | varchar(255) | Обязательно; Тип агрегата — источника события. |
-| aggregate_id | uuid | Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса. |
-| aggregate_version | bigint | Необязательно / не указано; Версия агрегата — источника события. |
-| event_type | varchar(255) | Обязательно; Тип события. |
-| payload | jsonb | Обязательно; Содержимое события или операции. |
-| headers | jsonb | Обязательно; По умолчанию: {}; Заголовки события. |
-| partition_key | varchar(255) | Необязательно / не указано; Ключ распределения события. |
-| status | varchar(32) | Обязательно; По умолчанию: PENDING; Состояние записи; допустимые переходы описаны в проекте сервиса. |
-| attempts | integer | Обязательно; По умолчанию: 0; Количество попыток. |
-| occurred_at | timestamptz | Обязательно; Время события. |
-| processing_started_at | timestamptz | Необязательно / не указано; Время соответствующего действия или состояния. |
-| published_at | timestamptz | Необязательно / не указано; Время публикации. |
-| next_attempt_at | timestamptz | Необязательно / не указано; Время следующей попытки. |
-| last_error | text | Необязательно / не указано; Последняя зафиксированная ошибка. |
-| created_at | timestamptz | Обязательно; Время создания. |
-| updated_at | timestamptz | Обязательно; Время последнего изменения. |
-
-Составные ключи и индексы DBML: `INDEX (aggregate_type, aggregate_id, aggregate_version)`.
+<div class="md-typeset__scrollwrap attribute-dictionary"><div class="md-typeset__table"><table><thead><tr><th>Сущность</th><th>Поле</th><th>Тип</th><th>Описание</th></tr></thead><tbody>
+<tr><td class="attribute-name" rowspan="24">vacancies</td><td class="attribute-name">create_request_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Необязательно / не указано; UNIQUE; UUID операции создания; уникален в пределах этой таблицы</td></tr>
+<tr><td class="attribute-name">create_request_hash</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Хеш канонического запроса создания</td></tr>
+<tr><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">company_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Внешний ID Company Service, не FK</td></tr>
+<tr><td class="attribute-name">author_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Внешний ID Identity, устанавливается из доверенного контекста</td></tr>
+<tr><td class="attribute-name">title</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Название.</td></tr>
+<tr><td class="attribute-name">description</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Описание.</td></tr>
+<tr><td class="attribute-name">status</td><td class="attribute-type">vacancy_status</td><td class="attribute-description">Обязательно; По умолчанию: DRAFT; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">required_experience</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Требуемый опыт.</td></tr>
+<tr><td class="attribute-name">employment_type</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Тип занятости.</td></tr>
+<tr><td class="attribute-name">work_format</td><td class="attribute-type">work_format</td><td class="attribute-description">Обязательно; Формат работы.</td></tr>
+<tr><td class="attribute-name">location</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Местоположение.</td></tr>
+<tr><td class="attribute-name">compensation_min</td><td class="attribute-type">numeric(18,2)</td><td class="attribute-description">Необязательно / не указано; Нижняя граница компенсации.</td></tr>
+<tr><td class="attribute-name">compensation_max</td><td class="attribute-type">numeric(18,2)</td><td class="attribute-description">Необязательно / не указано; Верхняя граница компенсации.</td></tr>
+<tr><td class="attribute-name">compensation_currency</td><td class="attribute-type">char(3)</td><td class="attribute-description">Необязательно / не указано; Валюта компенсации.</td></tr>
+<tr><td class="attribute-name">compensation_period</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Период компенсации.</td></tr>
+<tr><td class="attribute-name">compensation_tax_basis</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; GROSS или NET, если указано</td></tr>
+<tr><td class="attribute-name">compensation_bonus</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Описание бонусной части компенсации.</td></tr>
+<tr><td class="attribute-name">version</td><td class="attribute-type">bigint</td><td class="attribute-description">Обязательно; По умолчанию: 1; Версия для контроля конкурентных изменений.</td></tr>
+<tr><td class="attribute-name">first_published_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name">published_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время последней публикации или восстановления</td></tr>
+<tr><td class="attribute-name">closed_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+<tr><td class="attribute-name" rowspan="3">vacancy_skills</td><td class="attribute-name">vacancy_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK, FK; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса.</td></tr>
+<tr><td class="attribute-name">skill_key</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; PK; Нормализованный ключ навыка.</td></tr>
+<tr><td class="attribute-name">display_name</td><td class="attribute-type">text</td><td class="attribute-description">Обязательно; Имя для отображения.</td></tr>
+<tr><td class="attribute-name" rowspan="18">outbox_messages</td><td class="attribute-name">id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; PK; Идентификатор записи.</td></tr>
+<tr><td class="attribute-name">event_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; UNIQUE; Идентификатор события.</td></tr>
+<tr><td class="attribute-name">aggregate_type</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Обязательно; Тип агрегата — источника события.</td></tr>
+<tr><td class="attribute-name">aggregate_id</td><td class="attribute-type">uuid</td><td class="attribute-description">Обязательно; Идентификатор связанного объекта; владелец и назначение определяются контекстом сервиса.</td></tr>
+<tr><td class="attribute-name">aggregate_version</td><td class="attribute-type">bigint</td><td class="attribute-description">Необязательно / не указано; Версия агрегата — источника события.</td></tr>
+<tr><td class="attribute-name">event_type</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Обязательно; Тип события.</td></tr>
+<tr><td class="attribute-name">payload</td><td class="attribute-type">jsonb</td><td class="attribute-description">Обязательно; Содержимое события или операции.</td></tr>
+<tr><td class="attribute-name">headers</td><td class="attribute-type">jsonb</td><td class="attribute-description">Обязательно; По умолчанию: {}; Заголовки события.</td></tr>
+<tr><td class="attribute-name">partition_key</td><td class="attribute-type">varchar(255)</td><td class="attribute-description">Необязательно / не указано; Ключ распределения события.</td></tr>
+<tr><td class="attribute-name">status</td><td class="attribute-type">varchar(32)</td><td class="attribute-description">Обязательно; По умолчанию: PENDING; Состояние записи; допустимые переходы описаны в проекте сервиса.</td></tr>
+<tr><td class="attribute-name">attempts</td><td class="attribute-type">integer</td><td class="attribute-description">Обязательно; По умолчанию: 0; Количество попыток.</td></tr>
+<tr><td class="attribute-name">occurred_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время события.</td></tr>
+<tr><td class="attribute-name">processing_started_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время соответствующего действия или состояния.</td></tr>
+<tr><td class="attribute-name">published_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время публикации.</td></tr>
+<tr><td class="attribute-name">next_attempt_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Необязательно / не указано; Время следующей попытки.</td></tr>
+<tr><td class="attribute-name">last_error</td><td class="attribute-type">text</td><td class="attribute-description">Необязательно / не указано; Последняя зафиксированная ошибка.</td></tr>
+<tr><td class="attribute-name">created_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время создания.</td></tr>
+<tr><td class="attribute-name">updated_at</td><td class="attribute-type">timestamptz</td><td class="attribute-description">Обязательно; Время последнего изменения.</td></tr>
+</tbody></table></div></div>
 
 ## Перечисления
 
-Допустимые значения перечислимых типов из DBML. Переходы между состояниями задаются правилами сервиса.
+Допустимые значения перечислимых типов. Переходы между состояниями задаются правилами сервиса.
+
+<p align="right">Таблица - Перечисления сервиса Vacancy</p>
 
 | Тип | Допустимые значения |
 |---|---|
 | vacancy_status | DRAFT, PUBLISHED, ARCHIVED, CLOSED |
 | work_format | OFFICE, REMOTE, HYBRID |
+
+## Ограничения данных
+
+- Название вакансии и наименования навыков не могут быть пустыми.
+- Диапазон компенсации неотрицателен и упорядочен; при указании суммы обязательны валюта и период. Признак налогообложения принимает значения GROSS или NET.
+- Для опубликованной вакансии фиксируются даты первой и последней публикации. Для закрытой вакансии указывается время закрытия.
+
+- Вакансия принадлежит компании; её публикация допускается после проверки полномочий и правил публикации, включая наличие навыка.
 

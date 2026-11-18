@@ -27,9 +27,8 @@ Deployment_Node(cluster, "Инфраструктура Careeria", "Production Ku
         }
         Boundary(appNamespace, "Приватный контур приложений — careeria-apps", "Kubernetes namespace") {
             Deployment_Node(webPods, "Web Application Pods × 2..10", "Kubernetes Pod / Node.js") {
-                Container(web, "Web Application", "Next.js / React / TypeScript", "Веб-приложение Careeria: SSR/CSR, доставка интерфейса пользователям и обращения к BFF.")
+                Container(web, "Web Application", "Next.js / React / TypeScript", "Next.js: SSR/CSR и серверный BFF с сессиями, CSRF-защитой и адаптацией API.")
             }
-            Container(bff, "BFF", "Go / HTTP / gRPC · Pods × 2..10", "HttpOnly-сессии, CSRF-защита и агрегация ответов для веб-клиента.")
             Container(apiGateway, "API Gateway", "Go / grpc-gateway · Pods × 2..10", "Маршрутизация REST и gRPC, rate limiting и доверенный identity context.")
             ApiInstance(candidateService, "Candidate Service", "Профили кандидатов, резюме и карьерные предпочтения.")
             ApiInstance(companyService, "Company Service", "Работодатели, участники компаний и корпоративные роли.")
@@ -68,10 +67,8 @@ Deployment_Node(cluster, "Инфраструктура Careeria", "Production Ku
 
 Rel(browser, publicLb, "Загружает интерфейс и вызывает API", "HTTPS / WSS, порт 443")
 Rel(publicLb, ingress, "Передаёт TLS-соединения", "TCP, порт 443")
-Rel(ingress, web, "Маршрутизирует страницы и ресурсы", "HTTP")
-Rel(ingress, bff, "Маршрутизирует запросы браузера к API", "HTTP")
-Rel(web, bff, "Получает данные для SSR", "HTTP / JSON")
-Rel(bff, apiGateway, "Вызывает внутренний API", "HTTP / gRPC")
+Rel(ingress, web, "Маршрутизирует страницы, ресурсы и API BFF", "HTTP")
+Rel(web, apiGateway, "Серверный BFF вызывает API", "HTTP / JSON")
 Rel(apiGateway, candidateService, "Профили кандидатов", "gRPC / HTTP2")
 Rel(apiGateway, companyService, "Компании и корпоративные роли", "gRPC / HTTP2")
 Rel(apiGateway, vacancyService, "Вакансии и поиск предложений", "gRPC / HTTP2")
