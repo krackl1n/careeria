@@ -38,7 +38,7 @@ Debezium подключается к общей СУБД и читает WAL/out
 
 | Область | Состав и стартовая конфигурация |
 |---|---|
-| Control plane | API Server, Scheduler, controller-manager и etcd. Для self-managed варианта — отказоустойчивый control plane; при managed Kubernetes его обслуживает провайдер. Control plane и системные addons на этих двух deployment-видах не детализируются; их роли в масштабировании показаны отдельно на activity diagram. |
+| Control plane | API Server, Scheduler, controller-manager и etcd. Для self-managed варианта — отказоустойчивый control plane; при managed Kubernetes его обслуживает провайдер. Control plane и системные addons на этих двух deployment-видах не детализируются. |
 | Application pool | Старт с 3 worker nodes. Здесь работают Ingress controller, приложения, обработчики событий и платформенные сервисы. Пул допускает увеличение числа узлов; верхняя граница определяется бюджетом и ёмкостью инфраструктуры. |
 | Data pool | Старт с 3 выделенных worker nodes; workloads размещаются операторами и не масштабируются обычным HPA. Размещение MinIO может потребовать дополнительных узлов в зависимости от выбранной топологии дисков. |
 | Media pool | Старт с 2 выделенных worker nodes для LiveKit. В выбранном варианте используется host networking и не более одного LiveKit Pod на узел. Выделение пула позволяет не конкурировать с API за сеть и CPU. |
@@ -68,14 +68,6 @@ Debezium подключается к общей СУБД и читает WAL/out
 Обычный HTTP Ingress не переносит WebRTC-медиатрафик. Для LiveKit отдельно задаются публичные адреса, ICE/TURN, UDP/TCP-порты и правила firewall; способ экспонирования зависит от сети провайдера. Выбранный вариант с `hostNetwork` и ограничением одного Pod на узел соответствует [схеме Kubernetes-развёртывания LiveKit](https://docs.livekit.io/transport/self-hosting/kubernetes/).
 
 ## Процесс HPA и масштабирования узлов
-
-```plantuml
-@startuml
-!include architecture/c4/plantuml/deployment/kubernetes-autoscaling.puml
-@enduml
-```
-
-Этот вид — UML Activity diagram процесса управления, а не C4 Deployment: метрики, изменение replicas, решение Scheduler и provisioning не являются местами исполнения приложений.
 
 Увеличение количества Pod и количества узлов — два разных процесса. [HPA](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) меняет число реплик целевого workload. Если Scheduler не может разместить новые Pod, [Node Autoscaler](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) при наличии поддерживаемого provisioning API добавляет подходящие worker nodes. На статическом bare-metal кластере без такого API новые узлы нужно предоставлять отдельно.
 
@@ -119,6 +111,6 @@ Namespaces, PVC и реплики не обеспечивают резервно
 - [Контейнеры полной системы (L2)](../system-context%28L1%29/full-system%28L2%29/index.md) — логические приложения, данные и взаимодействия.
 - [Коммуникации (L2)](../communication%28L2%29/index.md) — realtime и media-потоки.
 - [System Landscape (L0)](../landscape%28L0%29/README.md) — внешние системы и границы ответственности.
-- [Исходник размещения приложений](kubernetes-production.puml), [исходник размещения данных](kubernetes-data.puml) и [исходник процесса autoscaling](kubernetes-autoscaling.puml).
+- [Исходник размещения приложений](kubernetes-production.puml), [исходник размещения данных](kubernetes-data.puml).
 
 Генерация SVG из корня проекта: `make plantuml-architecture`. Реализация manifests/Helm, выбор контроллеров и операторов, расчёт размеров PVC, ресурсов и верхних границ autoscaling — следующие шаги, а не уже развёрнутая конфигурация.
