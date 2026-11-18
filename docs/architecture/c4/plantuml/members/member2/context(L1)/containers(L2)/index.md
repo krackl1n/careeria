@@ -2,7 +2,7 @@
 
 Область Member 2: компании и найм. Основные контейнеры: Company Service, Company DB, Hiring Service и Hiring DB.
 
-Общий вход в систему: `Пользователь → Web Application → BFF → API Gateway`.
+Общий вход в систему: `Пользователь → Web Application (Next.js с BFF) → API Gateway`.
 
 ```plantuml
 @startuml

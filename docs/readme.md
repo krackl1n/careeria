@@ -4,7 +4,7 @@
 
 Frontend реализуется на Next.js, React и TypeScript. Для маршрутизации и серверного рендеринга используется Next.js App Router, для стилей — Tailwind CSS, для server state — TanStack Query, для форм — React Hook Form, для валидации DTO — Zod. Realtime-события доставляются через WebSocket/Centrifugo, аудио- и видеосвязь подключается через LiveKit React SDK.
 
-Все прикладные backend-сервисы реализуются на Go. Синхронные контракты описываются в Protobuf и вызываются по gRPC через `grpc-go`. API Gateway использует `grpc-gateway` для преобразования внешнего HTTP/JSON API в gRPC. BFF реализуется на Go и отвечает за HttpOnly-сессии, CSRF-защиту, обновление токенов и агрегацию ответов для frontend.
+Все прикладные backend-сервисы реализуются на Go. Синхронные контракты описываются в Protobuf и вызываются по gRPC через `grpc-go`. API Gateway использует `grpc-gateway` для преобразования внешнего HTTP/JSON API в gRPC. BFF реализуется в серверной части Next.js, развёртывается вместе с Web Application и отвечает за HttpOnly-сессии, CSRF-защиту, обновление токенов и агрегацию ответов для frontend.
 
 Каждый доменный сервис владеет PostgreSQL-схемой или отдельной базой данных. Доступ выполняется через `pgx` и сгенерированный `sqlc`-код, миграции — через Goose. Доменные события сохраняются в transactional outbox в той же транзакции, что и бизнес-данные. Debezium PostgreSQL Connector читает outbox через logical replication и публикует Avro-события в Apache Kafka. Схемы регистрируются в Apicurio Registry.
 
@@ -257,7 +257,7 @@ Resume
 4. Edge Layer
 BFF
 Backend for Frontend.
-Используется между frontend и backend-сервисами.
+Серверная часть Next.js выступает посредником между браузером и backend-сервисами; отдельного развёртывания BFF нет.
 Ответственность:
 * работа с пользовательской сессией;
 * работа с access/refresh token;
@@ -496,7 +496,7 @@ AuthZ Projection Service
 Notification Service
 File Service
 15. Edge
-BFF
+Web Application (Next.js с BFF)
 API Gateway
 16. Realtime / Media
 Centrifugo

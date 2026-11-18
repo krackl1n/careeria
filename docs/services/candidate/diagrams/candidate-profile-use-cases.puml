@@ -1,0 +1,28 @@
+@startuml candidate-profile-use-cases
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName sans-serif
+actor "Кандидат" as candidate
+actor "Уполномоченный\nрекрутер" as recruiter
+rectangle "Candidate Service: профиль" {
+  usecase "Создать и просмотреть\nсвой профиль" as P1
+  usecase "Изменить сведения\nи ссылки" as P2
+  usecase "Управлять опытом\nи образованием" as P3
+  usecase "Изменить навыки\nи предпочтения" as P4
+  usecase "Изменить статус поиска\nи видимость" as P5
+  usecase "Архивировать /\nвосстановить профиль" as P6
+  usecase "Найти доступных\nкандидатов" as P7
+  usecase "Просмотреть доступный\nпрофиль" as P8
+  usecase "Получить доступные\nконтакты" as P9
+}
+candidate -- P1
+candidate -- P2
+candidate -- P3
+candidate -- P4
+candidate -- P5
+candidate -- P6
+recruiter -- P7
+recruiter -- P8
+recruiter -- P9
+@enduml

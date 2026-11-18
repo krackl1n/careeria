@@ -1,0 +1,153 @@
+Project careeria_integration {
+  database_type: 'PostgreSQL'
+  Note: 'Проект, не миграция. Инварианты и открытые решения: docs/services/integration/index.md.'
+}
+Table integration_connections {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  company_id uuid [not null, note: 'Внешний Company ID']
+  provider_type text [not null]
+  external_tenant_ref text [not null]
+  allowed_events text[] [not null, default: '{}', note: 'Разрешённые типы входящих событий']
+  route_id uuid [not null, unique]
+  mapping_version integer [not null]
+  lifecycle text [not null]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (company_id, lifecycle) }
+}
+Table inbound_signing_keys {
+  id uuid [pk]
+  connection_id uuid [not null, ref: > integration_connections.id]
+  key_version integer [not null]
+  encrypted_secret bytea [not null]
+  encryption_key_id text [not null]
+  status text [not null]
+  valid_from timestamptz [not null]
+  valid_until timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  indexes { (connection_id, key_version) [unique] }
+}
+Table webhook_subscriptions {
+  create_request_id uuid [unique, note: 'UUID операции создания; уникален в пределах этой таблицы']
+  create_request_hash text [note: 'Хеш канонического запроса создания']
+  id uuid [pk]
+  connection_id uuid [not null, ref: > integration_connections.id]
+  lifecycle text [not null]
+  current_revision_id uuid [note: 'Текущая редакция этой подписки']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+Table subscription_revisions {
+  id uuid [pk]
+  subscription_id uuid [not null, ref: > webhook_subscriptions.id]
+  ordinal integer [not null]
+  endpoint_url text [not null, note: 'Проверяется на каждом соединении; без secrets в URL']
+  payload_schema_version integer [not null]
+  event_types text[] [not null, default: '{}', note: 'Типы исходящих событий редакции подписки']
+  created_at timestamptz [not null]
+  indexes {
+    (subscription_id, ordinal) [unique]
+    (subscription_id, id) [unique]
+  }
+}
+Ref: webhook_subscriptions.(id, current_revision_id) > subscription_revisions.(subscription_id, id)
+Table outbound_signing_keys {
+  id uuid [pk]
+  subscription_id uuid [not null, ref: > webhook_subscriptions.id]
+  key_version integer [not null]
+  encrypted_secret bytea [not null]
+  encryption_key_id text [not null]
+  status text [not null]
+  valid_from timestamptz [not null]
+  valid_until timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  indexes {
+    (subscription_id, key_version) [unique]
+    (subscription_id, id) [unique]
+  }
+}
+Table inbound_receipts {
+  id uuid [pk]
+  connection_id uuid [not null, ref: > integration_connections.id]
+  provider_message_id text [not null]
+  body_digest text [not null]
+  normalized_event_id uuid [unique]
+  schema_version integer [not null]
+  mapping_version integer [not null]
+  status text [not null]
+  received_at timestamptz [not null]
+  indexes { (connection_id, provider_message_id) [unique] }
+}
+Table processed_events {
+  consumer text [not null]
+  source_event_id uuid [not null]
+  outcome text [not null]
+  processed_at timestamptz [not null]
+  indexes { (consumer, source_event_id) [pk] }
+}
+Table webhook_deliveries {
+  id uuid [pk]
+  subscription_id uuid [not null]
+  revision_id uuid [not null]
+  source_event_id uuid [not null]
+  payload_bytes bytea [not null, note: 'Неизменяемый подписываемый payload']
+  payload_digest text [not null]
+  status text [not null]
+  attempt_count integer [not null, default: 0]
+  next_attempt_at timestamptz
+  deadline timestamptz [not null]
+  lease_token uuid
+  lease_until timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes {
+    (subscription_id, source_event_id) [unique]
+    (subscription_id, id) [unique]
+    (status, next_attempt_at)
+  }
+}
+Ref: webhook_deliveries.(subscription_id, revision_id) > subscription_revisions.(subscription_id, id)
+Table webhook_delivery_attempts {
+  id uuid [pk]
+  subscription_id uuid [not null]
+  delivery_id uuid [not null]
+  ordinal integer [not null]
+  lease_token uuid [not null]
+  signing_key_id uuid [not null]
+  status text [not null]
+  started_at timestamptz [not null]
+  finished_at timestamptz
+  http_status integer
+  error_class text
+  indexes { (delivery_id, ordinal) [unique] }
+}
+Ref: webhook_delivery_attempts.(subscription_id, delivery_id) > webhook_deliveries.(subscription_id, id)
+Ref: webhook_delivery_attempts.(subscription_id, signing_key_id) > outbound_signing_keys.(subscription_id, id)
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+}

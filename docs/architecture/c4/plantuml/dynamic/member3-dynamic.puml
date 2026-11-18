@@ -1,0 +1,58 @@
+@startuml member3-dynamic
+!include ../common/styles.puml
+!include ../model/elements.puml
+
+title Careeria — Сквозной процесс отправки решения задачи, автопроверки в раннере, скоринга и realtime-оповещения
+LAYOUT_LEFT_RIGHT()
+
+Person(candidate, "Кандидат", "Проходит техническое испытание, отправляет решение в веб-интерфейсе и получает вердикт.")
+Person(recruiter, "Рекрутер / Нанимающий менеджер", "Отслеживает прогресс кандидата в реальном времени и получает WebSocket-уведомление об успешной сдаче.")
+
+System_Boundary(platform, "Платформа Careeria") {
+    Container(web, "Web Application", "Next.js, React", "Пользовательский интерфейс соискателя и рекрутера.", $tags="frontend")
+    Container(bff, "BFF", "Go, net/http, grpc-go", "Сессионный слой и агрегация API.", $tags="edge")
+    Container(apiGateway, "API Gateway", "Go, grpc-gateway", "Маршрутизация, rate limiting и доверенный identity context.", $tags="gateway")
+    Container(assessmentService, "Assessment Service", "Go, gRPC, Protobuf, pgx, sqlc", "Управление сессиями испытаний, запуск проверок и скоринг.", $tags="business")
+    OpenFgaContainer("platform")
+    Container(codeRunner, "Code Execution Runner", "Go, gRPC, Docker / gVisor", "Изолированная песочница сборки и прогона юнит-тестов решений.", $tags="platform")
+    ContainerDb(assessmentDb, "Assessment DB", "PostgreSQL 16", "Сессии, решения, оценки и transactional outbox.", $tags="storage")
+    DebeziumContainer("eventInfrastructure")
+    ContainerQueue(kafka, "Kafka", "Apache Kafka, KRaft", "Шина доменных событий.", $tags="eventBus")
+    Container(realtimePublisher, "Realtime Publisher", "Go, Kafka Consumer, Centrifugo HTTP API", "Преобразует доменные события в realtime-сообщения каналов.", $tags="platform")
+    Container(centrifugo, "Centrifugo", "Centrifugo, WebSocket, JWT", "Управляет постоянными WebSocket-соединениями и presence.", $tags="realtime")
+    HiringServiceContainer("business")
+    Container(notificationService, "Notification Service", "Go, Kafka Consumer", "Оркестрация мультиканальных оповещений.", $tags="business")
+}
+
+NotificationProvidersSystem()
+
+' --- Синхронная цепочка: Запрос и исполнение (Шаги 1–8) ---
+Rel(candidate, web, "1. Отправляет решение задачи (SubmitTaskSolution)", "HTTPS / UI")
+Rel(web, bff, "2. Передаёт запрос с сессионной кукой", "HTTPS / JSON")
+Rel(bff, apiGateway, "3. Направляет авторизованный RPC-запрос", "gRPC / HTTP2")
+Rel(apiGateway, assessmentService, "4. Вызывает метод SubmitTaskSolution()", "gRPC / HTTP2, порт 50055")
+Rel(assessmentService, openFga, "5. Проверяет права кандидата (can_submit)", "gRPC / mTLS, порт 8081")
+Rel(assessmentService, codeRunner, "6. Направляет код и тесты на изолированное исполнение", "gRPC / HTTP2, порт 50060")
+Rel(codeRunner, assessmentService, "7. Возвращает статус прохождения тестов и метрики CPU/RAM", "gRPC response")
+Rel(assessmentService, assessmentDb, "8. Применяет ScoringStrategy, переводит FSM в EVALUATED и пишет Outbox", "SQL Transaction, порт 5432")
+
+' --- Синхронная цепочка: Ответ клиенту (Шаги 9–12) ---
+Rel(assessmentService, apiGateway, "9. Возвращает статус OK, итоговый балл и протокол тестов", "gRPC response")
+Rel(apiGateway, bff, "10. Транслирует ответ шлюза", "gRPC response")
+Rel(bff, web, "11. Возвращает 200 OK (финальный скоринг и статус EVALUATED)", "JSON / HTTPS")
+Rel(web, candidate, "12. Отображает в UI вердикт сдачи и аналитику выполнения", "UI Render")
+
+' --- Асинхронная цепочка: CDC, события, Realtime и нотификации (Шаги 13–21) ---
+Rel(assessmentDb, debezium, "13. Считывает запись Outbox из журнала транзакций WAL (CDC)", "PostgreSQL WAL (pgoutput)")
+Rel(debezium, kafka, "14. Публикует AssessmentCompletedEvent в топик assessment.events", "Kafka / Avro, порт 9092", $tags="async")
+Rel(kafka, realtimePublisher, "15. Вычитывает событие завершения испытания", "Kafka / Avro", $tags="async")
+Rel(realtimePublisher, centrifugo, "16. Публикует realtime-событие в канал компании (publish API)", "Centrifugo HTTP API, порт 8000", $tags="realtimeFlow")
+Rel(centrifugo, web, "17. Мгновенно доставляет WebSocket-пуш в открытую сессию рекрутера", "WSS / JSON", $tags="realtimeFlow")
+Rel(web, recruiter, "18. Обновляет статус кандидата в воронке найма без перезагрузки страницы", "UI Render")
+Rel(kafka, hiringService, "19. Автоматически переводит отклик в воронке на следующий этап", "Kafka / Avro", $tags="async")
+Rel(kafka, notificationService, "20. Доставляет событие для формирования мультиканального уведомления", "Kafka / Avro", $tags="async")
+Rel(notificationService, notificationProviders, "21. Отправляет email кандидату с подтверждением сдачи", "HTTPS / REST API")
+
+ShowArchitectureLegend()
+@enduml
+

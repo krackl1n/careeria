@@ -1,0 +1,106 @@
+Project careeria_file {
+  database_type: 'PostgreSQL'
+  Note: 'Проект File Service, не миграция; инварианты и неготовые контракты описаны в docs/services/file/index.md.'
+}
+Table files {
+  id uuid [pk]
+  owner_identity_id uuid [not null, note: 'Внешний Identity ID; не межсервисный FK']
+  purpose text [not null]
+  state text [not null]
+  declared_filename text [not null, note: 'Недоверенное имя для отображения, не object key']
+  verified_mime_type text
+  verified_size_bytes bigint
+  verified_checksum text
+  storage_object_key text [not null, unique, note: 'Генерируется сервером, не возвращается клиенту']
+  storage_version_id text [note: 'Неизменяемая версия байтов, подтверждённая при проверке']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  ready_at timestamptz
+  deleted_at timestamptz
+  indexes { (state, updated_at) }
+}
+Table upload_sessions {
+  id uuid [pk]
+  file_id uuid [not null, ref: > files.id]
+  caller_service text [not null, note: 'Сервис из доверенной service identity']
+  begin_operation_id uuid [not null]
+  request_hash text [not null]
+  state text [not null]
+  multipart_upload_id text [note: 'Внутренний ID хранилища; может отсутствовать до ответа хранилища']
+  expires_at timestamptz [not null]
+  last_upload_url_expires_at timestamptz [note: 'Для безопасной очистки после истечения ранее выданных прав записи']
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (caller_service, begin_operation_id) [unique] }
+}
+Table file_checks {
+  id uuid [pk]
+  file_id uuid [not null, ref: > files.id]
+  check_type text [not null]
+  operation_id uuid [not null, unique]
+  storage_version_id text [not null, note: 'Проверка относится к точной версии объекта']
+  status text [not null]
+  safe_result_code text
+  started_at timestamptz
+  completed_at timestamptz
+  created_at timestamptz [not null]
+  indexes { (file_id, check_type, created_at) }
+}
+Table file_bindings {
+  id uuid [pk]
+  file_id uuid [not null, ref: > files.id]
+  owner_service text [not null, note: 'Устанавливается по доверенной service identity']
+  resource_type text [not null]
+  resource_id uuid [not null, note: 'Внешний ID ресурса владельца']
+  bind_operation_id uuid [not null, unique]
+  release_operation_id uuid [unique, note: 'Устойчивый ID освобождения']
+  status text [not null]
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  released_at timestamptz
+  indexes {
+    (file_id, owner_service, resource_type, resource_id) [unique]
+    (file_id, id) [unique]
+  }
+  Note: 'Одна стабильная запись на связь; повторная активация освобождённой записи не допускается.'
+}
+Table file_cleanup_jobs {
+  id uuid [pk]
+  file_id uuid [not null, ref: > files.id]
+  operation_id uuid [not null, unique]
+  reason text [not null]
+  state text [not null]
+  attempts integer [not null, default: 0]
+  not_before timestamptz [not null, note: 'Включает срок ранее выданных прав записи']
+  next_attempt_at timestamptz
+  lease_token uuid
+  lease_until timestamptz
+  version bigint [not null, default: 1]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (state, next_attempt_at) }
+}
+Table outbox_messages {
+  id uuid [pk]
+  event_id uuid [not null, unique]
+  aggregate_type varchar(255) [not null]
+  aggregate_id uuid [not null]
+  aggregate_version bigint
+  event_type varchar(255) [not null]
+  payload jsonb [not null]
+  headers jsonb [not null, default: '{}']
+  partition_key varchar(255)
+  status varchar(32) [not null, default: 'PENDING']
+  attempts integer [not null, default: 0]
+  occurred_at timestamptz [not null]
+  processing_started_at timestamptz
+  published_at timestamptz
+  next_attempt_at timestamptz
+  last_error text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  indexes { (aggregate_type, aggregate_id, aggregate_version) }
+  Note: 'Предложение; необходимость событий и совместимость с общей реализацией требуют согласования.'
+}

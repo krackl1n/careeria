@@ -63,6 +63,8 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 
 ## Доменная модель и хранение
 
+Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/communication/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
+
 Вместо монолитного агрегата «Чат со всеми сообщениями», приводящего к блокировкам БД, предметная область декомпозирована на компактные агрегаты:
 
 | Сущность | Основные данные | Инварианты |
@@ -74,11 +76,11 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 | ReadReceipt | conversation ID, user ID, lastReadMessageId, lastReadAt | Монотонный сдвиг указателя прочтения вперёд по временной шкале; нельзя «откатить» прочитанное назад. |
 | MessageReaction | message ID, user ID, emojiCode, createdAt | Уникальность тройки (message ID, user ID, emojiCode). Пользователь может повторным кликом только снять свою реакцию. |
 | OutboxEvent | event ID, aggregate ID, aggregate type, event type, schema version, payload, occurredAt | Фиксируется атомарно в транзакции с изменением бизнес-сущности; обеспечивает гарантию At-Least-Once доставки. |
-| IdempotencyKey | key, user ID, operation, response payload, lockedUntil, createdAt | Предотвращает дублирование сообщений при нестабильной мобильной сети и ретраях. |
+| Идентификатор запроса создания | create_request_id и хеш в создаваемом сообщении или диалоге | Позволяет распознать повтор создания; права и совпадение запроса проверяются отдельно. |
 
 Межагрегатная валидация изолирована в MessagingPolicy: отправка сообщения требует одновременно статуса Conversation.ACTIVE, наличия отправителя в списке активных ConversationParticipant и соблюдения лимитов на размер вложений.
 
-Предлагаемые таблицы: conversations, conversation_participants, messages, message_attachments, conversation_read_receipts, message_reactions, idempotency_keys, communication_outbox.
+Предлагаемые таблицы: conversations, conversation_participants, messages, message_attachments, conversation_read_receipts, message_reactions, communication_outbox.
 
 Внутри Communication DB используются внешние ключи, каскадные правила и частичные индексы. Между сервисами связь осуществляется исключительно по идентификаторам: прямого доступа к профилям Identity DB или откликам Hiring DB нет.
 
