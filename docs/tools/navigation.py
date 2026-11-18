@@ -8,6 +8,8 @@ the inexpensive theme HTML for all pages. PlantUML runs only for changed pages.
 
 from __future__ import annotations
 
+import re
+
 from mkdocs.structure.nav import _add_parent_links, _add_previous_and_next_links, _get_by_type
 from mkdocs.structure.pages import Page
 
@@ -49,6 +51,21 @@ def _apply_section_titles(items, titles: dict[str, str]) -> None:
                 break
 
 
+def _order_project_sections(items) -> None:
+    for item in items:
+        children = getattr(item, "children", None)
+        if not children:
+            continue
+        if _first_src_uri(item).startswith("project/"):
+            children.sort(key=lambda child: (
+                not getattr(child, "is_index", False),
+                _first_src_uri(child).rsplit("/", 2)[-2:]
+                if getattr(child, "children", None)
+                else [_first_src_uri(child).rsplit("/", 1)[-1]],
+            ))
+        _order_project_sections(children)
+
+
 def on_config(config):
     global _render_config
     signature = repr((config.markdown_extensions, config.mdx_configs))
@@ -69,6 +86,10 @@ def on_nav(nav, *, config, files):
         if page is None:
             continue
         page.read_source(config)
+        if file.src_uri == "project/03-platform-services/02-TZ-GOST.md":
+            heading = re.search(r"^#\s+(.+)$", page.markdown, re.MULTILINE)
+            if heading:
+                page.title = heading.group(1).strip()
         cached = _rendered.get(file.src_uri)
         if not file.is_modified():
             if cached is not None and cached["markdown"] == page.markdown:
@@ -82,6 +103,7 @@ def on_nav(nav, *, config, files):
     raw_titles = nav_extra.get("titles") or {}
     titles = {str(k).strip().lower().replace(" ", "-"): str(v) for k, v in raw_titles.items()}
     _apply_section_titles(nav.items, titles)
+    _order_project_sections(nav.items)
 
     # Unwrap top-level single-page sections so they render as regular links instead of empty section headers.
     unwrapped = []

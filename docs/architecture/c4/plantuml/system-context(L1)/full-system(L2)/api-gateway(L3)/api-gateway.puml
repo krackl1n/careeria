@@ -1,0 +1,56 @@
+@startuml api-gateway-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title API Gateway (C4 L3)
+LAYOUT_TOP_DOWN()
+Container_Boundary(subject, "API Gateway") {
+    Component(router, "HTTP-маршрутизатор", "Go / chi", "Принимает запрос и применяет общие middleware.")
+    Component(mux, "Адаптер HTTP и gRPC", "grpc-gateway", "Сопоставляет HTTP-маршрут с RPC.")
+    Component(auth, "Проверка токена", "Go / JWT", "Устанавливает личность по bearer-токену.")
+    Component(keys, "Кеш открытых ключей", "Go / JWKS", "Подбирает ключ для проверки подписи.")
+    Component(clients, "Клиент gRPC с политикой метода", "grpc-go / Protobuf", "Проверяет допуск и вызывает метод.")
+}
+
+WebApplicationContainer("")
+IdentityServiceContainer("")
+CandidateServiceContainer("")
+VacancyServiceContainer("")
+HiringServiceContainer("")
+IntegrationServiceContainer("")
+FileServiceContainer("")
+Container(companyService, "Company Service", "Go, gRPC, Protobuf, pgx, sqlc", "Работодатели, участники компаний, рекрутеры и корпоративные роли.", $tags="", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/company-service(L3)/")
+Container(assessmentService, "Assessment Service", "Go, gRPC, Protobuf, pgx, sqlc", "Тесты, практические задания, Live Coding, submissions, scores и результаты проверки.", $tags="", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/assessment-service(L3)/")
+Container(communicationService, "Communication Service", "Go, gRPC, Protobuf, pgx, sqlc", "Диалоги, участники, сообщения, вложения, реакции и отметки о прочтении.", $tags="", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/communication-service(L3)/")
+Container(notificationService, "Notification Service", "Go, Kafka consumer, REST clients", "Шаблоны и доставка in-app, email через SendGrid, push через FCM и SMS через Twilio.", $tags="", $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/notification-service(L3)/")
+Rel(web, router, "Передаёт запрос из BFF", "HTTP / JSON")
+Rel(router, mux, "Выбирает обработчик API")
+Rel(mux, auth, "Проверяет предъявленный токен")
+Rel(auth, keys, "Запрашивает ключ по kid")
+Rel_(keys, identityService, "Получает открытые ключи", "gRPC", "-[norank]->")
+Rel(mux, clients, "Передаёт запрос и контекст")
+Rel_D(clients, identityService, "Вызывает метод Identity", "gRPC")
+Rel_(clients, candidateService, "Профили и резюме", "gRPC", "-[norank]->")
+Rel_D(clients, companyService, "Компании и участники", "gRPC")
+Rel_(clients, vacancyService, "Вакансии", "gRPC", "-[norank]->")
+Rel_D(clients, hiringService, "Отклики, интервью и предложения", "gRPC")
+Rel_(clients, assessmentService, "Задания и результаты", "gRPC", "-[norank]->")
+Rel_D(clients, communicationService, "Диалоги и сообщения", "gRPC")
+Rel_(clients, notificationService, "Уведомления", "gRPC", "-[norank]->")
+Rel_D(clients, fileService, "Загрузка и доступ к файлам", "gRPC")
+Rel_(clients, integrationService, "Управление интеграциями", "gRPC", "-[norank]->")
+
+Lay_R(identityService, candidateService)
+Lay_R(companyService, vacancyService)
+Lay_R(hiringService, assessmentService)
+Lay_R(communicationService, notificationService)
+Lay_R(fileService, integrationService)
+
+Lay_D(identityService, companyService)
+Lay_D(companyService, hiringService)
+Lay_D(hiringService, communicationService)
+Lay_D(communicationService, fileService)
+
+SHOW_FLOATING_LEGEND()
+@enduml

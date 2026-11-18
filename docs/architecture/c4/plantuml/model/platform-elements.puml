@@ -1,0 +1,15 @@
+!unquoted procedure WebApplicationContainer($tags)
+    Container(web, "Web Application", "Next.js, React, TypeScript, Tailwind CSS", "App Router, SSR/CSR и серверный BFF: сессии, CSRF-защита, токены и адаптация API.", $tags=$tags, $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/web-application(L3)/")
+!endprocedure
+
+!unquoted procedure ApiGatewayContainer($tags)
+    Container(apiGateway, "API Gateway", "Go, grpc-gateway, grpc-go, OpenTelemetry", "REST-to-gRPC маршрутизация, rate limiting, request ID, трассировка и передача доверенного identity context.", $tags=$tags, $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/api-gateway(L3)/")
+!endprocedure
+
+!unquoted procedure CentrifugoContainer($tags)
+    Container(centrifugo, "Centrifugo", "Centrifugo, WebSocket, JWT", "Управляет WebSocket-подключениями, каналами, presence и доставкой событий.", $tags=$tags)
+!endprocedure
+
+!unquoted procedure CodeRunnerContainer($tags)
+    Container(sandboxRunner, "Code Execution Runner", "gRPC, Docker/gVisor", "Собирает решение и выполняет тесты в изолированной среде.", $tags=$tags, $link="/architecture/c4/plantuml/system-context(L1)/full-system(L2)/code-execution-runner(L3)/")
+!endprocedure

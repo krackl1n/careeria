@@ -1,12 +1,70 @@
 # Integration Service (L3)
 
-Integration Service принимает вебхуки внешних систем и доставляет им исходящие вебхуки Careeria. Он владеет подключениями компаний, подписками, проверкой подлинности сообщений, нормализацией контрактов, идемпотентным приёмом и надёжной доставкой. Бизнес-состояние вакансии, кандидата или отклика меняет соответствующий доменный сервис, не сервис интеграций.
+<!-- excerpt -->
+
+Integration Service проверяет подпись входящего вебхука и передаёт принятое событие в Kafka. Для исходящих вебхуков он ведёт подписки работодателей и повторяет доставку при временном сбое.
+
+Входящий вебхук проходит проверку подписи, нормализацию и защиту от повторного приёма. Принятое сообщение и outbox фиксируются в Integration DB до подтверждения отправителю. Для исходящего обмена потребитель Kafka формирует доставки по подпискам, а фоновый обработчик выполняет попытки и повторы. Отдельный API предоставляет управление подключениями и журналом доставки.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/system-context(L1)/full-system(L2)/integration-service(L3)/integration-service.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Integration Service (L3)</p>
+
+<p align="right">Таблица - Элементы. Integration Service (L3)</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| Employer HR System | Система | Кадровая система работодателя. Принимает результаты найма из Careeria и передаёт изменения кадровых данных через согласованные вебхуки. |
+| API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| Schema Registry | Apicurio Registry, Avro | Хранилище версий схем событий Avro на базе Apicurio Registry. Издатели и потребители получают схемы для сериализации и чтения доменных сообщений. |
+| Kafka | Apache Kafka, KRaft | Событийная шина платформы. Хранит доменные сообщения в топиках и передаёт их группам потребителей для независимой асинхронной обработки. |
+| Webhook HTTP Handler | Go / net/http | Сырые байты запроса, лимиты тела и ответ отправителю. |
+| gRPC Server | Go / gRPC | Управление подключениями, подписками и доставками. |
+| Events Consumer | Go / Kafka Client | Внутренние события; commit offset после SQL commit. |
+| Webhook Delivery Worker | Go Background Worker | Захват jobs с lease и запуск попыток доставки. |
+| Inbound Webhook Service | Go Application Service | Подпись, нормализация, дедупликация и надёжный приём. |
+| Integration Management Service | Go Application Service | Настройки, ключи, подписки, журнал и ручные повторы. |
+| Outbound Webhook Service | Go Application Service | Маршрутизация событий, deliveries, исполнение и повторы. |
+| Inbound Webhook Adapter | Go / JSON, HMAC | Проверка подписи и нормализация provider payload. |
+| Outbound Webhook Adapter | Go / JSON, HMAC | Сериализация внешнего контракта и подпись доставки. |
+| Authorization Client | Go / OpenFGA SDK | Права управления интеграцией своей компании. |
+| Integration Repo | Go / pgx, sqlc | Подключения, inbox, deliveries, leases и attempts. |
+| Webhook HTTP Client | Go / net/http | HTTPS, проверка destination, timeout; без redirects. |
+| Transactional Outbox | Go / pgx, sqlc | Атомарная запись нормализованных входящих событий. |
+| Integration DB | PostgreSQL | Подключения, подписки, inbox, delivery jobs, попытки и transactional outbox. |
+| OpenFGA | OpenFGA, PostgreSQL | Сервис проверки доступа на основе отношений между субъектом и ресурсом. Доменные сервисы запрашивают решение о доступе, а обработчик синхронизации обновляет отношения по событиям платформы. |
+
+<p align="right">Таблица - Связи. Integration Service (L3)</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| Employer HR System | API Gateway | Входящий webhook. | HTTPS / JSON |
+| API Gateway | Webhook HTTP Handler | Без изменения тела. | HTTP |
+| API Gateway | gRPC Server | Управление. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| Kafka | Events Consumer | Бизнес-события. Сообщение передаётся асинхронно через топик Kafka. | Kafka / Avro |
+| Events Consumer | Schema Registry | Схемы. | Registry API |
+| Webhook HTTP Handler | Inbound Webhook Service | Принимает. Подпись, нормализация, дедупликация и надёжный приём. | In-process |
+| gRPC Server | Integration Management Service | Сценарии управления. Настройки, ключи, подписки, журнал и ручные повторы. | In-process |
+| Events Consumer | Outbound Webhook Service | Планирует доставки. Маршрутизация событий, deliveries, исполнение и повторы. | In-process |
+| Inbound Webhook Service | Inbound Webhook Adapter | Проверяет / преобразует. Проверка подписи и нормализация provider payload. | In-process |
+| Inbound Webhook Service | Integration Repo | Настройки / inbox. Подключения, inbox, deliveries, leases и attempts. | In-process |
+| Inbound Webhook Service | Transactional Outbox | Событие. Атомарная запись нормализованных входящих событий. | In-process |
+| Integration Management Service | Authorization Client | Полномочия. Права управления интеграцией своей компании. | In-process |
+| Integration Management Service | Integration Repo | Настройки / журнал. Подключения, inbox, deliveries, leases и attempts. | In-process |
+| Outbound Webhook Service | Outbound Webhook Adapter | Payload / подпись. Сериализация внешнего контракта и подпись доставки. | In-process |
+| Outbound Webhook Service | Integration Repo | Подписки / доставки. Подключения, inbox, deliveries, leases и attempts. | In-process |
+| Webhook Delivery Worker | Outbound Webhook Service | Исполняет due jobs. Маршрутизация событий, deliveries, исполнение и повторы. | In-process |
+| Outbound Webhook Service | Webhook HTTP Client | Отправляет. HTTPS, проверка destination, timeout; без redirects. | In-process |
+| Webhook HTTP Client | Employer HR System | Исходящий webhook. | HTTPS / JSON |
+| Integration Repo | Integration DB | Читает / пишет. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Transactional Outbox | Integration DB | События. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Authorization Client | OpenFGA | Проверяет доступ. Вызов использует модель отношений доступа OpenFGA. | OpenFGA API |
+
+<!-- /excerpt -->
 
 ## Границы и основные решения
 
@@ -19,6 +77,8 @@ Integration Service принимает вебхуки внешних систе�
 - **Outbound Webhook Service** — планирование доставок из внутренних событий и исполнение попыток по установленной политике.
 
 HTTP и gRPC — разные входные адаптеры. HTTP webhook endpoint не требует пользовательской BFF-сессии: отправитель аутентифицируется отдельной подписью своего подключения. Управление настройками требует доверенной пользовательской identity и прав компании через OpenFGA.
+
+<p align="right">Таблица - Границы и основные решения (Integration Service (L3))</p>
 
 | Направление | Цепочка | Где обеспечивается надёжность |
 |---|---|---|
@@ -34,6 +94,8 @@ Integration DB — собственное PostgreSQL-хранилище серв
 ## Элементы диаграммы
 
 ### Компоненты внутри Integration Service
+
+<p align="right">Таблица - Компоненты внутри Integration Service (Integration Service (L3))</p>
 
 | Элемент | Технология / слой | Обязанность | Зависимости |
 |---|---|---|---|
@@ -55,6 +117,8 @@ Tx Manager — общая техническая обвязка транзакц
 
 ### Соседние контейнеры
 
+<p align="right">Таблица - Соседние контейнеры (Integration Service (L3))</p>
+
 | Элемент | Роль |
 |---|---|
 | API Gateway | Отдельный raw HTTP route для вебхуков; пользовательские команды управления идут через обычный REST-to-gRPC путь. |
@@ -67,6 +131,8 @@ Tx Manager — общая техническая обвязка транзакц
 ## Модель данных и инварианты
 
 Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/integration/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
+
+<p align="right">Таблица - Модель данных и инварианты (Integration Service (L3))</p>
 
 | Сущность | Основные поля | Правила |
 |---|---|---|
@@ -82,6 +148,8 @@ Tx Manager — общая техническая обвязка транзакц
 Предлагаемые таблицы: `integration_connections`, `webhook_subscriptions`, `signing_keys`, `inbound_receipts`, `processed_events`, `webhook_deliveries`, `webhook_delivery_attempts`, `outbox`. Config lifecycle и retry FSM реализуются доменными методами Connection/Subscription/Delivery, не установкой произвольного `status` из HTTP handler.
 
 ### Состояния
+
+<p align="right">Таблица - Состояния (Integration Service (L3))</p>
 
 | Объект | Состояния | Семантика |
 |---|---|---|
@@ -105,6 +173,8 @@ Tx Manager — общая техническая обвязка транзакц
 Секреты хранятся зашифрованными с отдельным deployment-managed ключом шифрования вне БД; версия ключа сохраняется для ротации. Нужны безопасная передача signing secret, audit и отсутствие секретов в logs/config exports. Secret manager/KMS — выбор deployment, новый контейнер не добавлен без согласованной инфраструктуры. Утечка signing key требует экстренного revoke, не только обычного grace period.
 
 Предлагаемые ответы HTTP приёмника:
+
+<p align="right">Таблица - Входящие сообщения (Integration Service (L3))</p>
 
 | HTTP status | Значение |
 |---|---|
@@ -144,6 +214,8 @@ Webhook destination — потенциальный SSRF-вход. Требуют
 В первой версии предлагается регистрация структурированных host/path и фиксированного HTTPS/443 для разрешённых интеграций; произвольные схемы/порты и внутренние HR endpoints не поддерживаются. Если нужен private endpoint, требуется отдельный согласованный deployment path, а не выключение SSRF-проверок. Тестовое подтверждение адреса проходит тот же защищённый HTTP client. Внешний response не используется как новая destination или исполняемый mapping.
 
 ## Каталог сценариев
+
+<p align="right">Таблица - Каталог сценариев (Integration Service (L3))</p>
 
 | № | Сценарий | Прикладной компонент | Результат |
 |---|---|---|---|
@@ -324,6 +396,8 @@ Management после авторизации помечает PENDING/RETRY_WAIT
 При реализации обязательны тесты: изменение одного байта подписи; timestamp прошлого/будущего; две конкурентные одинаковые входящие команды; тот же ID с другим body; crash после SQL commit до ответа/offset; timeout после применения получателем; crash worker и устаревший lease; key rotation/revoke; pause/delete во время отправки; DNS rebinding/IPv6/private destination/redirect; replay внутренних событий; tenant isolation; запрет отражения сообщения обратно источнику. Документирование этих тестов не означает, что backend уже реализован и прошёл их.
 
 ## Требует согласования перед реализацией
+
+<p align="right">Таблица - Требует согласования перед реализацией (Integration Service (L3))</p>
 
 | Вопрос | Предлагаемая граница |
 |---|---|

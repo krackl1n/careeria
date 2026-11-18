@@ -1,12 +1,65 @@
 # Assessment Service (L3)
 
-Assessment Service владеет каталогом шаблонов испытаний (квизы, тестовые задания, Live Coding), сессиями прохождения тестирования кандидатами, отправленными решениями (submissions), результатами автоматических проверок и экспертными рецензиями. Медиапотоки аудио/видео взаимодействия и совместного редактирования в реальном времени обслуживаются внутренним медиасервером LiveKit (WebRTC), файлы тестов и артефакты решений хранятся в S3-совместимом Object Storage через File Service, а вся бизнес-логика, конечный автомат сессий и результаты оценивания — в Assessment DB (PostgreSQL).
+<!-- excerpt -->
+
+Assessment Service управляет шаблонами заданий и попытками кандидатов. Для проверки кода он вызывает Code Execution Runner, затем рассчитывает балл и сохраняет результат в Assessment DB.
+
+Компонент шаблонов определяет содержание задания и параметры проверки. Компонент исполнения управляет попыткой кандидата, передаёт код раннеру и получает отчёт о тестах. Политика жизненного цикла проверяет допустимость изменения состояния, выбранная стратегия рассчитывает балл. Репозитории сохраняют результаты, а outbox фиксирует событие для последующей обработки другими сервисами.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/system-context(L1)/full-system(L2)/assessment-service(L3)/assessment-service.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Assessment Service (L3)</p>
+
+<p align="right">Таблица - Элементы. Assessment Service (L3)</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| gRPC Server | Go / gRPC | Валидация входных структур запросов, распаковка identity context, маппинг ошибок FSM в gRPC-статусы. |
+| Assessment Template Service | Go Application Service | Управляет шаблонами испытаний, задачами, тест-кейсами и привязкой стратегий расчета баллов. |
+| Session Execution Service | Go Application Service | Управляет жизненным циклом сессии, контролирует дедлайны через Session Lifecycle Policy, запускает расчет баллов. |
+| Scoring Context & Strategies | Go Domain Model / Strategy | Реализует семейство алгоритмов вычисления итогового балла (Weighted, Strict Auto, Live Coding Rubric). |
+| Session Lifecycle Policy | Go Domain Policy | Межагрегатная валидация: проверяет не истекло ли время сдачи, разрешен ли запуск, допустим ли переход состояний. |
+| Authorization Client | Go / OpenFGA SDK | Проверяет права рекрутеров на создание шаблонов и интервьюеров на внесение оценок. |
+| Template Repo | Go / pgx, sqlc | Чтение и запись шаблонов, задач и связанных правил проверки в PostgreSQL. |
+| Session Repo | Go / pgx, sqlc | Чтение и запись сессий, попыток сдачи кода, результатов тестов и ручных рецензий. |
+| Sandbox Client | Go / gRPC | Взаимодействует с изолированным раннером безопасного исполнения кода кандидатов. |
+| LiveKit Manager | Go / LiveKit Go SDK | Инициализирует WebRTC-комнаты в LiveKit, генерирует ограниченные токены для кандидата и экзаменатора. |
+| Transactional Outbox | Go / pgx, sqlc | Сохраняет доменные события (AssessmentCompleted и др.) в рамках бизнес-транзакций. |
+| OpenFGA | OpenFGA, PostgreSQL | Сервис проверки доступа на основе отношений между субъектом и ресурсом. Доменные сервисы запрашивают решение о доступе, а обработчик синхронизации обновляет отношения по событиям платформы. |
+| Assessment DB | PostgreSQL 16 | Хранение шаблонов, сессий, решений, рецензий, outbox и ключей идемпотентности. |
+| LiveKit | LiveKit, WebRTC, LiveKit React SDK | Медиасервер для интервью и Live Coding. Сервисы управляют комнатами через API, а браузеры участников передают аудио, видео и демонстрацию экрана через WebRTC. |
+| Code Execution Runner | gRPC, Docker/gVisor | Code Execution Runner запускает решение и тесты в изолированной среде с ограничениями времени и памяти. Отчёт получает Assessment Service, который рассчитывает итоговый балл. |
+
+<p align="right">Таблица - Связи. Assessment Service (L3)</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| API Gateway | gRPC Server | Оценивание и сессии. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| gRPC Server | Assessment Template Service | Шаблоны и задания. Управляет шаблонами испытаний, задачами, тест-кейсами и привязкой стратегий расчета баллов. | In-process |
+| gRPC Server | Session Execution Service | Сессии и решения. Управляет жизненным циклом сессии, контролирует дедлайны через Session Lifecycle Policy, запускает расчет баллов. | In-process |
+| Assessment Template Service | Authorization Client | Проверяет права. Проверяет права рекрутеров на создание шаблонов и интервьюеров на внесение оценок. | In-process |
+| Assessment Template Service | Template Repo | Шаблоны и задачи. Чтение и запись шаблонов, задач и связанных правил проверки в PostgreSQL. | In-process |
+| Assessment Template Service | Transactional Outbox | События шаблонов. Сохраняет доменные события (AssessmentCompleted и др.) в рамках бизнес-транзакций. | In-process |
+| Session Execution Service | Session Lifecycle Policy | Дедлайны и FSM. Межагрегатная валидация: проверяет не истекло ли время сдачи, разрешен ли запуск, допустим ли переход состояний. | In-process |
+| Session Execution Service | Scoring Context & Strategies | Расчет баллов. Реализует семейство алгоритмов вычисления итогового балла (Weighted, Strict Auto, Live Coding Rubric). | In-process |
+| Session Execution Service | Authorization Client | Проверяет права. Проверяет права рекрутеров на создание шаблонов и интервьюеров на внесение оценок. | In-process |
+| Session Execution Service | Session Repo | Сессии и попытки. Чтение и запись сессий, попыток сдачи кода, результатов тестов и ручных рецензий. | In-process |
+| Session Execution Service | Sandbox Client | Код на проверку. Взаимодействует с изолированным раннером безопасного исполнения кода кандидатов. | In-process |
+| Session Execution Service | LiveKit Manager | Управление Live Coding. Инициализирует WebRTC-комнаты в LiveKit, генерирует ограниченные токены для кандидата и экзаменатора. | In-process |
+| Session Execution Service | Transactional Outbox | События сессий. Сохраняет доменные события (AssessmentCompleted и др.) в рамках бизнес-транзакций. | In-process |
+| Authorization Client | OpenFGA | Проверяет доступ. Вызов использует модель отношений доступа OpenFGA. | OpenFGA API |
+| Template Repo | Assessment DB | Шаблоны и задачи. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Session Repo | Assessment DB | Сессии и результаты. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Transactional Outbox | Assessment DB | Запись событий. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Sandbox Client | Code Execution Runner | Исполнение кода. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| LiveKit Manager | LiveKit | Комнаты и токены. | LiveKit API / JWT |
+
+<!-- /excerpt -->
 
 ## Границы и статус проекта
 
@@ -18,6 +71,8 @@ Assessment Service владеет каталогом шаблонов испыт
 - **Session Execution Service** — управление конечным автоматом индивидуальных сессий кандидатов (таймеры, доступ, дедлайны), прием решений, запуск автопроверки, координация Live Coding сессий (комнаты LiveKit) и фиксация экспертных ревью.
 
 Оба компонента функционируют в рамках единого контейнера на Go, обращаются к единой Assessment DB и предоставляют объединенный контракт AssessmentService. Инварианты вычислений и алгоритмы оценки отделены от сущностей хранения с применением паттерна Strategy (Стратегия).
+
+<p align="right">Таблица - Границы и статус проекта (Assessment Service (L3))</p>
 
 | Данные / действие | Владелец | Граница |
 |---|---|---|
@@ -36,6 +91,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ### Внутренние компоненты
 
+<p align="right">Таблица - Внутренние компоненты (Assessment Service (L3))</p>
+
 | Элемент | Технология / слой | Ответственность | Зависимости |
 |---|---|---|---|
 | gRPC Server | Go / gRPC | Валидация входных структур запросов, распаковка identity context, маппинг ошибок FSM в gRPC-статусы. | Assessment Template Service, Session Execution Service |
@@ -53,6 +110,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ### Соседние контейнеры
 
+<p align="right">Таблица - Соседние контейнеры (Assessment Service (L3))</p>
+
 | Элемент | Технология | Назначение / связь |
 |---|---|---|
 | API Gateway | Go, grpc-gateway, grpc-go | Проксирует клиентские запросы и передает метаданные пользователя. |
@@ -67,6 +126,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/assessment/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
 
 Модель декомпозирована на изолированные агрегаты с вынесением логики расчетов в стратегии:
+
+<p align="right">Таблица - Доменная модель и хранение (Assessment Service (L3))</p>
 
 | Сущность | Основные данные | Инварианты |
 |---|---|---|
@@ -91,6 +152,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ## Статусы и жизненный цикл
 
+<p align="right">Таблица - Статусы и жизненный цикл (Assessment Service (L3))</p>
+
 | Ось | Предлагаемые значения | Правило |
 |---|---|---|
 | Жизненный цикл сессии | SCHEDULED, IN_PROGRESS, SUBMITTED, EVALUATED, EXPIRED | SCHEDULED — назначено, ждет старта. IN_PROGRESS — кандидат выполняет, таймер запущен. SUBMITTED — решения сданы, идет проверка. EVALUATED — финальный балл рассчитан. EXPIRED — время вышло до сдачи. |
@@ -106,6 +169,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 ```
 
 ## Каталог сценариев
+
+<p align="right">Таблица - Каталог сценариев (Assessment Service (L3))</p>
 
 | № | Сценарий | Компонент | Результат |
 |---|---|---|---|
@@ -176,6 +241,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 
 ### Предлагаемые события
 
+<p align="right">Таблица - Предлагаемые события (Assessment Service (L3))</p>
+
 | События | Изменение | Минимальный payload |
 |---|---|---|
 | AssessmentAssigned | Назначено испытание | session ID, candidate ID, application ID, template ID, valid_until |
@@ -196,6 +263,8 @@ Kafka, Apicurio Schema Registry и Debezium обеспечивают асинх�
 unner.execution_time.
 
 ## Что не включено автоматически
+
+<p align="right">Таблица - Что не включено автоматически (Assessment Service (L3))</p>
 
 | Вопрос | Решение первой версии / следующий контракт |
 |---|---|

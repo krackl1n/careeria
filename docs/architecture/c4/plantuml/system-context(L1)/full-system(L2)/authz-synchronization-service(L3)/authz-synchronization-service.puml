@@ -1,0 +1,24 @@
+@startuml authz-synchronization-service-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title AuthZ Synchronization Service (C4 L3)
+Container_Boundary(subject, "AuthZ Synchronization Service") {
+    Component(consumer, "Потребитель изменений", "Go / Kafka", "Принимает изменения доменных объектов.")
+    Component(mapper, "Преобразование отношений", "Go", "Определяет изменения прав.")
+    Component(writer, "Клиент записи отношений", "Go / OpenFGA API", "Применяет изменения в OpenFGA.")
+}
+
+ComponentKafka()
+ComponentSchemaRegistry()
+ComponentOpenFga()
+
+Rel(kafka, consumer, "Доставляет изменения", "Kafka / Avro")
+Rel(consumer, schemaRegistry, "Получает схему", "Registry API")
+Rel(consumer, mapper, "Передаёт изменение объекта")
+Rel(mapper, writer, "Передаёт набор изменений")
+Rel(writer, openFga, "Добавляет и удаляет отношения", "OpenFGA API")
+
+SHOW_FLOATING_LEGEND()
+@enduml

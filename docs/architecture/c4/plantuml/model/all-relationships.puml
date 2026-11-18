@@ -36,11 +36,13 @@ Rel(candidateService, fileService, "Загружает и связывает р�
 Rel(companyService, companyDb, "Хранит компании и роли", "SQL")
 Rel(vacancyService, vacancyDb, "Хранит вакансии", "SQL")
 Rel(hiringService, hiringDb, "Хранит отклики и этапы", "SQL")
+Rel(assessmentService, sandboxRunner, "Передаёт решение на проверку", "gRPC")
 Rel(assessmentService, assessmentDb, "Хранит задания и оценки", "SQL")
 Rel(communicationService, communicationDb, "Хранит сообщения", "SQL")
 Rel(notificationService, notificationDb, "Хранит шаблоны, jobs и Inbox", "SQL")
 Rel(identityService, identityDb, "Хранит учётные данные", "SQL")
 Rel(integrationService, integrationDb, "Хранит inbox, настройки и доставки", "SQL")
+Rel(fileService, fileDb, "Сохраняет метаданные и привязки", "SQL")
 Rel(fileService, objectStorage, "Читает и записывает", "S3 API")
 Rel(web, objectStorage, "Загружает файл по presigned URL", "HTTPS / S3 API")
 

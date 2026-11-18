@@ -15,9 +15,8 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
     }
 
     Deployment_Node(app_subnet, "Приватный контур приложений (Application Subnet)", "careeria-apps namespace") {
-        Container(web_app_pod, "Web App Pod × 2..10", "Node.js 20 / Next.js 14", "SSR-рендеринг страниц, раздача статических JS/CSS бандлов. Порт 3000 (HTTP).")
-        Container(bff_pod, "BFF Pod × 2..10", "Go 1.23 / net/http, grpc-go", "Сессионный фасад, валидация HttpOnly кук, CSRF-защита. Входящий порт 8080 (HTTP), исходящий gRPC порт 50051.")
-        Container(api_gateway, "API Gateway Pod × 2..10", "Go 1.23 / grpc-gateway", "Трансляция REST в gRPC, проверка сессий, трассировка OpenTelemetry. Порт 8080 (HTTP), 50051 (gRPC).")
+        Container(web_app_pod, "Web App Pod × 2..10", "Node.js 20 / Next.js 14", "SSR-рендеринг страниц, раздача статических JS/CSS бандлов. BFF обслуживает сессии и проверяет CSRF. Порт 3000 (HTTP).")
+        Container(api_gateway, "API Gateway Pod × 2..10", "Go 1.23 / grpc-gateway", "Трансляция REST в gRPC, проверка сессий, трассировка OpenTelemetry. Порт 8080 (HTTP).")
 
         Deployment_Node(candidate_pod_node, "Candidate Service Pods × 2..10", "Kubernetes Deployment / HPA") {
             Container(candidate_svc, "Candidate Service", "Go 1.23+ Binary in Scratch", "Управление профилями, опытом, образованием, навыками и метаданными резюме. gRPC порт 50052, Metrics порт 9091.")
@@ -49,9 +48,8 @@ Deployment_Node(cloud, "Инфраструктура ЦОД (Kubernetes Cluster)
 
 Rel(browser, ingress, "HTTPS-запросы (страницы, статика, API)", "HTTPS / TLS 1.3, порт 443")
 Rel(browser, object_storage, "Загрузка файла резюме напрямую по presigned URL", "HTTPS / S3 API, порт 9000")
-Rel(ingress, web_app_pod, "Маршрутизация веб-страниц и статики (SSR)", "HTTP/1.1, порт 3000")
-Rel(ingress, bff_pod, "Проксирование API-запросов (/api/*)", "HTTP/1.1, порт 8080")
-Rel(bff_pod, api_gateway, "Авторизованные межсервисные RPC-вызовы", "gRPC / HTTP2, порт 50051")
+Rel(ingress, web_app_pod, "Страницы, статика и запросы к BFF", "HTTP/1.1, порт 3000")
+Rel(web_app_pod, api_gateway, "BFF вызывает API", "HTTP / JSON, порт 8080")
 Rel(api_gateway, candidate_svc, "gRPC-вызовы к сервису профилей кандидатов", "gRPC / HTTP2, порт 50052")
 Rel(api_gateway, vacancy_svc, "gRPC-вызовы к сервису вакансий", "gRPC / HTTP2, порт 50054")
 Rel(candidate_svc, openfga, "Проверка ReBAC-полномочий доступа к профилям", "gRPC / mTLS, порт 8081")

@@ -1,12 +1,65 @@
 # Communication Service (L3)
 
-Communication Service владеет диалогами, составом участников, сообщениями, реакциями, отметками о прочтении (watermarks) и метаданными вложений в процессе взаимодействия участников найма. Содержимое файлов-вложений хранится в S3-совместимом Object Storage, остальные данные — в Communication DB (PostgreSQL). Доступ к файлам выполняется через общий File Service, доставка сообщений в реальном времени — через связку Realtime Publisher и Centrifugo (WebSocket), а внешние оповещения — через Notification Service.
+<!-- excerpt -->
+
+Communication Service ведёт диалоги, сообщения и отметки о прочтении. Вложения обслуживает File Service, а события о новых сообщениях поступают подписчикам через Kafka.
+
+Компонент диалогов управляет составом участников и состоянием беседы, компонент сообщений отвечает за переписку и отметки прочтения. Перед изменением проверяются права и правила Messaging Policy. Для вложений используется файловый клиент, освобождение привязок выполняет обработчик очистки. Сообщение и связанное событие сохраняются в Communication DB.
 
 ```plantuml
 @startuml
 !include architecture/c4/plantuml/system-context(L1)/full-system(L2)/communication-service(L3)/communication-service.puml
 @enduml
 ```
+
+<p align="center">Рисунок - Communication Service (L3)</p>
+
+<p align="right">Таблица - Элементы. Communication Service (L3)</p>
+
+| Элемент | Тип или технология | Назначение и ответственность |
+|---|---|---|
+| API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | API Gateway принимает HTTP-запрос от BFF, проверяет предъявленный токен по открытым ключам Identity и применяет политику доступа к методу. Доменный сервис получает вызов по gRPC. |
+| gRPC Server | Go / gRPC | Проверяет структуру запроса, извлекает identity context, request ID и ключ идемпотентности, транслирует доменные ошибки в gRPC codes. |
+| Conversation Service | Go Application Service | Координирует создание диалогов, добавление/исключение участников, архивирование и блокировку бесед. Вызывает методы агрегата Conversation. |
+| Messaging Service | Go Application Service | Координирует отправку сообщений, проверки через Messaging Policy, редактирование, удаление, реакции и отметки прочтения. |
+| Messaging Policy | Go Domain Policy | Межагрегатная валидация: проверяет активность диалога, членство отправителя, лимиты текста и допустимые квоты вложений. |
+| Authorization Client | Go / OpenFGA SDK | Адаптирует ReBAC-проверки прав доступа к диалогам на основе контекста компании/вакансии. |
+| Conversation Repo | Go / pgx, sqlc | Загружает и сохраняет агрегаты Conversation и списки участников; выполняет выборки диалогов пользователя. |
+| Message Repo | Go / pgx, sqlc | Сохраняет Message, MessageAttachment, ReadReceipt, Reaction; выполняет пагинацию курсором. |
+| File Service Client | Go / gRPC | Проверяет статус и метаданные загруженных файлов, регистрирует постоянный binding вложения, запрашивает download URL. |
+| Transactional Outbox | Go / pgx, sqlc | Сохраняет доменные события в таблице outbox в той же SQL-транзакции, что и изменение состояния. |
+| Attachment Cleanup Worker | Go Background Worker | Отслеживает отклонённые или отвязанные вложения, запрашивает освобождение ресурсов у File Service. |
+| OpenFGA | OpenFGA, PostgreSQL | Сервис проверки доступа на основе отношений между субъектом и ресурсом. Доменные сервисы запрашивают решение о доступе, а обработчик синхронизации обновляет отношения по событиям платформы. |
+| Communication DB | PostgreSQL 16 | Хранение диалогов, сообщений, участников, реакций, watermarks, outbox и ключей идемпотентности. |
+| File Service | Go, gRPC, MinIO Go SDK | File Service выдаёт временную ссылку на загрузку в объектное хранилище, проверяет загруженную версию и связывает её с ресурсом платформы. Привязка определяет, какую версию файла можно скачать. |
+| Object Storage | MinIO, S3 API | Приватное объектное хранилище файлов на базе MinIO. File Service управляет версиями и ограниченными ссылками, а браузер передаёт содержимое по выданному разрешению. |
+
+<p align="right">Таблица - Связи. Communication Service (L3)</p>
+
+| Источник | Получатель | Содержание взаимодействия | Протокол или способ вызова |
+|---|---|---|---|
+| API Gateway | gRPC Server | Диалоги и сообщения. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| gRPC Server | Conversation Service | Диалоги и участники. Координирует создание диалогов, добавление/исключение участников, архивирование и блокировку бесед. Вызывает методы агрегата Conversation. | In-process |
+| gRPC Server | Messaging Service | Сообщения и реакции. Координирует отправку сообщений, проверки через Messaging Policy, редактирование, удаление, реакции и отметки прочтения. | In-process |
+| Conversation Service | Authorization Client | Полномочия. Адаптирует ReBAC-проверки прав доступа к диалогам на основе контекста компании/вакансии. | In-process |
+| Conversation Service | Conversation Repo | Сохраняет диалог. Загружает и сохраняет агрегаты Conversation и списки участников; выполняет выборки диалогов пользователя. | In-process |
+| Conversation Service | Transactional Outbox | События диалогов. Сохраняет доменные события в таблице outbox в той же SQL-транзакции, что и изменение состояния. | In-process |
+| Messaging Service | Messaging Policy | Правила и лимиты. Межагрегатная валидация: проверяет активность диалога, членство отправителя, лимиты текста и допустимые квоты вложений. | In-process |
+| Messaging Service | Authorization Client | Полномочия. Адаптирует ReBAC-проверки прав доступа к диалогам на основе контекста компании/вакансии. | In-process |
+| Messaging Service | Conversation Repo | Статус диалога. Загружает и сохраняет агрегаты Conversation и списки участников; выполняет выборки диалогов пользователя. | In-process |
+| Messaging Service | Message Repo | Сообщения и реакции. Сохраняет Message, MessageAttachment, ReadReceipt, Reaction; выполняет пагинацию курсором. | In-process |
+| Messaging Service | File Service Client | Проверка и binding. Проверяет статус и метаданные загруженных файлов, регистрирует постоянный binding вложения, запрашивает download URL. | In-process |
+| Messaging Service | Transactional Outbox | События сообщений. Сохраняет доменные события в таблице outbox в той же SQL-транзакции, что и изменение состояния. | In-process |
+| Attachment Cleanup Worker | Message Repo | Отвязанные вложения. Сохраняет Message, MessageAttachment, ReadReceipt, Reaction; выполняет пагинацию курсором. | In-process |
+| Attachment Cleanup Worker | File Service Client | Освобождает файлы. Проверяет статус и метаданные загруженных файлов, регистрирует постоянный binding вложения, запрашивает download URL. | In-process |
+| Authorization Client | OpenFGA | Проверяет доступ. Вызов использует модель отношений доступа OpenFGA. | OpenFGA API |
+| Conversation Repo | Communication DB | Диалоги и участники. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Message Repo | Communication DB | Сообщения, реакции, watermarks. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| Transactional Outbox | Communication DB | Запись событий. Получатель выполняет чтение или запись в базе данных сервиса. | SQL / TCP |
+| File Service Client | File Service | Метаданные, binding, presigned URLs. Запрос и ответ передаются как сообщения Protobuf. | gRPC |
+| File Service | Object Storage | Файлы вложений. Выполняется операция с содержимым или версией объекта в хранилище. | S3 API |
+
+<!-- /excerpt -->
 
 ## Границы и статус проекта
 
@@ -18,6 +71,8 @@ Communication Service владеет диалогами, составом уча
 - **Messaging Service** — самостоятельные агрегаты сообщений, отметок прочтения и реакций: приём и валидация текста, квоты вложений, ответы (threading), редактирование, мягкое удаление, фиксация прочитанного и эмоциональных откликов.
 
 Это не два отдельных микросервиса. Оба используют общую Communication DB и один внешний gRPC-контракт CommunicationService. Не нужны отдельные application services под каждое действие или тип диалога. Жизненный цикл и инварианты закреплены в компактных доменных агрегатах и доменных политиках, а не в транспортных gRPC-хэндлерах или сырых SQL-запросах.
+
+<p align="right">Таблица - Границы и статус проекта (Communication Service (L3))</p>
 
 | Данные / действие | Владелец | Граница |
 |---|---|---|
@@ -36,6 +91,8 @@ Communication Service владеет диалогами, составом уча
 
 ### Внутренние компоненты
 
+<p align="right">Таблица - Внутренние компоненты (Communication Service (L3))</p>
+
 | Элемент | Технология / слой | Ответственность | Зависимости |
 |---|---|---|---|
 | gRPC Server | Go / gRPC | Проверяет структуру запроса, извлекает identity context, request ID и ключ идемпотентности, транслирует доменные ошибки в gRPC codes. | Conversation Service, Messaging Service |
@@ -53,6 +110,8 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 
 ### Соседние контейнеры
 
+<p align="right">Таблица - Соседние контейнеры (Communication Service (L3))</p>
+
 | Элемент | Технология | Назначение / связь |
 |---|---|---|
 | API Gateway | Go, grpc-gateway, grpc-go, OpenTelemetry | Маршрутизирует клиентские REST/HTTP-запросы и передаёт доверенный identity context. |
@@ -66,6 +125,8 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 Актуальная проектная схема хранения и правила повторов находятся в [разделе моделей данных](../../../../../../data-model/communication/schema.dbml); перечень ниже отражает исходную L3 и требует дальнейшей сверки.
 
 Вместо монолитного агрегата «Чат со всеми сообщениями», приводящего к блокировкам БД, предметная область декомпозирована на компактные агрегаты:
+
+<p align="right">Таблица - Доменная модель и хранение (Communication Service (L3))</p>
 
 | Сущность | Основные данные | Инварианты |
 |---|---|---|
@@ -88,6 +149,8 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 
 ## Статусы и жизненный цикл
 
+<p align="right">Таблица - Статусы и жизненный цикл (Communication Service (L3))</p>
+
 | Ось | Предлагаемые значения | Правило |
 |---|---|---|
 | Жизненный цикл диалога | ACTIVE, READ_ONLY, ARCHIVED | ACTIVE разрешает отправку сообщений. READ_ONLY устанавливается автоматически при закрытии отклика или оффера (сообщения читать можно, писать нельзя). ARCHIVED скрывает диалог из активного списка. |
@@ -98,6 +161,8 @@ Repository и Outbox получают единый transaction handle (pgx.Tx) �
 Переходы состояний сообщений: SENT → EDITED (многократно в течение 24 часов) и SENT / EDITED → SOFT_DELETED. Восстановление удалённых сообщений не предусмотрено.
 
 ## Каталог сценариев
+
+<p align="right">Таблица - Каталог сценариев (Communication Service (L3))</p>
 
 | № | Сценарий | Компонент | Результат |
 |---|---|---|---|
@@ -197,6 +262,8 @@ API Gateway берет на себя аутентификацию (провер�
 
 ### Предлагаемые события
 
+<p align="right">Таблица - Предлагаемые события (Communication Service (L3))</p>
+
 | События | Изменение | Минимальный payload |
 |---|---|---|
 | ConversationCreated | Создан новый диалог | conversation ID, type, context ID, participant IDs, created_at |
@@ -221,6 +288,8 @@ API Gateway берет на себя аутентификацию (провер�
 Метрики: latency создания сообщений, задержка публикации из outbox (Debezium lag), объём загружаемых вложений, количество активных диалогов. Распределённая трассировка сквозная: traceparent и Request-ID передаются от API Gateway через gRPC context в SQL-комментарии и метаданные событий Kafka.
 
 ## Что не включено автоматически
+
+<p align="right">Таблица - Что не включено автоматически (Communication Service (L3))</p>
 
 | Вопрос | Решение первой версии / следующий контракт |
 |---|---|

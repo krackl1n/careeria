@@ -21,6 +21,7 @@
 - [3.2. Техническое задание на создание ПО](03-platform-services/02-TZ-GOST.md)
 
 ### [4. Проект системы: многоуровневая архитектура C4 Model и дизайн UI](04-technology-infrastructure/index.md)
+- [4.1. Многоуровневая архитектура ПО в нотации C4 Model](04-technology-infrastructure/01-c4-architecture/index.md)
 - [4.2. Информационная структура программного обеспечения](04-technology-infrastructure/02-information-structure/index.md)
 - [4.3. Сетевая архитектура программного обеспечения](04-technology-infrastructure/03-network-architecture/index.md)
 - [4.4. Разработка структуры пользовательского интерфейса ПО](04-technology-infrastructure/04-user-interface-structure.md)

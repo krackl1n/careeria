@@ -18,8 +18,7 @@
 |---|---|---|---|---|
 | **Рабочее место пользователя** | Физическое устройство | Windows / macOS / Linux / iOS / Android | `Web Client (Browser Runtime)` | Графический интерфейс соискателя и рекрутера, выполнение клиентского кода React, гидратация DOM-дерева, прямая загрузка файлов резюме в Object Storage по presigned URL. |
 | **Периметральный шлюз (DMZ)** | Виртуальный шлюз (`careeria-edge`) | Linux VM / K8s Edge Ingress (2 vCPU, 4 GB RAM) | `Ingress Controller (Nginx / Envoy)` | Фронтальный обратный прокси, SSL-терминация сертификатов TLS 1.3, защита от DDoS, rate limiting и маршрутизация HTTP(S)-трафика. |
-| **Контур приложений: Web App** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `web-app` (Pods × 2..10, Node.js 20 / Next.js 14) | Серверный рендеринг веб-страниц профилей и вакансий (SSR), начальная генерация HTML, раздача скомпилированных JS/CSS-бандлов и статических ассетов. Масштабируется через HPA по утилизации CPU. |
-| **Контур приложений: BFF** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `bff` (Pods × 2..10, Go 1.23) | Управление сессиями, CSRF-защита, валидация защищённой cookie `__Host-Careeria-Session`, агрегация и маршрутизация gRPC-вызовов к API Gateway. |
+| **Контур приложений: Web App** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (2 vCPU, 2 GB RAM per pod) | `web-app` (Pods × 2..10, Node.js 20 / Next.js 14) | Серверный рендеринг веб-страниц профилей и вакансий (SSR), начальная генерация HTML, раздача скомпилированных JS/CSS-бандлов и статических ассетов. Масштабируется через HPA по утилизации CPU. BFF управляет сессией и проверяет CSRF. |
 | **Контур приложений: API Gateway** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (cgroups v2, 2 vCPU, 2 GB RAM) | `api-gateway` (Pods × 2..10, Go 1.23) | Трансляция внешних REST-запросов в gRPC-вызовы микросервисов, верификация сессий, инжекция контекста `ctxmeta` и трассировки OpenTelemetry. |
 | **Контур приложений: Candidate Service** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (2 vCPU, 4 GB RAM per pod) | `candidate-service` (Pods × 2..10, Go 1.23+) | Горизонтально масштабируемый инстанс бизнес-логики управления профилями и резюме (`Candidate Profile Service`, `Resume Service`, ролевое маскирование `MaskingStrategy`, фоновый `Resume Cleanup Worker`). Количество реплик масштабируется HPA. |
 | **Контур приложений: Vacancy Service** | Kubernetes Deployment (`careeria-apps`) | K8s Worker Nodes (2 vCPU, 4 GB RAM per pod) | `vacancy-service` (Pods × 2..10, Go 1.23+) | Горизонтально масштабируемый инстанс бизнес-логики жизненного цикла вакансий (FSM `DRAFT` / `PUBLISHED` / `CLOSED` / `ARCHIVED`, проверка `PublishingPolicy`, CQRS-разделение команд и поисковых запросов). Масштабируется через HPA. |
@@ -38,9 +37,8 @@
 |---|---|---|---|:---:|---|---|
 | Браузер пользователя | Ingress Controller | Доставка веб-страниц, статики и вызовы API платформы | HTTPS / TLS 1.3 | 443 | Глобальная сеть (Internet) | TLS 1.3, шифр-сьюты ECDHE-RSA-AES256-GCM, HSTS |
 | Браузер пользователя | MinIO Object Storage | Прямая загрузка файла резюме по presigned PUT URL (TTL 15 мин) | HTTPS / S3 API | 9000 | Публичная сеть / DMZ | TLS 1.3, подпись AWS Signature V4, URL с ограниченным сроком действия |
-| Ingress Controller | Web App Pod | Проксирование запросов за страницами профилей и вакансий (SSR) | HTTP / 1.1 | 3000 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
-| Ingress Controller | BFF Pod | Проксирование клиентских запросов к API платформы (`/api/*`) | HTTP / 1.1 | 8080 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
-| BFF Pod | API Gateway Pod | Авторизованные межсервисные RPC-вызовы с проверенной сессией | gRPC / HTTP2 | 50051 | Приватная сеть K8s Cluster | Внутрикластерный mTLS / ClusterIP |
+| Ingress Controller | Web App Pod | Страницы, статика и запросы к BFF | HTTP / 1.1 | 3000 | Приватная сеть K8s Cluster | Внутрикластерный трафик (ClusterIP) |
+| Web App Pod (BFF) | API Gateway Pod | Авторизованные запросы | HTTP / JSON | 8080 | Приватная сеть K8s Cluster | Внутрикластерный mTLS / ClusterIP |
 | API Gateway Pod | Candidate Service Pod | Вызовы RPC-методов домена профилей (`GetProfile`, `UpdateSkills`, `RequestResumeUpload`, `ConfirmResumeUpload`) | gRPC / HTTP2 | 50052 | K8s Service Mesh / Overlay | Балансировка Round-Robin, mTLS |
 | API Gateway Pod | Vacancy Service Pod | Вызовы RPC-методов домена вакансий (`CreateDraftVacancy`, `PublishVacancy`, `ListVacancies`) | gRPC / HTTP2 | 50054 | K8s Service Mesh / Overlay | Балансировка Round-Robin, mTLS |
 | Candidate Service Pod | OpenFGA Pod | Проверка ReBAC-полномочий на действия над профилями и резюме (`can_view`, `can_upload_resume`) | gRPC / HTTP2 | 8081 | Внутренняя сеть K8s | Взаимный mTLS, корпоративный Root CA |
@@ -57,7 +55,7 @@
 ## 3. Топология отказоустойчивости и сетевой периметр
 
 ### 3.1. Горизонтальное автомасштабирование (HPA)
-* Все микросервисы бизнес-логики (`Candidate Service`, `Vacancy Service`), файлового сервиса (`File Service`), уровня представления (`Web App Pod`) и сессионного слоя (`BFF Pod`) развёрнуты как stateless-приложения под управлением **Horizontal Pod Autoscaler (HPA)** с кратностью от `2` до `10` реплик по метрикам утилизации CPU и задержки ответов.
+* Все микросервисы бизнес-логики (`Candidate Service`, `Vacancy Service`), файлового сервиса (`File Service`), веб-приложения с серверным BFF (`Web App Pod`) развёрнуты как stateless-приложения под управлением **Horizontal Pod Autoscaler (HPA)** с кратностью от `2` до `10` реплик по метрикам утилизации CPU и задержки ответов.
 * Балансировка входящей нагрузки между подами обеспечивается нативными виртуальными IP-адресами `Kubernetes Service` (ClusterIP).
 * Безопасная параллельная работа фоновых воркеров `Resume Cleanup Worker` в нескольких репликах `Candidate Service` гарантируется механизмом неблокирующего захвата строк PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` в таблице `resume_cleanup_jobs`.
 

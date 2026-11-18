@@ -1,0 +1,24 @@
+@startuml realtime-publisher-l3
+!include ../../../common/component-styles.puml
+!include ../../../common/component-wide-layout.puml
+!include ../../../model/component-elements.puml
+
+title Realtime Publisher (C4 L3)
+Container_Boundary(subject, "Realtime Publisher") {
+    Component(consumer, "Потребитель событий", "Go / Kafka", "Читает записи и декодирует Avro.")
+    Component(route, "Отбор событий и адресатов", "Go", "Определяет канал доставки.")
+    Component(publish, "Клиент публикации", "Go / HTTP", "Публикует сообщение в Centrifugo.")
+}
+
+ComponentKafka()
+ComponentSchemaRegistry()
+CentrifugoContainer("managedInfrastructure")
+
+Rel(kafka, consumer, "Доставляет события", "Kafka / Avro")
+Rel(consumer, schemaRegistry, "Получает схему", "Registry API")
+Rel(consumer, route, "Передаёт доменное событие")
+Rel(route, publish, "Передаёт канал и сообщение")
+Rel(publish, centrifugo, "Публикует в канал", "HTTP / JSON")
+
+SHOW_FLOATING_LEGEND()
+@enduml
