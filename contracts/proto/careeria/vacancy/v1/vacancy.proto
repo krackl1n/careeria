@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package careeria.vacancy.v1;
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/vacancy/v1;vacancyv1";
+
+enum VacancyStatus {
+  VACANCY_STATUS_UNSPECIFIED = 0;
+  VACANCY_STATUS_DRAFT = 1;
+  VACANCY_STATUS_PUBLISHED = 2;
+  VACANCY_STATUS_ARCHIVED = 3;
+  VACANCY_STATUS_CLOSED = 4;
+}
+
+enum WorkFormat {
+  WORK_FORMAT_UNSPECIFIED = 0;
+  WORK_FORMAT_OFFICE = 1;
+  WORK_FORMAT_REMOTE = 2;
+  WORK_FORMAT_HYBRID = 3;
+}
+
+enum TaxBasis {
+  TAX_BASIS_UNSPECIFIED = 0;
+  TAX_BASIS_GROSS = 1;
+  TAX_BASIS_NET = 2;
+}
+
+message Compensation {
+  // Суммы в единицах currency. Отсутствующая граница отличается от нуля.
+  // Если задана любая граница, обязательны currency и period. minimum <= maximum.
+  optional string minimum = 1 [(validate.rules).string.pattern = "^(0|[1-9][0-9]{0,15})([.][0-9]{1,2})?$"];
+  optional string maximum = 2 [(validate.rules).string.pattern = "^(0|[1-9][0-9]{0,15})([.][0-9]{1,2})?$"];
+  optional string currency = 3 [(validate.rules).string.pattern = "^[A-Z]{3}$"];
+  optional string period = 4 [(validate.rules).string.min_len = 1];
+  TaxBasis tax_basis = 5 [(validate.rules).enum.defined_only = true];
+  optional string bonus = 6;
+}
+
+message VacancySkill {
+  // Ключ навыка уникален в пределах вакансии.
+  string skill_key = 1 [(validate.rules).string.pattern = "[^[:space:]]"];
+  string display_name = 2 [(validate.rules).string.pattern = "[^[:space:]]"];
+}
+
+// Содержание вакансии. Для черновика допустимы пустые описание и набор навыков.
+message VacancyDetails {
+  string title = 1 [(validate.rules).string.pattern = "[^[:space:]]"];
+  string description = 2;
+  WorkFormat work_format = 3 [(validate.rules).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  optional string location = 4;
+  optional string required_experience = 5;
+  optional string employment_type = 6;
+  Compensation compensation = 7;
+  repeated VacancySkill skills = 8;
+}
+
+message VacancyCard {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  string company_id = 2 [(validate.rules).string.uuid = true];
+  VacancyDetails details = 3 [(validate.rules).message.required = true];
+  // Время последней публикации или восстановления. У черновика отсутствует.
+  google.protobuf.Timestamp published_at = 4;
+}
+
+// Представление для представителя компании с правом чтения вакансии.
+message CompanyVacancy {
+  VacancyCard card = 1 [(validate.rules).message.required = true];
+  string author_id = 2 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 3 [(validate.rules).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  int64 version = 4 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp first_published_at = 7;
+  google.protobuf.Timestamp closed_at = 8;
+}
+
+message Vacancy {
+  oneof representation {
+    option (validate.required) = true;
+    // Доступно только для PUBLISHED.
+    VacancyCard public_vacancy = 1;
+    CompanyVacancy company_vacancy = 2;
+  }
+}

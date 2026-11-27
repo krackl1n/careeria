@@ -22,4 +22,12 @@ var MethodAuthenticationPolicies = map[string]AuthenticationPolicy{
 	"/careeria.identity.v1.OAuthService/GetUserInfo":                        AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
 	"/careeria.identity.v1.OAuthService/RevokeToken":                        AuthenticationPolicy_AUTHENTICATION_POLICY_PUBLIC,
 	"/careeria.identity.v1.RegistrationService/RegisterIdentity":            AuthenticationPolicy_AUTHENTICATION_POLICY_PUBLIC,
+	"/careeria.vacancy.v1.VacancyQueryService/GetVacancyByID":               AuthenticationPolicy_AUTHENTICATION_POLICY_PUBLIC,
+	"/careeria.vacancy.v1.VacancyQueryService/ListCompanyVacancies":         AuthenticationPolicy_AUTHENTICATION_POLICY_PUBLIC,
+	"/careeria.vacancy.v1.VacancyService/ArchiveVacancy":                    AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
+	"/careeria.vacancy.v1.VacancyService/CloseVacancy":                      AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
+	"/careeria.vacancy.v1.VacancyService/CreateDraftVacancy":                AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
+	"/careeria.vacancy.v1.VacancyService/PublishVacancy":                    AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
+	"/careeria.vacancy.v1.VacancyService/RestoreVacancy":                    AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
+	"/careeria.vacancy.v1.VacancyService/UpdateVacancyDetails":              AuthenticationPolicy_AUTHENTICATION_POLICY_REQUIRED,
 }
