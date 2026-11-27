@@ -33,7 +33,7 @@ DOCS_DIR := docs
 -include $(DOCS_DIR)/.env
 DOCS_PORT ?= 18882
 DOCS_OPEN ?= 1
-DOCS_START_TIMEOUT ?= 60
+DOCS_START_TIMEOUT ?= 300
 DOCS_COMPOSE := DOCS_PORT=$(DOCS_PORT) docker compose --env-file $(DOCS_DIR)/.env -f $(DOCS_DIR)/docker-compose.yml
 DOCS_ENV := $(DOCS_DIR)/.env
 
@@ -54,7 +54,7 @@ PLANTUML_ARCHITECTURE_OUTPUT_DIR := $(PLANTUML_ARCHITECTURE_DIR)/images/generate
 PLANTUML_ARCHITECTURE_SOURCES := $(shell find $(PLANTUML_ARCHITECTURE_SOURCE_DIR) -type f -name '*.puml' ! -path '*/common/*' ! -path '*/model/*' | sort | sed "s/.*/'&'/")
 
 MODULE_DIRS := $(shell find . -name go.mod -not -path '*/vendor/*' -exec dirname {} \; | sort)
-MIGRATION_SERVICES := identity
+MIGRATION_SERVICES := identity vacancy
 
 .PHONY: \
 	help \
@@ -69,7 +69,7 @@ MIGRATION_SERVICES := identity
 	docs docs-build docs-stop docs-test idef0-render \
 	architecture-validate \
 	plantuml-architecture plantuml-architecture-validate \
-	run-gateway run-identity \
+	run-gateway run-identity run-vacancy \
 	migrate-new migrate-up migrate-status migrate-version \
 	proto-generate proto-lint proto-format
 
@@ -282,9 +282,12 @@ run-gateway: ## Run API Gateway from source.
 run-identity: ## Run Identity from source.
 	$(GO) -C services/identity run ./cmd/service
 
+run-vacancy: ## Run Vacancy from source.
+	$(GO) -C services/vacancy run ./cmd/service
+
 migrate-new: install-goose ## Create a Goose SQL migration; SERVICE and NAME are required.
 	@case "$(SERVICE)" in \
-		identity) ;; \
+		identity|vacancy) ;; \
 		*) \
 			printf '%s\n' 'SERVICE must be one of: $(MIGRATION_SERVICES)' >&2; \
 			exit 2; \
@@ -302,7 +305,7 @@ migrate-new: install-goose ## Create a Goose SQL migration; SERVICE and NAME are
 migrate-up: ## Apply migrations through the service Goose runner; SERVICE is required.
 	$(call require_migration_service)
 	$(GO) -C services/$(SERVICE) run ./cmd/migrate up
-
+	
 migrate-status: ## Show migration status through the service Goose runner; SERVICE is required.
 	$(call require_migration_service)
 	$(GO) -C services/$(SERVICE) run ./cmd/migrate status
@@ -313,7 +316,7 @@ migrate-version: ## Show the current migration version; SERVICE is required.
 
 define require_migration_service
 	@case "$(SERVICE)" in \
-		identity|meeting|document|organization) ;; \
+		identity|vacancy|meeting|document|organization) ;; \
 		*) \
 			printf '%s\n' 'SERVICE must be one of: $(MIGRATION_SERVICES)' >&2; \
 			exit 2; \

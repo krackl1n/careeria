@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package careeria.vacancy.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/vacancy/v1/vacancy.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/vacancy/v1;vacancyv1";
+
+// Публичное чтение охватывает только PUBLISHED. Корпоративное представление требует
+// аутентификации и проверки прав в сервисе при каждом запросе, включая следующие страницы.
+service VacancyQueryService {
+  // Для публичного запроса скрытая карточка и неизвестный ID возвращают NOT_FOUND.
+  rpc GetVacancyByID(GetVacancyByIDRequest) returns (GetVacancyByIDResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+  }
+  rpc ListCompanyVacancies(ListCompanyVacanciesRequest) returns (ListCompanyVacanciesResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_PUBLIC;
+  }
+}
+
+enum VacancyView {
+  // Используется публичное представление.
+  VACANCY_VIEW_UNSPECIFIED = 0;
+  VACANCY_VIEW_PUBLIC = 1;
+  VACANCY_VIEW_COMPANY = 2;
+}
+
+message GetVacancyByIDRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyView view = 2 [(validate.rules).enum.defined_only = true];
+}
+
+message GetVacancyByIDResponse {
+  Vacancy vacancy = 1 [(validate.rules).message.required = true];
+}
+
+message ListCompanyVacanciesRequest {
+  string company_id = 1 [(validate.rules).string.uuid = true];
+  VacancyView view = 2 [(validate.rules).enum.defined_only = true];
+  // 0 выбирает размер по умолчанию (20).
+  int32 page_size = 3 [(validate.rules).int32 = {
+    gte: 0
+    lte: 100
+  }];
+  // Непрозрачный курсор предыдущей страницы для тех же company_id и view.
+  // Некорректный или неподходящий курсор возвращает INVALID_ARGUMENT.
+  string page_token = 4;
+}
+
+message ListCompanyVacanciesResponse {
+  // Публичные карточки упорядочены по (published_at, vacancy_id) DESC,
+  // корпоративные — по (created_at, vacancy_id) DESC.
+  repeated Vacancy vacancies = 1;
+  // Пустая строка означает последнюю страницу.
+  string next_page_token = 2;
+}

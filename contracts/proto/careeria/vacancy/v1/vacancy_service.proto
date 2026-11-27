@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package careeria.vacancy.v1;
+
+import "authentication/policy/v1/policy.proto";
+import "careeria/vacancy/v1/vacancy.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/krackl1n/careeria/contracts/gen/careeria/vacancy/v1;vacancyv1";
+
+// Команды требуют аутентификации и права на операцию в соответствующей компании или вакансии.
+// Конфликт expected_version возвращает ABORTED, недопустимый переход — FAILED_PRECONDITION.
+service VacancyService {
+  rpc CreateDraftVacancy(CreateDraftVacancyRequest) returns (CreateDraftVacancyResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+  rpc UpdateVacancyDetails(UpdateVacancyDetailsRequest) returns (UpdateVacancyDetailsResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+  rpc PublishVacancy(PublishVacancyRequest) returns (PublishVacancyResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+  rpc ArchiveVacancy(ArchiveVacancyRequest) returns (ArchiveVacancyResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+  rpc RestoreVacancy(RestoreVacancyRequest) returns (RestoreVacancyResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+  rpc CloseVacancy(CloseVacancyRequest) returns (CloseVacancyResponse) {
+    option (authentication.policy.v1.authentication) = AUTHENTICATION_POLICY_REQUIRED;
+  }
+}
+
+message CreateDraftVacancyRequest {
+  // UUID операции. Повтор с тем же содержимым восстанавливает результат создания.
+  // Другой запрос с тем же ключом возвращает ALREADY_EXISTS. Автор берётся из контекста.
+  string create_request_id = 1 [(validate.rules).string.uuid = true];
+  string company_id = 2 [(validate.rules).string.uuid = true];
+  VacancyDetails details = 3 [(validate.rules).message.required = true];
+}
+
+message CreateDraftVacancyResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 2;
+  int64 version = 3 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message UpdateVacancyDetailsRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 expected_version = 2 [(validate.rules).int64.gt = 0];
+  // Непустая маска изменяемых полей этого сообщения (title … skills).
+  // Допустимы только имена целых полей. Поля вне маски сохраняются.
+  // В маске отсутствие необязательного поля очищает его. Поля title, description и work_format
+  // требуют значения. Для очистки описания передаётся пустая строка.
+  // compensation и skills заменяются целиком. Пустой список удаляет все навыки.
+  google.protobuf.FieldMask update_mask = 3 [(validate.rules).message.required = true];
+  optional string title = 4 [(validate.rules).string.pattern = "[^[:space:]]"];
+  optional string description = 5;
+  optional WorkFormat work_format = 6 [(validate.rules).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  optional string location = 7;
+  optional string required_experience = 8;
+  optional string employment_type = 9;
+  Compensation compensation = 10;
+  repeated VacancySkill skills = 11;
+}
+
+message UpdateVacancyDetailsResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 version = 2 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+// DRAFT → PUBLISHED.
+message PublishVacancyRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 expected_version = 2 [(validate.rules).int64.gt = 0];
+}
+
+message PublishVacancyResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 2;
+  int64 version = 3 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp published_at = 4;
+}
+
+// PUBLISHED → ARCHIVED.
+message ArchiveVacancyRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 expected_version = 2 [(validate.rules).int64.gt = 0];
+}
+
+message ArchiveVacancyResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 2;
+  int64 version = 3 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+// ARCHIVED → PUBLISHED.
+message RestoreVacancyRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 expected_version = 2 [(validate.rules).int64.gt = 0];
+}
+
+message RestoreVacancyResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 2;
+  int64 version = 3 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp published_at = 4;
+}
+
+// PUBLISHED → CLOSED.
+message CloseVacancyRequest {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  int64 expected_version = 2 [(validate.rules).int64.gt = 0];
+}
+
+message CloseVacancyResponse {
+  string vacancy_id = 1 [(validate.rules).string.uuid = true];
+  VacancyStatus status = 2;
+  int64 version = 3 [(validate.rules).int64.gt = 0];
+  google.protobuf.Timestamp closed_at = 4;
+}

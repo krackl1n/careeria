@@ -22,12 +22,21 @@ type Options struct {
 }
 
 func Load(options Options, target Validatable) error {
-	root, err := rootType(target)
+	file, err := validateFile(options.File)
 	if err != nil {
 		return err
 	}
+	options.File = file
+	return load(options, target)
+}
 
-	file, err := validateFile(options.File)
+// LoadEnv decodes and validates configuration from the process environment.
+func LoadEnv(prefix string, target Validatable) error {
+	return load(Options{EnvPrefix: prefix}, target)
+}
+
+func load(options Options, target Validatable) error {
+	root, err := rootType(target)
 	if err != nil {
 		return err
 	}
@@ -48,20 +57,19 @@ func Load(options Options, target Validatable) error {
 	}
 
 	v := viper.New()
-	v.SetConfigFile(file)
-	v.SetConfigType("yaml")
 	v.AllowEmptyEnv(true)
-
-	if err := v.ReadInConfig(); err != nil {
-		return fmt.Errorf("read config file %q: %w", file, err)
-	}
-
-	if err := validateFileConfig(v, root); err != nil {
-		return fmt.Errorf("validate config file %q: %w", file, err)
-	}
-
-	if err := validateEnvOnly(v, policy); err != nil {
-		return err
+	if options.File != "" {
+		v.SetConfigFile(options.File)
+		v.SetConfigType("yaml")
+		if err := v.ReadInConfig(); err != nil {
+			return fmt.Errorf("read config file %q: %w", options.File, err)
+		}
+		if err := validateFileConfig(v, root); err != nil {
+			return fmt.Errorf("validate config file %q: %w", options.File, err)
+		}
+		if err := validateEnvOnly(v, policy); err != nil {
+			return err
+		}
 	}
 
 	if err := bindEnv(v, schema.fields); err != nil {
